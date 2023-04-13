@@ -1,0 +1,11 @@
+/.vs/
+/deps/
+/packages/
+
+/CGAL.Native/x64/
+/CGAL.Wrapper/bin/
+/CGAL.Wrapper/obj/
+
+/Tellinclam/.vs/
+/Tellinclam/bin/
+/Tellinclam/obj/

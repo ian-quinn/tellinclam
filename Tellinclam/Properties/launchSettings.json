@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Tellinclam": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
