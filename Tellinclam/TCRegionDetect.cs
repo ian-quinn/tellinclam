@@ -21,7 +21,7 @@ namespace Ovenbird
         /// new tabs/panels will automatically be created.
         /// </summary>
         public TCRegionDetect()
-          : base("Region from Intersected Lines", "R",
+          : base("Get Region from Intersected Lines", "R",
             "Sort out space boundaries and surface relations from a bunch of fixed wall centerlines",
             "Clam", "Basic")
         {

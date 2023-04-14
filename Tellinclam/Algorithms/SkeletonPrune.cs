@@ -1,6 +1,12 @@
-﻿using Rhino.Commands;
+﻿using Grasshopper.Kernel.Geometry.Delaunay;
+using Grasshopper.Kernel.Utility;
+using Microsoft.SqlServer.Server;
+using Rhino;
+using Rhino.Commands;
 using Rhino.Geometry;
+using Rhino.Geometry.Intersect;
 using Rhino.Input.Custom;
+using Rhino.UI.Controls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,17 +18,18 @@ namespace Tellinclam.Algorithms
     internal class SkeletonPrune
     {
         public static List<Line> Prune(List<Line> skeletons, List<Line> bisectors, 
-            double tol_h, double tol_d, double tol_theta)
+            double tol_h, double tol_d, double tol_theta, 
+            out List<Point3d> debug_vts, out List<double> debug_vts_height, out List<int> debug_vts_degree)
         {
             // do not edit the original skeletons or bisectors
+
             List<Point3d> vertice = GetNodes(skeletons, out List<int> _ds);
 
-            List<Line> extended_edges = new List<Line>() { };
-
             // retreive node incident to edge
-            // traverse all bisectors and remove the node with too short bisector
             // then extend remaining nodes to the corresponding contour
             // (by connecting it to the midpoint)
+
+            List<Line> extended_edges = new List<Line>() { };
             int init_num = vertice.Count;
             for (int i = 0; i < init_num; i++)
             {
@@ -37,10 +44,9 @@ namespace Tellinclam.Algorithms
                 if (_ds[i] == 1)
                 {
                     // extend the stray to contour by connecting incident point
-                    // with the corresponding mid-point of contour
+                    // with the corresponding mid-point of the contour edge it collapses from
                     extended_edges.Add(new Line(vertice[i], contour_incident / 2));
                     vertice.Add(contour_incident / 2);
-                    // remove redundant branches
                 }
             }
 
@@ -48,14 +54,13 @@ namespace Tellinclam.Algorithms
             edges.AddRange(skeletons);
             edges.AddRange(extended_edges);
 
-            List<int> removable_edges = new List<int>() { };
-            List<double> vts_height = new double[vertice.Count].ToList();       // records height of each vertex
-
+            // regenerate the network, recording the vertices, adjacency matrix
+            // height and degree of each vertex
             int[,] adjMat = GetAdjMat(edges, out Point3d[] vts, out int[] vts_degree);
+            double[] vts_height = new double[vts.Length];       // records height of each vertex
 
             for (int i = 0; i < vts.Length; i++)
             {
-                Point3d contour_incident = new Point3d(0, 0, 0);
                 for (int j = 0; j < bisectors.Count; j++)
                 {
                     if (bisectors[j].PointAt(0).DistanceTo(vts[i]) < 0.0001 ||
@@ -67,23 +72,43 @@ namespace Tellinclam.Algorithms
             }
 
             // fullfil the vts_height list
-            for (int i = 0; i < vts.Length; i++)
+            // every node with degree <=2 must have bisectors connected
+            // which indicates the 'height' it rises from the base boundary contour
+            // those nodes with no bisectors can 'borrow' height value
+            // from other nodes connected to them, by choosing the maximum
+            // this only applies to general situation that the skeleton contains
+            // no 'tower tip', only the 'roof ridges'
+            // 'tower tip' usually collapses from regular polygons
+            // in which case the height of 'tip' node equals adjacent node's height
+            // plus the projection of the edge in between
+            for (int flag = 0; flag < 2; flag++)
             {
-                if (vts_height[i] == 0)
-                {
-                    for (int j = 0; j < adjMat.GetLength(1); j++)
+                for (int i = 0; i < vts.Length; i++)
+                    if (vts_height[i] == 0)
                     {
-                        if (adjMat[i, j] > 0)
+                        double max_height = 0;
+                        for (int j = 0; j < adjMat.GetLength(1); j++)
                         {
-                            vts_height[i] = vts_height[j];
+                            if (adjMat[i, j] > 0)
+                                if (vts_height[j] > max_height)
+                                    max_height = vts_height[j];
                         }
+                        vts_height[i] = max_height;
                     }
-                }
             }
 
+            // info from original network
+            //debug_vts = vts.ToList();
+            //debug_vts_height = vts_height.ToList();
+            //debug_vts_degree = vts_degree.ToList();
+
             // loop to remove all strays under certain height
-            bool flag_repeat = true;
-            while (flag_repeat)
+            // the height indicates the offset distance from the contour
+            // usually for indoor circulation area, this value should not 
+            // be smaller than 0.75, or else the corridor width is too narrow
+            List<int> removable_edge_idx = new List<int>() { };
+            bool flag_rerun = true;
+            while (flag_rerun)
             {
                 int trimmable_counter = 0;
                 for (int i = 0; i < vts.Count(); i++)
@@ -95,7 +120,7 @@ namespace Tellinclam.Algorithms
                         {
                             if (adjMat[i, j] > 0)
                             {
-                                removable_edges.Add(adjMat[i, j]);
+                                removable_edge_idx.Add(adjMat[i, j]);
                                 vts_degree[i] -= 1;
                                 vts_degree[j] -= 1;
                             }
@@ -103,26 +128,25 @@ namespace Tellinclam.Algorithms
                     }
                 }
                 if (trimmable_counter == 0)
-                    flag_repeat = false;
+                    flag_rerun = false;
             }
 
-            // regenerate all skeletons
-            
+            // remove inqualified edges
             for (int i = edges.Count - 1; i >= 0; i--)
             {
-                if (removable_edges.Contains(i))
+                if (removable_edge_idx.Contains(i))
                     edges.RemoveAt(i);
             }
 
             // flatten all edges then solve the adjacency
-            // get graph model in form of vertex list and adjacency matrix
-            // the matrix records the id of the edge connecting those nodes
+            // get graph in form of vertex list and adjacency matrix
+            // the matrix records the id of the edge connecting these nodes
 
-            // update the node list their degrees
+            // update the node list and their degrees
             adjMat = GetAdjMat(edges, out vts, out vts_degree);              // update the adjacency matrix
 
-            // align prevalent edges to form axes (d)
-            // then move relevant points to them
+            // align prevalent edges to form axes (d) then move relevant points to them
+            // note that the vector should be replaced by prevalent ones
             List<Line> axes_y = GetAxes(edges, new Vector3d(0, 1, 0), tol_d, tol_theta);
             List<Line> axes_x = GetAxes(edges, new Vector3d(1, 0, 0), tol_d, tol_theta);
             for (int i = 0; i < vts.Length; i++)
@@ -141,10 +165,111 @@ namespace Tellinclam.Algorithms
                 }
             }
 
-            // locate intersections X of axes
-            // collapse nodes to X within certain range (r)
+            debug_vts = vts.ToList();
+            debug_vts_height = vts_height.ToList();
+            debug_vts_degree = vts_degree.ToList();
 
             // remove redundant point with coline vectors stretching out
+            Vector3d normal = new Vector3d(0, 0, 1);
+            for (int i = 0; i < vts.Length; i++)
+            {
+                if (vts[i].Z > 0 || vts_degree[i] != 2)
+                    continue;
+                int[] idx = new int[2] { -1, -1 };
+                int idx_counter = 0;
+                for (int j = 0; j < adjMat.GetLength(1); j++)
+                {
+                    if (adjMat[i, j] >= 0)
+                    {
+                        idx[idx_counter] = j;
+                        idx_counter++;
+                    }
+                }
+                if (idx[0] < 0 && idx[1] < 0)
+                    continue;
+                double angle_delta = Vector3d.VectorAngle(
+                    vts[idx[0]] - vts[i], vts[idx[1]] - vts[i], normal);
+                if (Math.Abs(angle_delta - Math.PI) < 0.0001)
+                {
+                    vts[i] = new Point3d(0, 0, 1);  // which means to skip this point
+                    adjMat[idx[0], i] = -1;
+                    adjMat[idx[1], i] = -1;
+                    adjMat[i, idx[0]] = -1;
+                    adjMat[i, idx[1]] = -1;
+                    adjMat[idx[0], idx[1]] = 999;   // an impossible edge index
+                    adjMat[idx[1], idx[0]] = 999;   // as a place holder
+                }
+            }
+
+            // locate intersections X of axes
+            // collapse nodes to X within certain range (be careful)
+            // remove duplicate points with inherited adjacency information
+            List<Point3d> ptx = new List<Point3d>() { };
+            foreach (Line axis_x in axes_x)
+            {
+                foreach (Line axis_y in axes_y)
+                {
+                    // it will return false with 2D parallel lines
+                    if (Intersection.LineLine(axis_x, axis_y, out double param_x, out double param_y,
+                        RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, false))
+                        ptx.Add(axis_x.PointAt(param_x));
+                }
+            }
+            List<Point3d> checkbox_vts = new List<Point3d>()
+            {
+                new Point3d(tol_d / 2, tol_d / 2, 0),
+                new Point3d(-tol_d / 2, tol_d / 2, 0),
+                new Point3d(-tol_d / 2, -tol_d / 2, 0),
+                new Point3d(tol_d / 2, -tol_d / 2, 0),
+                new Point3d(tol_d / 2, tol_d / 2, 0),
+            };
+            
+            foreach (Point3d pt in ptx)
+            {
+                Polyline checkbox = new Polyline(checkbox_vts);
+                var xf = Transform.Translation(pt.X, pt.Y, pt.Z);
+                checkbox.Transform(xf);
+
+                List<int> pts_collapse_idx = new List<int>() { };
+                for (int i = 0; i < vts.Length; i++)
+                {
+                    if (Basic.IsPtInPoly(vts[i], checkbox, true))
+                        pts_collapse_idx.Add(i);
+                }
+                if (pts_collapse_idx.Count == 0)
+                    continue;
+                // set the first point as the collapsed one
+                // copy all adjacencies to its column/row
+                int idx_base = pts_collapse_idx.Min();
+                for (int i = 0; i < adjMat.GetLength(0); i++)
+                {
+                    if (pts_collapse_idx.Contains(i))
+                        for (int j = 0; j < adjMat.GetLength(1); j++)
+                        {
+                            if (adjMat[idx_base, j] < 0)
+                                adjMat[idx_base, j] = adjMat[i,j];
+                        }
+                }
+                for (int j = 0; j < adjMat.GetLength(1); j++)
+                {
+                    if (pts_collapse_idx.Contains(j))
+                        for (int i = 0; i < adjMat.GetLength(0); i++)
+                        {
+                            if (adjMat[i, idx_base] < 0)
+                                adjMat[i, idx_base] = adjMat[i, j];
+                        }
+                }
+
+                // cull points from vts list
+                for (int i = 0; i < vts.Length; i++)
+                {
+                    if (i == idx_base)
+                        vts[i] = pt;
+                    else if (pts_collapse_idx.Contains(i))
+                        vts[i] = new Point3d(0, 0, 1);
+                    // we will skip this one during regeneration
+                }
+            }
 
             // regenerate edges
             List<Line> network_rebuilt = RegenEdges(vts, adjMat);
@@ -152,9 +277,18 @@ namespace Tellinclam.Algorithms
             return network_rebuilt;
         }
 
+
         // -------------------------- UTILITIES ----------------------------- //
         // ------------------------------------------------------------------ //
         // ------------------------------------------------------------------ //
+
+        /// <summary>
+        /// This is based on the Quality Threshold clustering.
+        /// Basic idea borrowed from https://github.com/antklen/diameter-clustering
+        /// we add points one by one. If there is a cluster with all points close enough to new points, 
+        /// then we add new point to this cluster. If there is no such cluster, this point starts new cluster.
+        /// </summary>
+        /// <returns></returns>
         public static List<Line> GetAxes(List<Line> edges, Vector3d direction, double tol_d, double tol_theta)
         {
             List<List<Line>> edge_bundles = new List<List<Line>>() { };
@@ -262,6 +396,10 @@ namespace Tellinclam.Algorithms
             return adjMat;
         }
 
+        /// <summary>
+        /// Recreate edges based on vertice list and its adjacency matrix
+        /// </summary>
+        /// <returns></returns>
         public static List<Line> RegenEdges(Point3d[] vts, int[,] adjMat)
         {
             List<Line> skeletons = new List<Line>() { };
@@ -270,12 +408,17 @@ namespace Tellinclam.Algorithms
                 for (int j = i; j < adjMat.GetLength(1); j++)
                 {
                     if (adjMat[i, j] >= 0)
-                        skeletons.Add(new Line(vts[i], vts[j]));
+                        if (vts[i].Z < 1 && vts[j].Z < 1)
+                            skeletons.Add(new Line(vts[i], vts[j]));
                 }
             }
             return skeletons;
         }
 
+        /// <summary>
+        /// Flatten all lines, remove the duplicate points, then return the node list
+        /// </summary>
+        /// <returns></returns>
         public static List<Point3d> GetNodes(List<Line> lines, out List<int> degrees)
         {
             List<Point3d> vts = new List<Point3d>() { };
@@ -287,6 +430,10 @@ namespace Tellinclam.Algorithms
                 degrees.Add(1);
                 degrees.Add(1);
             }
+
+            //Rhino.Geometry has available function to do this
+            //Point3d[] vts_ = Point3d.CullDuplicates(vts, 0.0001);
+
             for (int i = vts.Count - 1; i >= 1; i--)
             {
                 for (int j = i - 1; j >= 0; j--)

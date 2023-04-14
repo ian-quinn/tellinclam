@@ -18,7 +18,7 @@ namespace Tellinclam
         /// new tabs/panels will automatically be created.
         /// </summary>
         public TCStraightSkeleton()
-          : base("Stright Skeleton", "SS",
+          : base("Get Stright Skeleton of Polygons", "SS",
             "Stright Skeleton wrapper for CGAL",
             "Clam", "Basic")
         {
@@ -38,9 +38,11 @@ namespace Tellinclam
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddLineParameter("Skeleton", "Skeleton", "Inter straight skeleton of the polygon", GH_ParamAccess.tree);
-            pManager.AddLineParameter("Bisector", "Bisector", "Trace of polygon vertice moving inward", GH_ParamAccess.tree);
-            pManager.AddLineParameter("Contour", "Contour", "Boundary contour with certain offset", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Vertices", "Vtx", "Vertices of the straight skeleton", GH_ParamAccess.tree);
+            pManager.AddLineParameter("Skeleton", "Skt", "Inter straight skeleton of the polygon", GH_ParamAccess.tree);
+            pManager.AddLineParameter("Bisector", "Bis", "Trace of polygon vertice moving inward", GH_ParamAccess.tree);
+            pManager.AddLineParameter("Contour", "Ctr", "Boundary contour with certain offset", GH_ParamAccess.tree);
+            
         }
 
         /// <summary>
@@ -77,6 +79,7 @@ namespace Tellinclam
                         plines.Add(pline);
             }
 
+            List<List<Point3d>> nestedVertices = new List<List<Point3d>>() { };
             List<List<Line>> nestedSkeletons = new List<List<Line>>() { };
             List<List<Line>> nestedBisectors = new List<List<Line>>() { };
             List<List<Line>> nestedContours = new List<List<Line>>() { };
@@ -115,9 +118,16 @@ namespace Tellinclam
                 nestedContours.Add(edges.Item3);
             }
 
-            DA.SetDataTree(0, Util.ListToTree(nestedSkeletons));
-            DA.SetDataTree(1, Util.ListToTree(nestedBisectors));
-            DA.SetDataTree(2, Util.ListToTree(nestedContours));
+            foreach (List<Line> skeletons in nestedSkeletons)
+            {
+                List<int> degrees;
+                nestedVertices.Add(Algorithms.SkeletonPrune.GetNodes(skeletons, out degrees));
+            }
+
+            DA.SetDataTree(0, Util.ListToTree(nestedVertices));
+            DA.SetDataTree(1, Util.ListToTree(nestedSkeletons));
+            DA.SetDataTree(2, Util.ListToTree(nestedBisectors));
+            DA.SetDataTree(3, Util.ListToTree(nestedContours));
         }
 
         /// <summary>

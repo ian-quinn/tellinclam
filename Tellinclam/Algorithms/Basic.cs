@@ -243,5 +243,63 @@ namespace Tellinclam.Algorithms
             //Rhino.RhinoApp.WriteLine("this distance is: " + stretch.ToString());
             return Math.Sqrt(dx * dx + dy * dy);
         }
+
+        public static List<Line> RemoveDupLines(List<Line> lines, double tol = 0.001)
+        {
+            if (lines.Count == 0)
+                return lines;
+            
+            List<Line> lines_ = new List<Line>() { };
+            foreach (Line line in lines) 
+            { 
+                if (line != null)
+                    if (line.IsValid)
+                        lines_.Add(line); 
+            }
+            for (int i = lines_.Count - 1; i >= 1; i--)
+            {
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    double distance_1 = lines_[i].PointAt(0).DistanceTo(lines_[j].PointAt(0));
+                    double distance_2 = lines_[i].PointAt(0).DistanceTo(lines_[j].PointAt(1));
+                    double distance_3 = lines_[i].PointAt(1).DistanceTo(lines_[j].PointAt(0));
+                    double distance_4 = lines_[i].PointAt(1).DistanceTo(lines_[j].PointAt(1));
+                    if (distance_1 < tol && distance_4 < tol ||
+                        distance_2 < tol && distance_3 < tol)
+                    {
+                        lines_.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+            return lines_;
+        }
+
+        public static List<Point3d> RemoveDupPoints(List<Point3d> pts, double tol)
+        {
+            if (pts.Count == 0)
+                return pts;
+
+            List<Point3d> pts_ = new List<Point3d>() { };
+            foreach (Point3d pt in pts) 
+            { 
+                if (pt != null)
+                    if (pt.IsValid)
+                        pts_.Add(pt); 
+            }
+            for (int i = pts_.Count - 1; i >= 1; i--)
+            {
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    double distance = pts_[i].DistanceTo(pts_[j]);
+                    if (distance < tol)
+                    {
+                        pts_.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+            return pts_;
+        }
     }
 }

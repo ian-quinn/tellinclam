@@ -19,7 +19,7 @@ namespace Tellinclam
         /// </summary>
         public TCPruneSkeleton()
           : base("Prune Skeleton", "PS",
-            "Stright Skeleton wrapper for CGAL",
+            "Trim branches and simplify the trunk as the polygon centerlines",
             "Clam", "Basic")
         {
         }
@@ -29,15 +29,13 @@ namespace Tellinclam
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Skeletons", "Line",
+            pManager.AddCurveParameter("Skeletons", "Skt",
                 "Non self-intersected or cross-intersected polylines as input", GH_ParamAccess.list);
-            pManager.AddCurveParameter("Bisectors", "Line",
+            pManager.AddCurveParameter("Bisectors", "Bis",
                 "Non self-intersected or cross-intersected polylines as input", GH_ParamAccess.list);
             pManager.AddNumberParameter("Height Tolerance", "tol_h",
                 "Non self-intersected or cross-intersected polylines as input", GH_ParamAccess.item);
             pManager.AddNumberParameter("Node Collapse Tolerance", "tol_d",
-                "Non self-intersected or cross-intersected polylines as input", GH_ParamAccess.item);
-            pManager.AddNumberParameter("Trunk Delination Tolerance", "tol_theta",
                 "Non self-intersected or cross-intersected polylines as input", GH_ParamAccess.item);
         }
 
@@ -46,7 +44,10 @@ namespace Tellinclam
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddLineParameter("Centerlines", "Lines", "Inter straight skeleton of the polygon", GH_ParamAccess.list);
+            pManager.AddLineParameter("Centerline", "Edge", "Centerlines collapsed from skeletons", GH_ParamAccess.list);
+            pManager.AddPointParameter("Debug_vts", "Vtx", "Vertices of the network graph (for debug)", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Debug_height", "ht", "Height value of each vertex (for debug)", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Debug_degree", "deg", "Degree value of each vertex (for debug)", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -60,7 +61,8 @@ namespace Tellinclam
             List<Curve> secs = new List<Curve>() { };
             double tol_h = 1;
             double tol_d = 0.2;
-            double tol_theta = 0.1;
+            // 0.01 - default angle tolerance when merging two almost parallel edges
+            double tol_theta = 0.01;
 
             if (!DA.GetDataList(0, skes) || !DA.GetDataList(1, secs))
             {
@@ -69,7 +71,6 @@ namespace Tellinclam
 
             DA.GetData(2, ref tol_h);
             DA.GetData(3, ref tol_d);
-            DA.GetData(4, ref tol_theta);
 
             List<Line> skeletons = new List<Line>() { };
             List<Line> bisectors = new List<Line>() { };
@@ -80,7 +81,7 @@ namespace Tellinclam
 
                 if (!crv.IsValid)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "One polyline is not valid.");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "At least one line is not valid.");
                     continue;
                 }
                 if (crv.IsLinear())
@@ -94,7 +95,7 @@ namespace Tellinclam
 
                 if (!crv.IsValid)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "One polyline is not valid.");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "At least one line is not valid.");
                     continue;
                 }
                 if (crv.IsLinear())
@@ -103,9 +104,19 @@ namespace Tellinclam
                 }
             }
 
-            List<Line> edges = SkeletonPrune.Prune(skeletons, bisectors, tol_h, tol_d, tol_theta);
+            // remove duplicate lines
+            List<Line> skeletons_ = Basic.RemoveDupLines(skeletons, 0.0001);
+            List<Line> bisectors_ = Basic.RemoveDupLines(bisectors, 0.0001);
+
+            // the input lines should be well shattered without crossings
+
+            List<Line> edges = SkeletonPrune.Prune(skeletons_, bisectors_, tol_h, tol_d, tol_theta,
+                out List<Point3d> vts, out List<double> vts_height, out List<int> vts_degree);
 
             DA.SetDataList(0, edges);
+            DA.SetDataList(1, vts);
+            DA.SetDataList(2, vts_height);
+            DA.SetDataList(3, vts_degree);
         }
 
         /// <summary>

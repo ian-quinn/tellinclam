@@ -83,6 +83,16 @@ namespace Tellinclam.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap cull_line {
+            get {
+                object obj = ResourceManager.GetObject("cull_line", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap obb {
             get {
                 object obj = ResourceManager.GetObject("obb", resourceCulture);
