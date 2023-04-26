@@ -3,13 +3,14 @@ using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace CGAL.Wrapper
 {
-    public class PolygonMeshProcessing
+    public class OptBoundingBox
     {
         public static List<Point3d> ObbAsPoint3d(List<Point3d> pts)
         {
@@ -58,6 +59,23 @@ namespace CGAL.Wrapper
             UnsafeNativeMethods.ReleaseDoubleArray(obb_xyz_pointer);
 
             return points;
+        }
+
+        /// <summary>
+        /// Must input a list of Point3d that has Z == 0
+        /// </summary>
+        public static List<Point3d> ObbWithPoint2d(List<Point3d> pts)
+        {
+            List<Point3d> input = new List<Point3d>() { };
+            var xf = Transform.Translation(0, 0, 1);
+            foreach (Point3d pt in pts)
+            {
+                input.Add(pt);
+                Point3d mirror = new Point3d(pt.X, pt.Y, pt.Z);
+                mirror.Transform(xf);
+                input.Add(mirror);
+            }
+            return ObbAsPoint3d(input);
         }
     }
 }

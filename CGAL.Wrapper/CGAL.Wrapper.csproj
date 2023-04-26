@@ -65,9 +65,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="StraightSkeletonProcessing.cs" />
+    <Compile Include="MinSpanningTree.cs" />
+    <Compile Include="StraightSkeleton.cs" />
     <Compile Include="UnsafeNativeMethods.cs" />
-    <Compile Include="PolygonMeshProcessing.cs" />
+    <Compile Include="OptBoundingBox.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

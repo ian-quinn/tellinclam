@@ -8,7 +8,9 @@ Based on [XingxinHE](https://github.com/XingxinHE)/[CGAL_IN_GRASSHOPPER](https:/
 
 - CGAL Straight Skeleton wrapper
 - CGAL Optimal Bounding Box wrapper
-- Skeleton prone for plumbing network (WIP)
+- Boost Kruskal MST wrapper
+- Floyd-Warshall algorithm
+- Skeleton prone for plumbing network
 - Rectilinear Steiner Tree (WIP)
 - gbXML deserializer (WIP)
 

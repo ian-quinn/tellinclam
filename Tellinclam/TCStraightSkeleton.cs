@@ -112,7 +112,7 @@ namespace Tellinclam
             {
                 if (redundantMcr[i])
                     continue;
-                var edges = StraightSkeletonProcessing.SsAsPoint3d(MCRs[i]);
+                var edges = StraightSkeleton.SsAsPoint3d(MCRs[i]);
                 nestedSkeletons.Add(edges.Item1);
                 nestedBisectors.Add(edges.Item2);
                 nestedContours.Add(edges.Item3);

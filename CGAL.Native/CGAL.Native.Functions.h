@@ -16,6 +16,12 @@ void StraightSkeletonByPolygonWithHoles(
 );
 
 CGALNATIVE_C_FUNCTION
+void KruskalMST(
+	int* edge_array, double* weight_array, size_t edge_count,
+	int*& mst_edge_array, int*& mst_edge_count
+);
+
+CGALNATIVE_C_FUNCTION
 void ReleaseDoubleArray(double* arr);
 
 CGALNATIVE_C_FUNCTION

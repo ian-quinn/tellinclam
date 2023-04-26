@@ -29,5 +29,12 @@ namespace CGAL.Wrapper
             [MarshalAs(UnmanagedType.LPArray)] int[] vert_count_array, ulong hole_count, 
             ref IntPtr ss_pts_xy, ref IntPtr ss_type_mask, ref IntPtr ss_edge_count
             );
+
+        [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void KruskalMST(
+            [MarshalAs(UnmanagedType.LPArray)] int[] edge_array, //ulong vert_count,
+            [MarshalAs(UnmanagedType.LPArray)] double[] weight_array, ulong edge_count,
+            ref IntPtr mst_edge_array, ref IntPtr mst_edge_count
+            );
     }
 }

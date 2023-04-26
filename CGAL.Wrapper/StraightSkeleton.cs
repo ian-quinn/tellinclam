@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace CGAL.Wrapper
 {
-    public class StraightSkeletonProcessing
+    public class StraightSkeleton
     {
         public static Tuple<List<Line>, List<Line>, List<Line>> SsAsPoint3d(List<Polyline> plines)
         {

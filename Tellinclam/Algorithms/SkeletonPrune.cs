@@ -409,7 +409,12 @@ namespace Tellinclam.Algorithms
                 {
                     if (adjMat[i, j] >= 0)
                         if (vts[i].Z < 1 && vts[j].Z < 1)
-                            skeletons.Add(new Line(vts[i], vts[j]));
+                        {
+                            Line newEdge = new Line(vts[i], vts[j]);
+                            if (newEdge.IsValid)
+                                skeletons.Add(newEdge);
+                        }
+                            
                 }
             }
             return skeletons;

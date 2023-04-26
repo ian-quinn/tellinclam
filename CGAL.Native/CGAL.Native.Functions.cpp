@@ -1,6 +1,62 @@
 #include "pch.h"
 #include "CGAL.Native.Functions.h"
 
+
+void KruskalMST(
+	int* edge_array, double* weight_array, size_t edge_count,
+	int*& mst_edge_array, int*& mst_edge_count
+)
+{
+	E edges[100];
+	double weights[100];
+	std::size_t num_edges = 0;
+	for (size_t i = 0; i < edge_count; i++)
+	{
+		edges[i] = E(edge_array[2 * i], edge_array[2 * i + 1]);
+		weights[i] = weight_array[i];
+		num_edges++;
+	}
+	
+	/*E edge_array[] = { E(0, 1), E(0, 2), E(1, 2), E(2, 3), E(3, 1) };
+	int weights[] = { 1, 2, 1, 1, 2 };*/
+
+	//std::size_t num_edges = sizeof(edges) / sizeof(E);
+
+#if defined(BOOST_MSVC) && BOOST_MSVC <= 1300
+	Graph g(num_nodes);
+	property_map<Graph, edge_weight_t>::type weightmap = get(edge_weight, g);
+	for (std::size_t j = 0; j < num_edges; ++j) {
+		Edge e; bool inserted;
+		boost::tie(e, inserted) = add_edge(edges[j].first, edges[j].second, g);
+		weightmap[e] = weights[j];
+	}
+#else
+	Graph g(edges, edges + num_edges, weights, static_cast<int>(num_edges));
+#endif
+	Pmap::type weight = get(Wtr::edge_weight, g);
+	std::vector<Edge> spanning_tree;
+
+	kruskal_minimum_spanning_tree(g, std::back_inserter(spanning_tree));
+
+	// the edge amount must be less than the original graph, or equal
+	// it is a safe choice to declare an array like this
+	mst_edge_array = new int[static_cast<int>(num_edges) * 2];
+
+	int edgeCounter = 0;
+	for (std::vector < Edge >::iterator ei = spanning_tree.begin();
+		ei != spanning_tree.end(); ++ei)
+	{
+		mst_edge_array[2 * edgeCounter] = source(*ei, g);
+		mst_edge_array[2 * edgeCounter + 1] = target(*ei, g);
+		edgeCounter++;
+	}
+
+	mst_edge_count = new int[1];
+	mst_edge_count[0] = edgeCounter;
+
+	return;
+}
+
 void OrientedBoudningBoxBySurfaceMesh(
 	double* vert_xyz_array, size_t vert_count, /* input - mesh vertices */
 	double*& obb_pts_xyz

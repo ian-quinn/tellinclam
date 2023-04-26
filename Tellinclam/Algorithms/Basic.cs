@@ -212,15 +212,49 @@ namespace Tellinclam.Algorithms
                             breakParams.Add(IE.ParameterA);
                         }
                     }
-                    else
-                    {
-                        continue;
-                    }
                 }
                 shatteredCrvs.AddRange(crvs[i].Split(breakParams));
             }
 
             return shatteredCrvs;
+        }
+
+        public static List<Point3d> GetIntersectionOfLines(List<Line> lines)
+        {
+            List<Point3d> pts = new List<Point3d>() { };
+            for (int i = 0; i < lines.Count - 1; i++)
+            {
+                for (int j = 0; j < lines.Count - 1; j++)
+                {
+                    if (i != j)
+                    {
+                        if (Intersection.LineLine(lines[i], lines[j], 
+                            out double paramA, out double paramB, 
+                            RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, true))
+                        {
+                            pts.Add(lines[i].PointAt(paramA));
+                        }
+                    }
+                }
+            }
+            return pts;
+        }
+
+        public static List<Line> ShatterLines(List<Line> lines)
+        {
+            List<Line> shatteredLines = new List<Line>() { };
+            List<Curve> crvs = new List<Curve>() { };
+            foreach (Line line in lines)
+                crvs.Add(new LineCurve(line));
+
+            List<Curve> shatters = ShatterCrvs(crvs);
+
+            foreach (Curve crv in shatters)
+            {
+                if (crv.IsLinear())
+                    shatteredLines.Add(new Line(crv.PointAtStart, crv.PointAtEnd));
+            }
+            return shatteredLines;
         }
 
         public static double PtDistanceToRay(
@@ -299,6 +333,14 @@ namespace Tellinclam.Algorithms
                     }
                 }
             }
+            return pts_;
+        }
+
+        public static List<Point3d> PtProjToXY(List<Point3d> pts)
+        {
+            List<Point3d> pts_ = new List<Point3d>() { };
+            foreach (Point3d pt in pts)
+                pts_.Add(new Point3d(pt.X, pt.Y, 0));
             return pts_;
         }
     }

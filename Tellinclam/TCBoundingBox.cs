@@ -4,6 +4,7 @@ using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 using CGAL.Wrapper;
+using Tellinclam.Algorithms;
 
 namespace Tellinclam
 {
@@ -29,7 +30,7 @@ namespace Tellinclam
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddPointParameter("Points", "Pts",
-                "Non self-intersected or cross-intersected polylines as input", GH_ParamAccess.list);
+                "List of points", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -37,7 +38,9 @@ namespace Tellinclam
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Vert", "Vert", "Inter straight skeleton of the polygon", GH_ParamAccess.list);
+            pManager.AddPointParameter("Vertices", "Vtx", "Vertex of the bounding box", GH_ParamAccess.list);
+            pManager.AddBrepParameter("3D Box", "Box", "The optimal bounding box in brep", GH_ParamAccess.item);
+            pManager.AddCurveParameter("Box on XY plane", "Ply", "The 2D bounding box in polyline", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -53,9 +56,16 @@ namespace Tellinclam
                 return;
             }
 
-            var verts = PolygonMeshProcessing.ObbAsPoint3d(pts);
+            List<Point3d> vtx = OptBoundingBox.ObbAsPoint3d(pts);
+            Plane plane = new Plane(vtx[0], vtx[1], vtx[2]);
+            Brep box = new Box(plane, pts).ToBrep();
 
-            DA.SetDataList(0, verts);
+            List<Point3d> vtx2 = OptBoundingBox.ObbWithPoint2d(Basic.PtProjToXY(pts));
+            Polyline box2 = new Polyline(new Point3d[] { vtx2[0], vtx2[1], vtx2[2], vtx2[3], vtx2[0] });
+
+            DA.SetDataList(0, vtx);
+            DA.SetData(1, box);
+            DA.SetData(2, box2);
         }
 
         /// <summary>
