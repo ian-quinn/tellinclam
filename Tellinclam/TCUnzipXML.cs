@@ -81,7 +81,7 @@ namespace Tellinclam
             List<string> idList = new List<string>();
             DataTree<Point3d> spaceTree = new DataTree<Point3d>();
             DataTree<Point3d> openingTree = new DataTree<Point3d>();
-            DecodeXML.GetSpace(path, out List<string> ids,
+            SerializeXML.GetSpace(path, out List<string> ids,
                 out List<List<List<Point3d>>> spaces, out List<List<List<Point3d>>> openings);
             //Debug.Print($"Space members: {spaces.Count}");
             for (int i = 0; i < spaces.Count; i++)

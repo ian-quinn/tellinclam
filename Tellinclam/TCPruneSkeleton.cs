@@ -18,7 +18,7 @@ namespace Tellinclam
         /// new tabs/panels will automatically be created.
         /// </summary>
         public TCPruneSkeleton()
-          : base("Prune Skeleton", "PS",
+          : base("Prune Skeleton", "PruneSkel",
             "Trim branches and simplify the trunk as the polygon centerlines",
             "Clam", "Basic")
         {

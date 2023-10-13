@@ -63,6 +63,26 @@ namespace Tellinclam.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap align {
+            get {
+                object obj = ResourceManager.GetObject("align", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap box_closed {
+            get {
+                object obj = ResourceManager.GetObject("box_closed", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap box_open {
             get {
                 object obj = ResourceManager.GetObject("box_open", resourceCulture);
@@ -86,6 +106,16 @@ namespace Tellinclam.Properties {
         internal static System.Drawing.Bitmap cull_line {
             get {
                 object obj = ResourceManager.GetObject("cull_line", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap ditto {
+            get {
+                object obj = ResourceManager.GetObject("ditto", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -133,9 +163,29 @@ namespace Tellinclam.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap template {
+            get {
+                object obj = ResourceManager.GetObject("template", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap vent {
             get {
                 object obj = ResourceManager.GetObject("vent", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap weld {
+            get {
+                object obj = ResourceManager.GetObject("weld", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

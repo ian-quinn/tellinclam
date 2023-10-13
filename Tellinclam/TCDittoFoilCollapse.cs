@@ -1,17 +1,14 @@
 ﻿using Grasshopper;
 using Grasshopper.Kernel;
-using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
-using Rhino.Geometry.Intersect;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Tellinclam;
+using CGAL.Wrapper;
 using Tellinclam.Algorithms;
 
-namespace Ovenbird
+namespace Tellinclam
 {
-    public class TCRegionDetect : GH_Component
+    public class TCDittoFoilCollapse : GH_Component
     {
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -20,10 +17,10 @@ namespace Ovenbird
         /// Subcategory the panel. If you use non-existing tab or panel names, 
         /// new tabs/panels will automatically be created.
         /// </summary>
-        public TCRegionDetect()
-          : base("Get Region from Intersected Lines", "R",
-            "Sort out space boundaries and surface relations from a bunch of fixed wall centerlines",
-            "Clam", "Basic")
+        public TCDittoFoilCollapse()
+          : base("Test module for convex/concave hull algorithms", "Hull",
+            "Testing convex/concave hull algorithms",
+            "Clam", "Lab")
         {
         }
 
@@ -32,8 +29,8 @@ namespace Ovenbird
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Linelike Curves", "Crvs",
-                "Lineline-Curves as input floorplan sketches", GH_ParamAccess.list);
+            pManager.AddPointParameter("-", "Pts", "-", GH_ParamAccess.list);
+            pManager.AddCurveParameter("-", "Crv", "-", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -41,14 +38,9 @@ namespace Ovenbird
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddLineParameter("Shattered Lines", "Shatters",
-                "Splitted lines based on curve-curve intersections", GH_ParamAccess.list);
-            pManager.AddLineParameter("Trimmed Lines", "Orphans",
-                "Lines removed apart from the space boundaries", GH_ParamAccess.list);
-            pManager.AddCurveParameter("Space Boundaries", "Spaces",
-                "Space Boundaries (counter-clockwise, closed polyline)", GH_ParamAccess.list);
-            pManager.AddCurveParameter("Outer Shell", "Shell",
-                "Floorplan outer shell (clockwise, closed polyline)", GH_ParamAccess.item);
+            pManager.AddPointParameter("Extension box", "CHull", "Extension box", GH_ParamAccess.list);
+            pManager.AddPointParameter("Extension box", "RHull", "Extension box", GH_ParamAccess.list);
+            pManager.AddPointParameter("Extension box", "FHull", "Extension box", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -58,33 +50,42 @@ namespace Ovenbird
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<Curve> lineCrvs = new List<Curve>();
-
-            if (!DA.GetDataList(0, lineCrvs))
-                return;
-
-            if (lineCrvs == null)
+            List<Point3d> pts = new List<Point3d>() { };
+            List<Curve> crvs = new List<Curve>() { };
+            List<Line> edges = new List<Line>() { };
+            if (!DA.GetDataList(0, pts) || !DA.GetDataList(1, crvs))
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please check if the inputs are qualified");
                 return;
             }
 
-            //List<Curve> shatters = Basic.ShatterCrvs(lineCrvs);
-            List<Line> lines = new List<Line>() { };
-            foreach (Curve crv in lineCrvs)
+            foreach (Curve crv in crvs)
             {
+                // curve self-intersection check
+
                 if (!crv.IsValid)
+                {
                     continue;
+                }
                 if (crv.IsLinear())
-                    lines.Add(new Line(crv.PointAtStart, crv.PointAtEnd));
+                {
+                    edges.Add(new Line(crv.PointAtStart, crv.PointAtEnd));
+                }
             }
 
-            PolygonDetect.GetRegion(lines, out List<Line> shatters, out List<Line> trimmed, out List <Polyline> regions);
+            //List<PolylineCurve> boxes = new List<PolylineCurve>() { };
+            //foreach (Line edge in edges)
+            //{
+            //    boxes.Add(EdgeAlign.GetExpansionBox(edge, exp));
+            //}
 
-            DA.SetDataList(0, shatters);
-            DA.SetDataList(1, trimmed);
-            DA.SetDataList(2, regions.Skip(1));
-            DA.SetData(3, regions[0]);
+
+            var vts = BoundingHull.GetConvexHull(pts);
+            var mb = BoundingHull.GetMinimalRectHull(pts);
+            var foil = BoundingHull.GetMinFoilHull(edges);
+
+            DA.SetDataList(0, vts);
+            DA.SetDataList(1, mb);
+            DA.SetDataList(2, foil);
         }
 
         /// <summary>
@@ -97,7 +98,7 @@ namespace Ovenbird
         {
             get
             {
-                return Tellinclam.Properties.Resources.region;
+                return Properties.Resources.ditto;
             }
         }
 
@@ -106,6 +107,6 @@ namespace Ovenbird
         /// It is vital this Guid doesn't change otherwise old ghx files 
         /// that use the old ID will partially fail during loading.
         /// </summary>
-        public override Guid ComponentGuid => new Guid("5B898405-B556-45C8-83DA-38601C463258");
+        public override Guid ComponentGuid => new Guid("584FFC41-6546-4FC2-9433-EF53380607EB");
     }
 }

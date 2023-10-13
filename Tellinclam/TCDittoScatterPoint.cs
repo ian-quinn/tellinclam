@@ -8,7 +8,7 @@ using Tellinclam.Algorithms;
 
 namespace Tellinclam
 {
-    public class TCScatterPoint : GH_Component
+    public class TCDittoScatterPoint : GH_Component
     {
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -17,10 +17,10 @@ namespace Tellinclam
         /// Subcategory the panel. If you use non-existing tab or panel names, 
         /// new tabs/panels will automatically be created.
         /// </summary>
-        public TCScatterPoint()
+        public TCDittoScatterPoint()
           : base("Scatter Points", "SP",
             "Get mesh grid responsive to the polygon boundary",
-            "Clam", "Basic")
+            "Clam", "Lab")
         {
         }
 
@@ -116,7 +116,7 @@ namespace Tellinclam
         {
             get
             {
-                return Properties.Resources.vent;
+                return Properties.Resources.ditto;
             }
         }
 

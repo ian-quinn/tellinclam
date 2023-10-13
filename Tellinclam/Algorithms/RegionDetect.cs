@@ -145,7 +145,7 @@ namespace Tellinclam
                 {
                     if (HCOut != HCO[HCIdx] & HCK[HCIdx] == false & HCK[HCOut] == false)
                     {
-                        double testAngle = 2 * Math.PI - Basic.VectorAngle(HCPln[HCOut], HCPln[HCO[HCIdx]]);
+                        double testAngle = 2 * Math.PI - Basic.VectorAngle2PI(HCPln[HCOut], HCPln[HCO[HCIdx]]);
 
                         //Rhino.RhinoApp.Write(testAngle.ToString() + "\n");
                         // The comparing order is important to ensure a right-hand angle under z-axis
@@ -186,7 +186,7 @@ namespace Tellinclam
                         {
                             orphanId.Add(faceIdx);
                             //Debug.Print("Log 1 orphan for missing next HC " + orphanId.Count);
-                            Util.LogPrint($"RegionDetect: Orphan located as Z::{faceIdx} for missing next outward segment");
+                            //Util.LogPrint($"RegionDetect: Orphan located as Z::{faceIdx} for missing next outward segment");
                             break;
                         }
 
@@ -201,7 +201,7 @@ namespace Tellinclam
                         if (emExit == lines.Count - 1)
                         {
                             orphanId.Add(faceIdx);
-                            Util.LogPrint($"RegionDetect: Orphan located as Z::{faceIdx} for infinite looping");
+                            //Util.LogPrint($"RegionDetect: Orphan located as Z::{faceIdx} for infinite looping");
                             break;
                         }
                     }

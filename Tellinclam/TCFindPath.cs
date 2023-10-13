@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using CGAL.Wrapper;
 using Tellinclam.Algorithms;
+using System.Diagnostics;
+using Tellinclam.Serialization;
 
 namespace Tellinclam
 {
@@ -20,7 +22,7 @@ namespace Tellinclam
         public TCFindPath()
           : base("Path Finder", "Path",
             "Get the path between possible source points and end points",
-            "Clam", "Basic")
+            "Clam", "Lab")
         {
         }
 
@@ -29,12 +31,14 @@ namespace Tellinclam
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            
             pManager.AddCurveParameter("Lines", "Ls",
                 "List of line segments representing trunk network", GH_ParamAccess.list);
             pManager.AddCurveParameter("Terminals", "T",
                 "List of space boundary as terminals", GH_ParamAccess.list);
             pManager.AddCurveParameter("Sources", "S",
                 "List of space boundary as sources", GH_ParamAccess.list);
+            // for internal information flow, this input  will be replaced by JSON file
             pManager.AddIntegerParameter("Zoned index", "n",
                 "List of space index from one zone cluster", GH_ParamAccess.list);
         }
@@ -44,12 +48,18 @@ namespace Tellinclam
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            // for visualization and debug
             pManager.AddLineParameter("Complete Graph", "G", 
                 "Connecting terminals to the main trunk by minimum-cost Manhattan distance.", GH_ParamAccess.list);
             pManager.AddLineParameter("Sub-Graph", "G_", 
                 "Subset of original graph including terminals and candidate steiner points by Floyd-Warshell.", GH_ParamAccess.list);
             pManager.AddLineParameter("Steiner Tree", "S", 
                 "Minimum tree connecting terminals with steiner points from original graph", GH_ParamAccess.list);
+            pManager.AddPointParameter("Graph Centroid", "C",
+                "The pseudo centroid of graph for AHU layout that minimizes (almost) the branches", GH_ParamAccess.item);
+            // for internal information flow
+            pManager.AddTextParameter("JSON file", "json",
+                "The JSON file for internal information flow", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -128,15 +138,26 @@ namespace Tellinclam
             foreach (int idx in target_idx)
                 terminals_zoned.Add(terminals[idx]);
 
-            List<Line> edges_complete = Algorithms.PathFinding.GetTerminalConnection(edges, terminals_zoned);
-            List<Line> edges_subgraph = Algorithms.PathFinding.GetSubGraph(edges_complete, terminals_zoned);
+            List<Line> edges_complete = Algorithms.PathFinding.GetTerminalConnection(edges, terminals_zoned, out List<Line> cons);
+            List<Line> edges_subgraph = Algorithms.PathFinding.GetSubGraph(edges_complete, terminals_zoned, out _);
             // minimum spanning tree applied on edges_subgraph
             List<Line> edges_steiner = Algorithms.PathFinding.GetSteinerTree(
-                Basic.RemoveDupLines(edges_subgraph), terminals_zoned);
+                edges_subgraph, terminals_zoned, new List<Point3d>() { }, PathFinding.algoEnum.MST);
+            PathFinding.Graph<int> graph = PathFinding.RebuildGraph(edges_steiner);
+            
+            PathFinding.Graph<int> trunk = new PathFinding.Graph<int>(true, true);
+            Point3d ahu = PathFinding.GetPseudoRootOfGraph(graph);
+            graph.Graft();
 
             DA.SetDataList(0, edges_complete);
             DA.SetDataList(1, edges_subgraph);
             DA.SetDataList(2, edges_steiner);
+            DA.SetData(3, ahu);
+
+            // only for the geometry test
+            DA.SetData(4, "");
+            //DA.SetData(4, SerializeJSON.InitiateSystemGraph(new List<PathFinding.Graph<int>>() { trunk }, new List<PathFinding.Graph<int>>() { graph }, 
+            //    new List<List<int>>() { target_idx }, "sample_system", true));
         }
 
         /// <summary>

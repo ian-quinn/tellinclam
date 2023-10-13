@@ -18,7 +18,7 @@ namespace Tellinclam
         /// new tabs/panels will automatically be created.
         /// </summary>
         public TCStraightSkeleton()
-          : base("Get Stright Skeleton of Polygons", "SS",
+          : base("Get Stright Skeleton of Polygons", "Stright-Skel",
             "Stright Skeleton wrapper for CGAL",
             "Clam", "Basic")
         {
@@ -31,6 +31,7 @@ namespace Tellinclam
         {
             pManager.AddCurveParameter("Polylines", "Poly", 
                 "Non self-intersected or cross-intersected polylines as input", GH_ParamAccess.list);
+            pManager.AddNumberParameter("time", "time", "test input", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -40,9 +41,10 @@ namespace Tellinclam
         {
             pManager.AddPointParameter("Vertices", "Vtx", "Vertices of the straight skeleton", GH_ParamAccess.tree);
             pManager.AddLineParameter("Skeleton", "Skt", "Inter straight skeleton of the polygon", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Height", "hgt", "The time cost offseting this skeleton edge", GH_ParamAccess.tree);
             pManager.AddLineParameter("Bisector", "Bis", "Trace of polygon vertice moving inward", GH_ParamAccess.tree);
             pManager.AddLineParameter("Contour", "Ctr", "Boundary contour with certain offset", GH_ParamAccess.tree);
-            
+            pManager.AddCurveParameter("Polys", "Ply", "Boundary contour with certain offset", GH_ParamAccess.tree);
         }
 
         /// <summary>
@@ -53,6 +55,8 @@ namespace Tellinclam
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             List<Curve> crvs = new List<Curve>() { };
+            double time = 1;
+            DA.GetData(1, ref time);
             if (!DA.GetDataList(0, crvs))
             {
                 return;
@@ -81,8 +85,11 @@ namespace Tellinclam
 
             List<List<Point3d>> nestedVertices = new List<List<Point3d>>() { };
             List<List<Line>> nestedSkeletons = new List<List<Line>>() { };
+            List<List<double>> nestedHeights = new List<List<double>>() { };
             List<List<Line>> nestedBisectors = new List<List<Line>>() { };
             List<List<Line>> nestedContours = new List<List<Line>>() { };
+
+            List<List<Polyline>> nestedPolys = new List<List<Polyline>>() { };
 
             List<List<Polyline>> MCRs = new List<List<Polyline>>() { };
             foreach (Polyline pline in plines)
@@ -114,9 +121,34 @@ namespace Tellinclam
                     continue;
                 var edges = StraightSkeleton.SsAsPoint3d(MCRs[i]);
                 nestedSkeletons.Add(edges.Item1);
-                nestedBisectors.Add(edges.Item2);
-                nestedContours.Add(edges.Item3);
+                List<double> heights = new List<double>() { };
+                foreach (Tuple<double, double> pair in edges.Item2)
+                {
+                    //if (pair.Item1 == pair.Item2)
+                    //    heights.Add(pair.Item1);
+                    //else
+                    heights.Add((pair.Item1 + pair.Item2) / 2);
+                }
+                nestedHeights.Add(heights);
+                nestedBisectors.Add(edges.Item3);
+                nestedContours.Add(edges.Item4);
             }
+
+            for (int i = 0; i < MCRs.Count; i++)
+            {
+                if (redundantMcr[i])
+                    continue;
+                var polys = StraightSkeleton.OffsetPolygon(MCRs[i], time);
+                List<Polyline> polylines = new List<Polyline>() { };
+                foreach (List<Point3d> poly in polys)
+                {
+                    poly.Add(poly[0]);
+                    polylines.Add(new Polyline(poly));
+                }
+                nestedPolys.Add(polylines);
+            }
+
+            // p
 
             foreach (List<Line> skeletons in nestedSkeletons)
             {
@@ -126,8 +158,11 @@ namespace Tellinclam
 
             DA.SetDataTree(0, Util.ListToTree(nestedVertices));
             DA.SetDataTree(1, Util.ListToTree(nestedSkeletons));
-            DA.SetDataTree(2, Util.ListToTree(nestedBisectors));
-            DA.SetDataTree(3, Util.ListToTree(nestedContours));
+            DA.SetDataTree(2, Util.ListToTree(nestedHeights));
+            DA.SetDataTree(3, Util.ListToTree(nestedBisectors));
+            DA.SetDataTree(4, Util.ListToTree(nestedContours));
+
+            DA.SetDataTree(5, Util.ListToTree(nestedPolys));
         }
 
         /// <summary>

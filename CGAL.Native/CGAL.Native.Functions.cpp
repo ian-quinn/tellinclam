@@ -94,7 +94,7 @@ void OrientedBoudningBoxBySurfaceMesh(
 
 void StraightSkeletonByPolygonWithHoles(
 	double* vert_xy_array, int* vert_count_array, size_t hole_count, 
-	double*& ss_pts_xy, int*& ss_type_mask, 
+	double*& ss_pts_xy, double*& ss_pts_time, int*& ss_type_mask, 
 	int*& ss_edge_count
 )
 {
@@ -141,16 +141,19 @@ void StraightSkeletonByPolygonWithHoles(
 	typedef typename Ss::Vertex_const_handle		Vertex_const_handle ;
 	typedef typename Ss::Halfedge_const_handle		Halfedge_const_handle ;
 	typedef typename Ss::Halfedge_const_iterator	Halfedge_const_iterator ;
+	typedef typename Ss::Vertex_const_iterator		Vertex_const_iterator ;
 
 	Halfedge_const_handle	null_halfedge ;
 	Vertex_const_handle		null_vertex ;
 
 	// only take the bisectors
 	ss_pts_xy = new double[ss.size_of_halfedges() * 4];
+	ss_pts_time = new double[ss.size_of_halfedges() * 2];
 	ss_type_mask = new int[ss.size_of_halfedges()];
 	ss_edge_count = new int[1];
 	ss_edge_count[0] = ss.size_of_halfedges();
 	int count = 0;
+
 
 	for (Halfedge_const_iterator i = ss.halfedges_begin(); i != ss.halfedges_end(); ++i)
 	{
@@ -158,6 +161,8 @@ void StraightSkeletonByPolygonWithHoles(
 		ss_pts_xy[count * 4 + 1] = i->opposite()->vertex()->point().y();
 		ss_pts_xy[count * 4 + 2] = i->vertex()->point().x();
 		ss_pts_xy[count * 4 + 3] = i->vertex()->point().y();
+		ss_pts_time[count * 2 + 0] = CGAL::to_double(i->opposite()->vertex()->time());
+		ss_pts_time[count * 2 + 1] = CGAL::to_double(i->vertex()->time());
 		
 		if (i->is_bisector())
 		{
@@ -176,6 +181,98 @@ void StraightSkeletonByPolygonWithHoles(
 		}
 		count++;
 	}
+
+	return;
+}
+
+void CreateOffsetPolygons(
+	double* vert_xy_array, int* vert_count_array, size_t hole_count, 
+	double*& ss_poly_xy, int*& ss_poly_vt, int*& ss_poly_count, int*& ss_pt_count
+)
+{
+	// declare the outer polygon
+	Polygon_2 outer;
+	int pt_count = 0;
+	for (int i = 0; i < vert_count_array[0]; i++)
+	{
+		outer.push_back(
+			Point_2(
+				vert_xy_array[2 * pt_count + 0],
+				vert_xy_array[2 * pt_count + 1])
+		);
+		pt_count += 1;
+	}
+	//assert(outer.is_counterclockwise_oriented());
+
+	// declare the inner hole
+	// pending
+	Polygon_with_holes poly(outer);
+
+	for (size_t i = 1; i < hole_count; i++)
+	{
+		Polygon_2 hole;
+		for (int j = 0; j < vert_count_array[i]; j++)
+		{
+			hole.push_back(
+				Point_2(
+					vert_xy_array[2 * pt_count + 0],
+					vert_xy_array[2 * pt_count + 1])
+			);
+			pt_count += 1;
+		}
+		//assert(hole.is_clockwise_oriented());
+		poly.add_hole(hole);
+	}
+
+	// declare output
+	SsPtr iss = CGAL::create_interior_straight_skeleton_2(poly) ;
+
+	// how to decode iss into list of vertice pairs?
+	Ss ss = *iss ;
+
+	// set two array
+	// one to record the vertices coordinate [x1, y1, x2, y2, x3, y3, ... ]
+	// one to record the number of vertices of each polygon
+	double lOffset = 1.6;
+	PolygonPtrVector offset_polygons = CGAL::create_offset_polygons_2<Polygon_2>(lOffset, ss);
+
+	// only take the bisectors
+	// ss_poly_xy:		x y x y x y .... x y x y x y x y ...
+	// ss_poly_vt:			3                   4       ...   
+	// ss_poly_count:	            2
+	//
+	
+	int memosize = 0;
+	for (typename PolygonVector::const_iterator pi = offset_polygons.begin(); pi != offset_polygons.end(); ++pi)
+	{
+		Polygon_2 poly = **pi;
+		memosize += poly.size();
+	}
+
+	ss_poly_xy = new double[memosize * 2];
+	ss_poly_vt = new int[offset_polygons.size()];
+	ss_poly_count = new int[1];
+	ss_pt_count = new int[1];
+	ss_poly_count[0] = offset_polygons.size();
+
+	int poly_count = 0;
+	int accu_count = 0; // accumulate the number of all points recorded
+	for (typename PolygonVector::const_iterator pi = offset_polygons.begin(); pi != offset_polygons.end(); ++pi)
+	{
+		Polygon_2 poly = **pi;
+		int vt_count = 0;
+		for (typename Polygon_2::Vertex_const_iterator vi = poly.vertices_begin(); vi != poly.vertices_end(); ++vi)
+		{
+			Point_2 pt = *vi;
+			ss_poly_xy[accu_count * 2 + vt_count * 2 + 0] = pt.x();
+			ss_poly_xy[accu_count * 2 + vt_count * 2 + 1] = pt.y();
+			vt_count++;
+		}
+		ss_poly_vt[poly_count] = vt_count;
+		accu_count += vt_count;
+		poly_count++;
+	}
+	ss_pt_count[0] = accu_count;
 
 	return;
 }

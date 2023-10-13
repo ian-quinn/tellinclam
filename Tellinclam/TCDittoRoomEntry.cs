@@ -5,10 +5,13 @@ using System;
 using System.Collections.Generic;
 using CGAL.Wrapper;
 using Tellinclam.Algorithms;
+using Rhino.UI;
+using Rhino;
+using Rhino.DocObjects;
 
 namespace Tellinclam
 {
-    public class TCRemoveDup : GH_Component
+    public class TCDittoRoomEntry : GH_Component
     {
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -17,10 +20,10 @@ namespace Tellinclam
         /// Subcategory the panel. If you use non-existing tab or panel names, 
         /// new tabs/panels will automatically be created.
         /// </summary>
-        public TCRemoveDup()
-          : base("RemoveDuplicateX", "Del",
-            "Remove duplicate points or line segments",
-            "Clam", "Util")
+        public TCDittoRoomEntry()
+          : base("Assign door location to rooms", "Entry",
+            "Assign door location to rooms",
+            "Clam", "Lab")
         {
         }
 
@@ -29,9 +32,8 @@ namespace Tellinclam
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddPointParameter("Points", "Pts", "List of Points", GH_ParamAccess.list);
-            pManager.AddLineParameter("Lines", "Ls", "List of Lines", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Tolerance", "tol", "Distance limit", GH_ParamAccess.item, 0.0001);
+            pManager.AddPointParameter("-", "Pts", "-", GH_ParamAccess.list);
+            pManager.AddCurveParameter("-", "Crv", "-", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -39,8 +41,8 @@ namespace Tellinclam
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Points", "Pts_", "List with duplicate points removed", GH_ParamAccess.list);
-            pManager.AddLineParameter("Lines", "Ls_", "List with duplicate lines removed", GH_ParamAccess.list);
+            pManager.AddPointParameter("Pts", "Pts", "-", GH_ParamAccess.tree);
+            pManager.AddCurveParameter("Crv", "Crv", "-", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -51,19 +53,29 @@ namespace Tellinclam
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             List<Point3d> pts = new List<Point3d>() { };
-            List<Line> lines = new List<Line>() { };
-            double tol = 0.0001;
-            if (!DA.GetDataList(0, pts) && !DA.GetDataList(1, lines))
+            List<Curve> crvs = new List<Curve>() { };
+            if (!DA.GetDataList(0, pts) || !DA.GetDataList(1, crvs))
             {
                 return;
             }
-            DA.GetData(2, ref tol);
 
-            var pts_ = Basic.RemoveDupPoints(pts, tol);
-            var lines_ = Basic.RemoveDupLines(lines, tol);
+            List<List<Point3d>> nested_locs = new List<List<Point3d>>() { };
+            foreach (Curve crv in crvs)
+            {
+                if (crv is null)
+                    continue;
+                List<Point3d> door_locs = new List<Point3d>() { };
+                foreach (Point3d pt in pts)
+                {
+                    double t;
+                    if (crv.ClosestPoint(pt, out t, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance))
+                        door_locs.Add(pt);
+                }
+                nested_locs.Add(door_locs);
+            }
 
-            DA.SetDataList(0, pts_);
-            DA.SetDataList(1, lines_);
+            DA.SetDataTree(0, Util.ListToTree(nested_locs));
+            DA.SetDataList(1, crvs);
         }
 
         /// <summary>
@@ -76,7 +88,7 @@ namespace Tellinclam
         {
             get
             {
-                return Properties.Resources.cull_line;
+                return Properties.Resources.ditto;
             }
         }
 
@@ -85,6 +97,6 @@ namespace Tellinclam
         /// It is vital this Guid doesn't change otherwise old ghx files 
         /// that use the old ID will partially fail during loading.
         /// </summary>
-        public override Guid ComponentGuid => new Guid("FF7C829A-8E7B-4EC2-8DF4-2418230425AB");
+        public override Guid ComponentGuid => new Guid("3F57FFEC-CE9F-4DB0-A5AA-CDE42D26BB94");
     }
 }

@@ -318,9 +318,8 @@ namespace Tellinclam.Algorithms
                     for (int j = 0; j < edge_bundles[i].Count; j++)
                     {
                         double distance = Basic.PtDistanceToRay(
-                            _edges[0].PointAt(0),
-                            edge_bundles[i][j].PointAt(0),
-                            direction, out double stretch);
+                            _edges[0].PointAt(0), edge_bundles[i][j].PointAt(0), direction, 
+                            out Point3d plummet, out double stretch);
                         //double distance = edge_bundles[i][j].DistanceTo(_edges[0].PointAt(0), false);
                         distance_sum += distance;
                         // not in range

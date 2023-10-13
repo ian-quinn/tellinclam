@@ -11,6 +11,9 @@
   
   <ItemGroup>
     <PackageReference Include="Grasshopper" Version="7.13.21348.13001" IncludeAssets="compile;build" />
+    <PackageReference Include="OptimizedPriorityQueue" Version="5.1.0" />
+    <PackageReference Include="PsychroLib" Version="2.5.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.0-preview.6.23329.7" />
   </ItemGroup>
   
   <ItemGroup>

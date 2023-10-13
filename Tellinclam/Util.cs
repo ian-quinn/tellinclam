@@ -12,16 +12,29 @@ using Rhino.DocObjects;
 using Rhino.Collections;
 using Rhino.Geometry.Intersect;
 using Grasshopper.Kernel.Data;
+using System.Diagnostics;
 
 namespace Tellinclam
 {
     class Util
     {
+
+        public static void ScriptPrint(string msg, string filename, string outPath)
+        {
+            string thisAssemblyFolderPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            string scriptPath = thisAssemblyFolderPath + $"/{filename}";
+            File.WriteAllText(scriptPath, $"{msg}");
+            if (outPath != "")
+                File.Copy(scriptPath, Path.Combine(outPath, $"{filename}"), true);
+        }
+
         public static void LogPrint(string msg)
         {
-            using (var sw = File.AppendText(@"D:\tellinclam\log.txt"))
+            string thisAssemblyFolderPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            string logPath = thisAssemblyFolderPath + "/log.txt";
+            using (var sw = File.AppendText(logPath))
             {
-                sw.WriteLine(msg);
+                sw.WriteLine($"[{DateTime.Now.ToLongTimeString()}] {msg}");
             }
         }
 
@@ -125,6 +138,47 @@ namespace Tellinclam
             foreach (List<T> list in nestedList)
                 flatList.AddRange(list);
             return flatList;
+        }
+
+        // supporting functions
+        public static List<List<T>> GetCombinations<T>(List<List<T>> lists)
+        {
+            List<List<T>> result = new List<List<T>>();
+            int[] indices = new int[lists.Count];
+
+            while (true)
+            {
+                List<T> combination = new List<T>();
+                for (int i = 0; i < lists.Count; i++)
+                {
+                    combination.Add(lists[i][indices[i]]);
+                }
+                result.Add(combination);
+
+                int k = lists.Count - 1;
+                while (k >= 0 && indices[k] == lists[k].Count - 1)
+                {
+                    indices[k] = 0;
+                    k--;
+                }
+
+                if (k < 0)
+                    break;
+
+                indices[k]++;
+            }
+
+            return result;
+        }
+
+        public static List<T> ConcateLists<T>(List<T> a, List<T> b)
+        {
+            List<T> newList = new List<T>() { };
+            foreach (T item in a)
+                newList.Add(item);
+            foreach (T item in b)
+                newList.Add(item);
+            return newList;
         }
     }
 }

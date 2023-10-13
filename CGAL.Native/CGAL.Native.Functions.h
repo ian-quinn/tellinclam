@@ -11,8 +11,14 @@ void OrientedBoudningBoxBySurfaceMesh(
 CGALNATIVE_C_FUNCTION
 void StraightSkeletonByPolygonWithHoles(
 	double* vert_xy_array, int* vert_count_array, size_t hole_count, 
-	double*& ss_pts_xy, int*& ss_type_mask, 
+	double*& ss_pts_xy, double*& ss_pts_time, int*& ss_type_mask,
 	int*& ss_edge_count
+);
+
+CGALNATIVE_C_FUNCTION
+void CreateOffsetPolygons(
+	double* vert_xy_array, int* vert_count_array, size_t hole_count,
+	double*& ss_poly_xy, int*& ss_poly_vt, int*& ss_poly_count, int*& ss_pt_count
 );
 
 CGALNATIVE_C_FUNCTION

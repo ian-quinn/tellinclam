@@ -10,7 +10,7 @@ using Tellinclam;
 
 namespace Tellinclam
 {
-    class DecodeXML
+    class SerializeXML
     {
         public static void Appendix(string XMLpath, string label, out List<List<Point3d>> loops)
         //    Dictionary<string, string> adjDict)

@@ -10,21 +10,565 @@ using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using CGAL.Wrapper;
 using Grasshopper.Kernel.Geometry.Delaunay;
+using Priority_Queue;
+using System.Reflection;
+
+
+using Tellinclam.Serialization;
+using static Tellinclam.Serialization.SchemaJSON;
+using System.CodeDom;
+using static Tellinclam.Algorithms.PathFinding;
+using Rhino.FileIO;
 
 namespace Tellinclam.Algorithms
 {
-    internal class PathFinding
+    public class PathFinding
     {
-        public static List<Line> GetTerminalConnection(List<Line> edges, List<Point3d> terminals)
+        public enum algoEnum
         {
-            List<Line> connections = new List<Line>() { };
+            MST,        // Minimal Spanning Tree by Kruskal
+            SPT         // Shortest Path Tree by Dijkstra
+        }
+
+        public class Node<T>
+        {
+            public int Index { get; set; }
+            public T Value { get; set; }
+            public Point3d Coords { get; set; }
+            public string label { get; set; }
+            public bool isRoot { get; set; } = false;
+            public int depth { get; set; } = -1; // invalid value by default
+            public List<Node<T>> Neighbors { get; set; } = new List<Node<T>>();
+            public List<float> Weights { get; set; } = new List<float>(); 
+
+
+            public bool AddNeighbors(Node<T> neighbor)
+            {
+                if (Neighbors.Contains(neighbor))
+                {
+                    return false;
+                }
+                else
+                {
+                    Neighbors.Add(neighbor);
+                    return true;
+                }
+            }
+
+            public bool RemoveNeighbors(Node<T> neighbor)
+            {
+                return Neighbors.Remove(neighbor);
+            }
+
+            public bool RemoveAllNeighbors()
+            {
+                for (int i = Neighbors.Count; i >= 0; i--)
+                {
+                    Neighbors.RemoveAt(i);
+                }
+                return true;
+            }
+
+            public override string ToString()
+            {
+                StringBuilder nodeString = new StringBuilder();
+                nodeString.Append($"[ ID-{Index} Value-{Value} Neighbors- ");
+                for (int i = 0; i < Neighbors.Count; i++)
+                {
+                    nodeString.Append(Neighbors[i].Value + $"-{Weights[i]} "); // + edge.ToString()+ " ");                
+                }
+                nodeString.Append("]");
+                return nodeString.ToString();
+            }
+        }
+
+        public class Edge<T>
+        {
+            public Node<T> From { get; set; }
+            public Node<T> To { get; set; }
+            public float Weight { get; set; }
+            public bool isMarked { get; set; }
+
+            public override string ToString()
+            {
+                return $"WeightedEdge: {From.Value} -> {To.Value}, weight: {Weight}";
+            }
+        }
+
+        public class PathNodeInfo<T>
+        {
+            //Graph: internal previous node variable
+            Node<T> previous;
+            //Graph: constructor to initialize the previous node
+            public PathNodeInfo(Node<T> previous)
+            {
+                this.previous = previous;
+            }
+            //Graph: Readonly return previous node prop
+            public Node<T> Previous
+            {
+                get
+                {
+                    return previous;
+                }
+            }
+        }
+
+        public class Graph<T>
+        {
+            List<Node<T>> nodes = new List<Node<T>>();
+            private bool _isDirected = false;
+            private bool _isWeighted = false;
+
+            public Graph(bool isDirected, bool isWeighted)
+            {
+                _isDirected = isDirected;
+                _isWeighted = isWeighted;
+            }
+
+            public int Count { get { return nodes.Count; } }
+            public List<Node<T>> Nodes { get { return nodes; } }
+
+            //Increase the Index Value
+            public void UpdateIndices()
+            {
+                int i = 0;
+                Nodes.ForEach(n => n.Index = i++);
+            }
+
+            // only for trees!
+            public void updateDepth(Node<T> node, int depth)
+            {
+                if (node != null)
+                {
+                    node.depth = depth;
+                    foreach (Node<T> _node in node.Neighbors)
+                    {
+                        updateDepth(_node, depth + 1);
+                    }
+                }
+            }
+
+            // this .Equals() method limits the usage of graph model
+            // two points are not equal with tiny little bit coordinate difference
+            // so the comparision between points must have some tolerance, like .DistanceTo() < tol
+            // the safe choic is to use integer to construct the graph, then append point to the node
+            // or, you need to override Point3d.Equals() to make it useful
+            public Node<T> Find(Node<T> graphNode)
+            {
+                foreach (Node<T> node in nodes)
+                {
+                    if (node.Value.Equals(graphNode.Value))
+                    {
+                        return node;
+                    }
+                }
+                return null;
+            }
+
+            public Node<T> FindByValue(T value)
+            {
+                foreach (Node<T> node in nodes)
+                {
+                    if (node.Value.Equals(value))
+                    {
+                        return node;
+                    }
+                }
+                return null;
+            }
+
+            public Node<T> AddNode(T value)
+            {
+                Node<T> node = new Node<T>() { Value = value };
+                if (Find(node) != null)
+                {
+                    return null;
+                }
+                else
+                {
+                    Nodes.Add(node);
+                    UpdateIndices();
+                    return node;
+                }
+            }
+
+            public bool AddEdge(Node<T> from, Node<T> to, float weight)
+            {
+                Node<T> source = Find(from);
+                Node<T> destination = Find(to);
+                if (source == null || destination == null)
+                {
+                    return false;
+                }
+                else if (source.Neighbors.Contains(destination))
+                {
+                    return false;
+                }
+                else
+                {
+                    //for direted graph only below 1st line is required  node1->node2
+                    from.AddNeighbors(to);
+                    if (_isWeighted)
+                    {
+                        source.Weights.Add(weight);
+                    }
+                    //for undireted graph need below line as well
+                    if (!_isDirected)
+                    {
+                        to.AddNeighbors(from);
+                        if (_isWeighted)
+                        {
+                            to.Weights.Add(weight);
+                            // for junction you need to add different ratios to 
+                            // different weight values
+                        }
+                    }
+                    return true;
+                }
+            }
+
+            public bool RemoveNode(Node<T> value)
+            {
+                Node<T> removeNode = Find(value);
+                if (removeNode == null)
+                {
+                    return false;
+                }
+                else
+                {
+                    nodes.Remove(removeNode);
+                    foreach (Node<T> node in nodes)
+                    {
+                        node.RemoveNeighbors(removeNode);
+                        RemoveEdge(node, removeNode);
+                    }
+                    return true;
+                }
+            }
+
+            public bool RemoveEdge(Node<T> from, Node<T> to)
+            {
+                Node<T> node1 = Find(from);
+                Node<T> node2 = Find(to);
+                if (node1 == null || node2 == null)
+                {
+                    return false;
+                }
+                else if (!node1.Neighbors.Contains(node2))
+                {
+                    return false;
+                }
+                else
+                {
+                    //for direted graph only below 1st line is required  node1->node2
+                    int index = from.Neighbors.FindIndex(n => n == to);
+                    if (index >= 0)
+                    {
+                        from.Neighbors.RemoveAt(index);
+                        if (_isWeighted)
+                        {
+                            from.Weights.RemoveAt(index);
+                        }
+                    }
+                    //for undireted graph need below line as well
+                    index = to.Neighbors.FindIndex(n => n == from);
+                    if (index >= 0)
+                    {
+                        to.Neighbors.RemoveAt(index);
+                        if (_isWeighted)
+                        {
+                            to.Weights.RemoveAt(index);
+                        }
+                    }
+                    return true;
+                }
+            }
+
+            // retrieve certain edge from the graph by its start and end node
+            public Edge<T> this[int from, int to]
+            {
+                get
+                {
+                    Node<T> nodeFrom = Nodes[from];
+                    Node<T> nodeTo = Nodes[to];
+                    int i = nodeFrom.Neighbors.IndexOf(nodeTo);
+                    if (i >= 0)
+                    {
+                        Edge<T> edge = new Edge<T>()
+                        {
+                            From = nodeFrom,
+                            To = nodeTo,
+                            Weight = i < nodeFrom.Weights.Count ? nodeFrom.Weights[i] : 0
+                        };
+                        return edge;
+                    }
+
+                    return null;
+                }
+            }
+
+            public List<Edge<T>> GetEdges()
+            {
+                List<Edge<T>> edges = new List<Edge<T>>();
+                foreach (Node<T> from in Nodes)
+                {
+                    for (int i = 0; i < from.Neighbors.Count; i++)
+                    {
+                        Edge<T> edge = new Edge<T>()
+                        {
+                            From = from,
+                            To = from.Neighbors[i],
+                            Weight = i < from.Weights.Count ? from.Weights[i] : 0
+                        };
+                        edges.Add(edge);
+                    }
+                }
+                return edges;
+            }
+
+            private void Fill<Q>(Q[] array, Q value)
+            {
+                for (int i = 0; i < array.Length; i++)
+                {
+                    array[i] = value;
+                }
+            }
+
+            public override string ToString()
+            {
+                StringBuilder nodeString = new StringBuilder();
+                for (int i = 0; i < Count; i++)
+                {
+                    nodeString.Append(nodes[i].ToString());
+                    if (i < Count - 1)
+                    {
+                        nodeString.Append("\n");
+                    }
+                }
+                return nodeString.ToString();
+            }
+
+            // iterate all nodes in Dijkstra way, get the longest path
+            public List<Edge<T>> GetFurthestPathDijkstra(Node<T> source, out int remoteIdx)
+            {
+                void Fill<Q>(Q[] array, Q value)
+                {
+                    for (int i = 0; i < array.Length; i++)
+                    {
+                        array[i] = value;
+                    }
+                }
+
+                int[] previous = new int[Nodes.Count];
+                //Set Every Previous node with initial value -1
+                Fill(previous, -1);
+
+                float[] distances = new float[Nodes.Count];
+                //Set Every Previous node with initial value -1
+                Fill(distances, float.PositiveInfinity);
+                //Initially distance will be 0 on starting node
+                distances[source.Index] = 0;
+
+                //Create SimplePriorityQueue for dynamicall update the priority of each node on the basis of distance and process accordingly
+                SimplePriorityQueue<Node<T>> nodes = new SimplePriorityQueue<Node<T>>();
+                for (int i = 0; i < Nodes.Count; i++)
+                {
+                    nodes.Enqueue(Nodes[i], distances[i]);
+                }
+
+                while (nodes.Count != 0)
+                {
+                    Node<T> node = nodes.Dequeue();
+                    for (int i = 0; i < node.Neighbors.Count; i++)
+                    {
+                        Node<T> neighbor = node.Neighbors[i];
+                        float weight = i < node.Weights.Count ? node.Weights[i] : 0;
+                        float weightTotal = distances[node.Index] + weight;
+
+                        if (distances[neighbor.Index] > weightTotal)
+                        {
+                            distances[neighbor.Index] = weightTotal;
+                            previous[neighbor.Index] = node.Index;
+                            nodes.UpdatePriority(neighbor, distances[neighbor.Index]);
+                        }
+                    }
+                }
+
+                List<float> distPile = distances.ToList();
+                foreach (float num in distPile)
+                {
+                    Console.Write($"{num} ");
+                }
+                remoteIdx = distPile.IndexOf(distPile.Max());
+
+                //Getting all the index
+                List<int> indices = new List<int>();
+                int index = remoteIdx;
+                while (index >= 0)
+                {
+                    indices.Add(index);
+                    index = previous[index];
+                }
+
+                //Reverse all the index to get the correct order
+                indices.Reverse();
+                List<Edge<T>> result = new List<Edge<T>>();
+                for (int i = 0; i < indices.Count - 1; i++)
+                {
+                    Edge<T> edge = this[indices[i], indices[i + 1]];
+                    result.Add(edge);
+                }
+                //return list of WeightedEdge
+                return result;
+            }
+
+            public List<Edge<T>> GetShortestPathDijkstra(Node<T> source, Node<T> target, out float distance)
+            {
+                int[] previous = new int[Nodes.Count];
+                //Set Every Previous node with initial value -1
+                Fill(previous, -1);
+
+                float[] distances = new float[Nodes.Count];
+                //Set Every Previous node with initial value -1
+                Fill(distances, int.MaxValue);
+                //Initially distance will be 0 on starting node
+                distances[source.Index] = 0;
+
+                //Create SimplePriorityQueue for dynamicall update the priority of each node on the basis of distance and process accordingly
+                SimplePriorityQueue<Node<T>> nodes = new SimplePriorityQueue<Node<T>>();
+                for (int i = 0; i < Nodes.Count; i++)
+                {
+                    nodes.Enqueue(Nodes[i], distances[i]);
+                }
+
+                while (nodes.Count != 0)
+                {
+                    Node<T> node = nodes.Dequeue();
+                    for (int i = 0; i < node.Neighbors.Count; i++)
+                    {
+                        Node<T> neighbor = node.Neighbors[i];
+                        float weight = i < node.Weights.Count ? node.Weights[i] : 0;
+                        float weightTotal = distances[node.Index] + weight;
+
+                        if (distances[neighbor.Index] > weightTotal)
+                        {
+                            distances[neighbor.Index] = weightTotal;
+                            previous[neighbor.Index] = node.Index;
+                            nodes.UpdatePriority(neighbor, distances[neighbor.Index]);
+                        }
+                    }
+                }
+
+                //Getting all the index
+                List<int> indices = new List<int>();
+                int index = target.Index;
+                while (index >= 0)
+                {
+                    indices.Add(index);
+                    index = previous[index];
+                }
+
+                //Reverse all the index to get the correct order
+                indices.Reverse();
+                List<Edge<T>> result = new List<Edge<T>>();
+                distance = 0;
+                for (int i = 0; i < indices.Count - 1; i++)
+                {
+                    Edge<T> edge = this[indices[i], indices[i + 1]];
+                    result.Add(edge);
+                    distance += edge.Weight;
+                }
+                //return list of WeightedEdge
+                return result;
+            }
+
+            // avoid to use this on loop graph. only for trees.
+            public Graph<T> Graft()
+            {
+                if (nodes.Count == 0)
+                    return this;
+
+                // change the edge direction to make the graph directed
+                // iterate all neighbors from the root node
+                int rootId = 0;
+                bool[] isTraversed = new bool[nodes.Count];
+                List<int> nodeIds = new List<int>() { };
+                foreach (Node<T> node in nodes)
+                {
+                    nodeIds.Add(node.Index);
+                    if (node.isRoot)
+                        rootId = node.Index;
+                }
+
+                isTraversed[rootId] = true;
+                nodeIds.Remove(rootId);
+
+                int safeCounter = 0;
+                while (nodeIds.Count > 0 || safeCounter < 1000)
+                {
+                    safeCounter++;
+                    foreach (Node<T> node in nodes)
+                    {
+                        safeCounter++;
+                        if (!isTraversed[node.Index])
+                        {
+                            int boolCounter = 0;
+                            foreach (Node<T> neighbor in node.Neighbors)
+                            {
+                                if (isTraversed[neighbor.Index])
+                                {
+                                    boolCounter++;
+                                }
+                            }
+                            if (boolCounter > 0)
+                            {
+                                isTraversed[node.Index] = true;
+                                nodeIds.Remove(node.Index);
+                                for (int i = node.Neighbors.Count - 1; i >= 0; i--)
+                                {
+                                    int index = node.Neighbors[i].Index;
+                                    if (isTraversed[index])
+                                    {
+                                        node.Neighbors.RemoveAt(i);
+                                        if (_isWeighted)
+                                        {
+                                            node.Weights.RemoveAt(i);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // update the depth of nodes
+                updateDepth(nodes[rootId], 0);
+
+                _isDirected = true;
+                return this;
+            }
+
+        }
+
+        // ################################# END OF GRAPH MODEL ###################################
+
+        /// <summary>
+        /// Connect all terminals to current main trunk
+        /// Elevation: use Manhatten distance, punish any connection across the wall
+        /// </summary>
+        public static List<Line> GetTerminalConnection(List<Line> edges, List<Point3d> terminals, out List<Line> connections)
+        {
+            connections = new List<Line>() { };
 
             // change this to Manhattan distance 
             foreach (Point3d pt in terminals)
             {
+                // this absurd default value is for debugging convenience
                 Point3d closestPt = new Point3d(0, 0, 0);
                 double minDist = double.MaxValue;
                 foreach (Line edge in edges)
@@ -44,16 +588,17 @@ namespace Tellinclam.Algorithms
             List<Line> allEdges = new List<Line>() { };
             allEdges.AddRange(edges);
             allEdges.AddRange(connections);
-            List<Line> shatters = Basic.ShatterLines(allEdges);
+            List<Line> shatters = Basic.BreakLinesAtIntersection(allEdges);
 
             return shatters;
         }
+        
         /// <summary>
         /// Get the sub-graph given a subset of the original graph nodes, 
         /// which may contain Steiner points (also a subset of the original graph nodes)
         /// This may contain loops (often the case)
         /// </summary>
-        public static List<Line> GetSubGraph(List<Line> edges, List<Point3d> terminals)
+        public static List<Line> GetSubGraph(List<Line> edges, List<Point3d> terminals, out double sum_length)
         {
             // adjacency matrix mapping edge index to vertices incident
             int[,] adjMat = SkeletonPrune.GetAdjMat(edges, out Point3d[] vts, out int[] degrees);
@@ -109,7 +654,8 @@ namespace Tellinclam.Algorithms
                 }
             }
 
-            // get candidate points (either terminals or Steiner pts as relays)
+            // get candidate points (either
+            // or Steiner pts as relays)
             List<int> vtx_included = new List<int>() { };
             List<int> vtx_skipped = new List<int>() { };
             for (int i = 0; i < terminalIds.Count; i++)
@@ -169,10 +715,20 @@ namespace Tellinclam.Algorithms
                         merged.Add(item);
                 return merged;
             }
-            return edges_rebuilt;
+
+            List<Line> branches = Basic.RemoveDupLines(edges_rebuilt);
+            sum_length = 0;
+            foreach (Line branch in branches)
+                sum_length += branch.Length;
+
+            return branches;
         }
 
-        public static List<Line> GetSteinerTree(List<Line> edges, List<Point3d> terminals)
+        /// <summary>
+        /// Get the minimum spanning tree from existing graph. However, not all nodes need to be connected.
+        /// This is the Steiner tree problem with some supporting Steiner points that are not necessarily included.
+        /// </summary>
+        public static List<Line> GetSteinerTree(List<Line> edges, List<Point3d> terminals, List<Point3d> sources, algoEnum algorithm)
         {
             // based on the relative sub-graph, generate the minimum spanning tree
             // then remove irrelevant vertices (with degree 1 and not terminal)
@@ -181,6 +737,7 @@ namespace Tellinclam.Algorithms
 
             // retrieve the index of terminals
             List<int> terminalIdx = new List<int>() { };
+            List<int> sourceIdx = new List<int>() { };
             for (int i = 0; i < vts.Length; i++)
             {
                 for (int j = 0; j < terminals.Count; j++)
@@ -188,6 +745,12 @@ namespace Tellinclam.Algorithms
                     if (terminals[j].DistanceTo(vts[i]) < 0.0001)
                         if (!terminalIdx.Contains(i))
                             terminalIdx.Add(i);
+                }
+                for (int j = 0; j < sources.Count; j++)
+                {
+                    if (sources[j].DistanceTo(vts[i]) < 0.0001)
+                        if (!sourceIdx.Contains(i))
+                            sourceIdx.Add(i);
                 }
             }
 
@@ -272,11 +835,62 @@ namespace Tellinclam.Algorithms
                 }
             }
 
-            // calculate the MST
-            List<Tuple<int, int>> mst = MinSpanningTree.GetKruskalMST(subEdges, subWeights, out int mstEdgeCount);
-            // I am not using dynamic memory allocation in C++ code 
-            // so the array returned may have invalid Tuple<int, int> appended
-            // int edge_count indicates the actual number of edges in the MST
+
+            // solver
+            List<Tuple<int, int>> branches = new List<Tuple<int, int>>() { };
+            int branch_counter = 0;
+
+            if (algorithm == algoEnum.MST)
+            {
+                // calculate the MST
+                branches = MinSpanningTree.GetKruskalMST(subEdges, subWeights, out int mstEdgeCount);
+                // I am not using dynamic memory allocation in C++ code 
+                // so the array returned may have invalid Tuple<int, int> appended
+                // int edge_count indicates the actual number of edges in the MST
+                branch_counter = mstEdgeCount;
+            }
+            else if (algorithm == algoEnum.SPT)
+            {
+                Graph<int> graph = new Graph<int>(false, true);
+                List<int> nodelist = new List<int>() { };
+                foreach (Tuple<int, int> edge in subEdges)
+                {
+                    if (!nodelist.Contains(edge.Item1))
+                    {
+                        nodelist.Add(edge.Item1);
+                        Node<int> newNode = graph.AddNode(edge.Item1);
+                        if (edge.Item1 == sourceIdx[0])
+                            graph.Nodes.Last().isRoot = true;
+                    }
+                    if (!nodelist.Contains(edge.Item2))
+                    {
+                        nodelist.Add(edge.Item2);
+                        Node<int> newNode = graph.AddNode(edge.Item2);
+                        if (edge.Item2 == sourceIdx[0])
+                            graph.Nodes.Last().isRoot = true;
+                    }
+                    Node<int> nodeFrom = null;
+                    Node<int> nodeTo = null;
+                    foreach (Node<int> node in graph.Nodes)
+                    {
+                        if (node.Value == edge.Item1)
+                            nodeFrom = node;
+                        if (node.Value == edge.Item2)
+                            nodeTo = node;
+                    }
+                    graph.AddEdge(nodeFrom, nodeTo, (float)subWeights[subEdges.IndexOf(edge)]);
+                }
+
+                // calculate the SPT
+                Graph<int> treeSPT = DijkstraSPT(graph);
+                // rebuild all edges
+                foreach (Edge<int> edge in treeSPT.GetEdges())
+                {
+                    branches.Add(new Tuple<int, int>(edge.From.Value, edge.To.Value));
+                }
+                branch_counter = branches.Count;
+            }
+
 
             // trim unnecessary branches. Cull edges with 1 degree vertex that is not a terminal
             // some vertices are removed, so mst_degree may have 0 degree points, idle
@@ -286,13 +900,13 @@ namespace Tellinclam.Algorithms
             while (flag_iteration)
             {
                 // cache degree list
-                for (int i = 0; i < mstEdgeCount; i++)
+                for (int i = 0; i < branch_counter; i++)
                 {
-                    if (vts_removed.Contains(mst[i].Item1) ||
-                        vts_removed.Contains(mst[i].Item2))
+                    if (vts_removed.Contains(branches[i].Item1) ||
+                        vts_removed.Contains(branches[i].Item2))
                         continue;
-                    mstDegrees[mst[i].Item1]++;
-                    mstDegrees[mst[i].Item2]++;
+                    mstDegrees[branches[i].Item1]++;
+                    mstDegrees[branches[i].Item2]++;
                 }
 
                 // if there is not increment in vts_removed, cancel this iteration
@@ -311,23 +925,27 @@ namespace Tellinclam.Algorithms
             }
 
 
-            // rebuild the MST edges by mapping back the graph edge to actual line segments
+            // rebuild the steiner tree edges by mapping back the graph edge to actual line segments
             // mst (i, j) -> adjMat[i, j] -> edges_proxy[k] -> edge[l~m]
-            List<Line> mst_edges = new List<Line>() { };
+            List<Line> st_edges = new List<Line>() { };
 
-            for (int i = 0; i < mstEdgeCount; i++)
+            for (int i = 0; i < branch_counter; i++)
             {
                 // if any mst edge falls on the vertex within vts_removed, skip it
-                if (vts_removed.Contains(mst[i].Item1) ||
-                    vts_removed.Contains(mst[i].Item2))
+                if (vts_removed.Contains(branches[i].Item1) ||
+                    vts_removed.Contains(branches[i].Item2))
                     continue;
 
-                foreach (int id in edges_proxy[adjMat[mst[i].Item1, mst[i].Item2]])
-                    mst_edges.Add(edges[id]);
+                foreach (int id in edges_proxy[adjMat[branches[i].Item1, branches[i].Item2]])
+                    st_edges.Add(edges[id]);
             }
 
-            return mst_edges;
+            return st_edges;
         }
+
+
+        // ######################## Auxiliary Functions ########################
+
 
         public static int[,] GetAdjMat(List<Line> edges, out Point3d[] vts, out int[] degrees)
         {
@@ -393,5 +1011,279 @@ namespace Tellinclam.Algorithms
             }
             return vts;
         }
+
+
+        // ######################## Implementation with the Graph model ########################
+
+
+        public static Graph<int> RebuildGraph(List<Line> edges)
+        {
+            // compare the edges and trunks then mark the duplicated ones
+            // get the center point of the tree as the pre-selected point for AHU
+            // reconstruct the tree to make it grows based on the center point
+            // you may need the adjacency matrix describing a directional graph
+
+            bool VtsContain(List<Point3d> nodes, Point3d pt, out int dupIdx)
+            {
+                dupIdx = -1;
+                for (int i = 0; i < nodes.Count; i++)
+                {
+                    if (nodes[i].DistanceTo(pt) < 0.000001)
+                    {
+                        dupIdx = i;
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            List<Point3d> vts = new List<Point3d>() { };
+            List<Line> droppedEdges = new List<Line>() { }; // for debug
+            Graph<int> graph = new Graph<int>(false, true);
+
+            // iterate all edges, piling up vertices, then rebuild the graph
+            foreach (Line edge in edges)
+            {
+                int startIdx = -1;
+                int endIdx = -1;
+                if (!VtsContain(vts, edge.PointAt(0), out startIdx))
+                {
+                    vts.Add(edge.PointAt(0));
+                    Node<int> newNode = graph.AddNode(graph.Count);
+                    newNode.Coords = edge.PointAt(0);
+                    startIdx = graph.Count - 1;
+                }
+                if (!VtsContain(vts, edge.PointAt(1), out endIdx))
+                {
+                    vts.Add(edge.PointAt(1));
+                    Node<int> newNode = graph.AddNode(graph.Count);
+                    newNode.Coords = edge.PointAt(1);
+                    endIdx = graph.Count - 1;
+                }
+                if (graph.AddEdge(graph.Nodes[startIdx], graph.Nodes[endIdx], (float)edge.Length))
+                    droppedEdges.Add(edge);
+            }
+
+            return graph;
+        }
+
+        /// <summary>
+        /// Create shortest path tree by Dijkstra Algorithm
+        /// Rebuilt from https://github.com/RodrigoMendoza2000/Lab-6-Dijkstra-s-Shortest-Path-Tree
+        /// </summary>
+        public static Graph<int> DijkstraSPT(Graph<int> graph)
+        {
+            var _tree = new Dictionary<int, List<Tuple<int, float>>>() { };
+            int source = -1;
+
+            // rebuild the graph to dictionary
+            var _graph = new Dictionary<int, List<Tuple<int, float>>>() { };
+            foreach (Node<int> node in graph.Nodes)
+            {
+                _graph.Add(node.Value, new List<Tuple<int, float>>() { });
+                for (int i = 0; i < node.Neighbors.Count; i++)
+                {
+                    _graph[node.Value].Add(
+                        new Tuple<int, float>(node.Neighbors[i].Value, node.Weights[i]));
+                }
+                if (node.isRoot)
+                {
+                    source = node.Value;
+                }
+            }
+
+            // get visited and unvisited nodes
+            List<int> node_unvisited = new List<int>() { };
+            List<int> node_visited = new List<int>() { };
+            foreach (int key in _graph.Keys)
+            {
+                node_unvisited.Add(key);
+            }
+            node_visited.Add(source);
+
+            // get all nodes then assign them with infinite distance
+            var cost_prev = new Dictionary<int, Tuple<float, int, float>>() { };
+            foreach (int key in _graph.Keys)
+            {
+                cost_prev.Add(key, new Tuple<float, int, float>(float.PositiveInfinity, -1, 0));
+            }
+            cost_prev[source] = new Tuple<float, int, float>(0, -1, 0);
+
+            // new graph for cache
+            //Graph<int> tree = new Graph<int>(false, true);
+
+            // while unvisited nodes exist, put the lowest cost nodes in cost_prev
+            while (node_unvisited.Count > 0)
+            {
+                int current = -1;
+                float min_cost = float.PositiveInfinity;
+                foreach (int nodeIdx in node_unvisited)
+                {
+                    if (cost_prev[nodeIdx].Item1 < min_cost)
+                    {
+                        min_cost = cost_prev[nodeIdx].Item1;
+                        current = nodeIdx;
+                    }
+                }
+                node_unvisited.Remove(current);
+                node_visited.Add(current);
+
+                for (int i = 0; i < _graph[current].Count; i++)
+                {
+                    float new_cost = 0;
+                    int neighbor = _graph[current][i].Item1;
+                    float cost = _graph[current][i].Item2;
+                    if (node_unvisited.Contains(neighbor))
+                    {
+                        new_cost = cost_prev[current].Item1 + cost;
+                        if (new_cost < cost_prev[neighbor].Item1)
+                        {
+                            cost_prev[neighbor] = new Tuple<float, int, float>(new_cost, current, cost);
+                        }
+                    }
+                }
+            }
+
+            // iterate through cost_prev dict and create the return graph
+            foreach (KeyValuePair<int, Tuple<float, int, float>> pair in cost_prev)
+            {
+                if (pair.Value.Item2 != -1)
+                {
+                    // check if current tree graph includes this value
+                    if (_tree.Keys.Contains(pair.Key))
+                    {
+                        _tree[pair.Key].Add(
+                            new Tuple<int, float>(pair.Value.Item2, pair.Value.Item3));
+                    }
+                    else
+                    {
+                        _tree[pair.Key] = new List<Tuple<int, float>>()
+                        {
+                            new Tuple<int, float>(pair.Value.Item2, pair.Value.Item3)
+                        };
+                    }
+                }
+            }
+
+            // 
+            foreach (KeyValuePair<int, Tuple<float, int, float>> pair in cost_prev)
+            {
+                if (pair.Value.Item2 != -1)
+                {
+                    // check if current tree graph includes this value
+                    if (_tree.Keys.Contains(pair.Value.Item2))
+                    {
+                        _tree[pair.Value.Item2].Add(
+                            new Tuple<int, float>(pair.Key, pair.Value.Item3));
+                    }
+                    else
+                    {
+                        _tree[pair.Value.Item2] = new List<Tuple<int, float>>()
+                        {
+                            new Tuple<int, float>(pair.Key, pair.Value.Item3)
+                        };
+                    }
+                }
+            }
+
+            Graph<int> tree = new Graph<int>(false, true);
+            foreach (KeyValuePair<int, List<Tuple<int, float>>> pair in _tree)
+            {
+                Node<int> newNode = tree.AddNode(pair.Key);
+            }
+            foreach (KeyValuePair<int, List<Tuple<int, float>>> pair in _tree)
+            {
+                for (int i = 0; i < pair.Value.Count; i++)
+                {
+                    tree.FindByValue(pair.Key).Neighbors.Add(tree.FindByValue(pair.Value[i].Item1));
+                    tree.FindByValue(pair.Key).Weights.Add(pair.Value[i].Item2);
+                }
+            }
+
+            return tree;
+        }
+
+        /// <summary>
+        /// Get the center point of the tree by Dijkstra furtherst path search
+        /// Only applied to graph with positive edge weight
+        /// </summary>
+        public static Point3d GetPseudoRootOfGraph(Graph<int> graph)
+        {
+            Point3d loc_equip = new Point3d(); // for debug
+            if (graph.Count <= 1)
+                return loc_equip;
+
+            List<Edge<int>> path_1 = graph.GetFurthestPathDijkstra(graph.Nodes[0], out int remoteIdx_1);
+            List<Edge<int>> path_2 = graph.GetFurthestPathDijkstra(graph.Nodes[remoteIdx_1], out int remoteIdx_2);
+
+            float distance = 0;
+            foreach (Edge<int> edge in path_2)
+            {
+                distance += edge.Weight;
+            }
+            float midDist = distance / 2;
+            distance = 0;
+            int edgeRemoveIdx = -1;
+            int prevNodeIdx = remoteIdx_1;
+            
+            foreach (Edge<int> edge in path_2)
+            {
+                // prevNodeIdx records the node sequence in this retrieving path
+                // the next edge must start from this node, if not, 
+                // the edge may be flipped so the prevNodeIdx for next edge should be edge.From
+                edgeRemoveIdx++;
+                distance += edge.Weight;
+                if (distance == midDist)
+                {
+                    Point3d midPt = edge.To.Coords;
+                    Node<int> mid = edge.To;
+                    if (edge.To.Index == prevNodeIdx)
+                    {
+                        midPt = edge.From.Coords;
+                        mid = edge.From;
+                    }
+
+                    Line targetEdge = new Line(edge.From.Coords, edge.To.Coords);
+                    // offset a little bit as the equiptment position
+                    Vector3d dir_offset = Basic.GetPendicularUnitVec(targetEdge.Direction, true);
+                    loc_equip = midPt + 0.5 * dir_offset;
+                    Node<int> root = graph.AddNode(graph.Count);
+                    graph.Nodes.Last().Coords = loc_equip;
+                    graph.Nodes.Last().isRoot = true;
+                    graph.AddEdge(root, mid, (float)0.5);
+
+                    break;
+                }
+                if (distance > midDist)
+                {
+                    Line targetEdge = new Line(edge.From.Coords, edge.To.Coords);
+                    Point3d midPt = targetEdge.PointAt((midDist - distance + edge.Weight) / edge.Weight);
+                    graph.RemoveEdge(edge.From, edge.To);
+
+                    Node<int> mid = graph.AddNode(graph.Count);
+                    graph.Nodes.Last().Coords = midPt;
+                    //graph.Nodes.Last().isRoot = true;
+                    graph.AddEdge(edge.From, mid, midDist - distance + edge.Weight);
+                    graph.AddEdge(mid, edge.To, distance - midDist);
+
+                    // offset a little bit as the equiptment position
+                    Vector3d dir_offset = Basic.GetPendicularUnitVec(targetEdge.Direction, true);
+                    loc_equip = midPt + 0.5 * dir_offset;
+                    Node<int> root = graph.AddNode(graph.Count);
+                    graph.Nodes.Last().Coords = loc_equip;
+                    graph.Nodes.Last().isRoot = true;
+                    graph.AddEdge(root, mid, (float)0.5);
+
+                    break;
+                }
+
+                if (edge.From.Index != prevNodeIdx)
+                    prevNodeIdx = edge.From.Index;
+            }
+
+            return loc_equip;
+        }
+
     }
+
 }

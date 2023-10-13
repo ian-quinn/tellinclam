@@ -151,7 +151,7 @@ namespace Tellinclam.Algorithms
                 slices.Add(grid_x);
             }
 
-            List<Line> edges = Basic.ShatterLines(slices);
+            List<Line> edges = Basic.BreakLinesAtIntersection(slices);
             int[,] adjMat = Algorithms.SkeletonPrune.GetAdjMat(edges, out Point3d[] vts,
                 out int[] degrees);
             for (int i = vts.Length - 1; i >= 0; i--)
