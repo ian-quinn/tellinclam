@@ -16,6 +16,9 @@ using GH_IO.Serialization;
 using static Tellinclam.Serialization.SchemaJSON;
 using static Tellinclam.Algorithms.PathFinding;
 using System.Drawing.Printing;
+using System.Security.Policy;
+using System.Runtime.Remoting.Messaging;
+using System.Text.Json.Nodes;
 
 namespace Tellinclam
 {
@@ -26,13 +29,13 @@ namespace Tellinclam
         {
             string model = "";
             model += $"Buildings.Controls.OBC.CDL.Continuous.Sources.Pulse TSet{id}(amplitude = {amp}, offset = 273.15 + {offset}, period(displayUnit = \"d\") = 86400, \r\n    shift(displayUnit = \"h\") = 21600, y(displayUnit = \"degC\", unit = \"K\"));\n";
-            model += $"Controls.OBC.CDL.Continuous.PID conPID{id}(Ti(displayUnit = \"min\") = 1800, controllerType = Buildings.Controls.OBC.CDL.Types.SimpleController.PI, \r\n    k = 1, u_m(displayUnit = \"degC\", unit = \"K\"), u_s(displayUnit = \"degC\", unit = \"K\"), yMax = 1, yMin = 0);\n";
-            model += $"Controls.OBC.CDL.Continuous.Hysteresis staA{id}(uLow = 0.05, uHigh = 0.5);\n";
-            model += $"Controls.OBC.CDL.Continuous.Hysteresis staB{id}(uLow = 0.5, uHigh = 0.75);\n";
-            model += $"Controls.OBC.CDL.Conversions.BooleanToReal mSetFanA{id}_flow(realTrue = {rec_flow/2});\n";
-            model += $"Controls.OBC.CDL.Conversions.BooleanToReal mSetFanB{id}_flow(realTrue = {rec_flow/2});\n";
-            model += $"Controls.OBC.CDL.Continuous.Add m_fan_set{id};\n";
-            model += $"Controls.OBC.CDL.Continuous.Add TAirLvgSet{id};\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.PID conPID{id}(Ti(displayUnit = \"min\") = 1800, controllerType = Buildings.Controls.OBC.CDL.Types.SimpleController.PI, \r\n    k = 1, u_m(displayUnit = \"degC\", unit = \"K\"), u_s(displayUnit = \"degC\", unit = \"K\"), yMax = 1, yMin = 0);\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Hysteresis staA{id}(uLow = 0.05, uHigh = 0.5);\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Hysteresis staB{id}(uLow = 0.5, uHigh = 0.75);\n";
+            model += $"Buildings.Controls.OBC.CDL.Conversions.BooleanToReal mSetFanA{id}_flow(realTrue = {rec_flow/2});\n";
+            model += $"Buildings.Controls.OBC.CDL.Conversions.BooleanToReal mSetFanB{id}_flow(realTrue = {rec_flow/2});\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Add m_fan_set{id};\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Add TAirLvgSet{id};\n";
             model += $"Buildings.Controls.OBC.CDL.Continuous.MultiplyByParameter gai{id}(final k = {gain});\n";
             model += $"Buildings.Controls.OBC.CDL.Continuous.AddParameter TSupMin{id}(p = {minTemp});\n";
 
@@ -138,7 +141,7 @@ namespace Tellinclam
         //        flows.Add(newFlow);
         //        zones.Add(newZone);
         //    }
-            
+
 
         //    // legacy retrieve templates
         //    //Tuple<string, string> fanHeating = ControlPreset.FanHeating(
@@ -243,11 +246,11 @@ namespace Tellinclam
         /// 20231013 add a toggle to switch the mode how pipe/duct are modeled: whether to use pressure drops or
         /// just consider the friction by tee-joint (at each port)
         /// </summary>
-        public static string RecFancoil(Floorplan jsFloorplan, string modelName, string idf, string epw, bool isRealFriction)
+        public static string RecFancoil(Floorplan jsFloorplan, string modelName, string idf, string epw, bool isIdealFlow)
         {
             string scripts = "";
             string idfPath = idf.Replace(@"\", @"\\");
-            string epwPath = epw.Replace(@"\", @"\\"); 
+            string epwPath = epw.Replace(@"\", @"\\");
             string mosPath = Path.ChangeExtension(epwPath, "mos"); ;
 
             if (epw != "") // for test only
@@ -256,14 +259,32 @@ namespace Tellinclam
                 mosPath = "modelica://Buildings/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.mos";
             }
 
+            // prepare dictionaries for Zone, Node, Edge in json
+            //Dictionary<string, ControlZone> jsZoneDict = new Dictionary<string, ControlZone>();
+            //Dictionary<string, FunctionSpace> jsRoomDict = new Dictionary<string, FunctionSpace>();
+            Dictionary<string, ConduitNode> jsNodeDict = new Dictionary<string, ConduitNode>();
+            foreach (SystemZone jsSystem in jsFloorplan.systems)
+            {
+                foreach (ControlZone jsZone in jsSystem.zones)
+                {
+                    //jsZoneDict.Add(jsZone.id, jsZone);
+                    //foreach (FunctionSpace jsRoom in jsZone.rooms)
+                    //    jsRoomDict.Add(jsRoom.id, jsRoom);
+                    foreach (ConduitNode node in jsZone.network.nodes)
+                        jsNodeDict.Add(node.id, node);
+                }
+                foreach (ConduitNode node in jsSystem.network.nodes)
+                    jsNodeDict.Add(node.id, node);
+            }
 
+            // the global module
+            // the weather bus in building module has multiple connections directly to each thermal zone model
+            // the pAtm has extensible ports that can accommodate all pressure balance port of each thermal zone model
             MO.Building building = new MO.Building(idfPath, epwPath, mosPath);
-
             Boundary pAtm = new Boundary("pAtm", "Medium");
 
-            // for demonstration here, we create a Modelica with two zoning controls
+            // for demonstration, we create a Modelica script for all zones (flatten)
             // generate MO class in a hierarchy way while make the serialization flat
-            SystemZone jsSystem = jsFloorplan.systems[0];
 
             // zone level attributes
             List<HeaterT> heaters = new List<HeaterT>() { };
@@ -273,312 +294,182 @@ namespace Tellinclam
 
             List<List<ThermalZone>> nested_zones = new List<List<ThermalZone>>() { };
             // each control zone has its own sub-network
-            List<List<PressureDrop>> nested_net_pDrops = new List<List<PressureDrop>>() { };
-            List<List<Junction>> nested_net_tJoints = new List<List<Junction>>() { };
+            List<List<PressureDrop>> nested_zon_pDrops = new List<List<PressureDrop>>() { };
+            List<List<Junction>> nested_zon_tJoints = new List<List<Junction>>() { };
+            List<List<PressureDrop>> nested_sys_pDrops = new List<List<PressureDrop>>() { };
+            List<List<Junction>> nested_sys_tJoints = new List<List<Junction>>() { };
 
-            List<ControlZone> jsZones = jsSystem.zones;
-            for (int i = 0; i < jsZones.Count; i++)
+            int z = 0; // zone counter
+            int s = 0; // system counter
+
+            Dictionary<string, ThermalZone> zoneDict = new Dictionary<string, ThermalZone>() { };
+
+            foreach (SystemZone jsSystem in jsFloorplan.systems)
             {
-                List<FunctionSpace> jsSpaces = jsZones[i].rooms;
-
-                // room level attributes
-                List<ThermalZone> zones = new List<ThermalZone>() { };
-                List<MassFlowSource> flows = new List<MassFlowSource>() { };
-
-                // mark the Modelica room that is treated as thermostat loc
-                ThermalZone thermostat = null;
-                List<double> rec_flow_each = new List<double>() { };
-                Dictionary<string, ThermalZone> zoneDict = new Dictionary<string, ThermalZone>() { };
-                for (int j = 0; j < jsSpaces.Count; j++)
+                List<ControlZone> jsZones = jsSystem.zones;
+                foreach (ControlZone jsZone in jsZones)
                 {
-                    string zoneName = $"zon_{i}_{j}";
+                    List<FunctionSpace> jsSpaces = jsZone.rooms;
 
-                    ThermalZone newZone = new ThermalZone(zoneName, jsSpaces[j].name, jsSpaces[j].volume, 0);
-                    // internal gain should be a value defined by space function
-                    // or you can leave it to EnergyPlus to solve
-                    // array q_gain has 3 numbers as inputs
+                    // room level attributes
+                    List<ThermalZone> zones = new List<ThermalZone>() { };
+                    List<MassFlowSource> flows = new List<MassFlowSource>() { };
 
-                    // only apply one-direction connetion between constant/bus with component?
-                    newZone.qGai_flow.to = newZone.qIntGai.y;
-                    newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for mass flow
-                    newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for p drop
-                    newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for air loop inlet
-                    newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for air loop outlet
-
-
-                    if (newZone.zoneName == jsZones[i].thermostat)
-                        thermostat = newZone;
-
-                    // recirculation air flow rate of each room
-                    // this can be the inherit attribute of a space, the flow rate should be designated while system sizing
-                    //MassFlowRate recFlow = new MassFlowRate($"mRec_flow_nominal_{i}_{j}", jsSpaces[j].flowrate);
-                    //MassFlowRate outFlow = new MassFlowRate($"mOut_flow_nominal_{i}_{j}", 0.3 * jsSpaces[j].volume * 1.2 / 3600);
-                    rec_flow_each.Add(jsSpaces[j].flowrate);
-                    newZone.recFlow = jsSpaces[j].flowrate;
-                    newZone.outFlow = 0.3 * jsSpaces[j].volume * 1.2 / 3600;
-                    // only cache the data. it will not be used
-
-                    // paired with a mass flow port
-                    string flowName = $"freshAir_{i}_{j}";
-                    MassFlowSource newFlow = new MassFlowSource(flowName, "Medium", 0.3 * jsSpaces[j].volume * 1.2 / 3600);
-                    newFlow.ports.Add(new Port($"ports[{newFlow.ports.Count + 1}]", flowName));
-                    newFlow.weaBus.to = building.weaBus; // is it bi-direction?
-                    newZone.newFlow = newFlow;
-
-                    // paired with a pressure drop with outdoor air
-                    string ductName = $"outDuc_{i}_{j}";
-                    PressureDrop crack = new PressureDrop(ductName, "Medium", false, true, true,
-                        20, 0.3 * jsSpaces[j].volume * 1.2 / 3600); /////////////////////////////////////////////////////////////////////-CHECK-///////
-                    // paired with airloop
-                    // add another port to the global pAtm component
-                    pAtm.ports.Add(new Port($"ports[{pAtm.ports.Count + 1}]", pAtm.Name));
-                    // this mutual assignment indicates a bad data structure, we'll fix it later
-                    Port.Connect(pAtm.ports.Last(), crack.port_b);
-
-                    Port.Connect(newZone.ports[0], newFlow.ports[0]);
-                    newZone.ports[1].to = crack.port_a;
-
-                    newZone.crack = crack;
-
-                    // network connection
-                    // leave this part to zone level connection
-
-                    flows.Add(newFlow);
-                    zones.Add(newZone);
-                    zoneDict.Add(jsSpaces[j].id, newZone);
-                }
-                nested_zones.Add(zones);
-
-                // paired with a heater set
-                // name the heater one by one, start from 0
-                // the flow_nominal is a place holder. it is a cummulative value based on rooms within the zone
-                HeaterT heater = new HeaterT($"hea_{i}", rec_flow_each.Sum(), 200);
-                ControlledMassFlow fan = new ControlledMassFlow($"fan_{i}", heater.flow_nominal);
-                heaters.Add(heater);
-                fans.Add(fan);
-
-
-                // compile the network in this zone
-                // in this process, the relay points are removed
-                // be careful that the flowrate attribute is assigned when creating a bridging edge
-                // this part should be isolated as another function()
-                List<ConduitNode> jsNodes = jsZones[i].network.nodes;
-                Dictionary<string, ConduitNode> jsNodeDict = new Dictionary<string, ConduitNode>() { };
-                foreach (ConduitNode jsNode in jsNodes)
-                {
-                    jsNodeDict.Add(jsNode.id, jsNode);
-                }
-                List<ConduitEdge> jsEdges = jsZones[i].network.edges;
-                bool flag = true;
-                int inf_counter = 0;
-                while (flag || inf_counter > 30)
-                {
-                    inf_counter += 1;
-                    int node_counter = 0;
-                    // do not remove node with degree = 2
-                    // just add new edges that bridge them over
-                    foreach (ConduitNode jsNode in jsNodes)
+                    // mark the Modelica room that is treated as thermostat loc
+                    ThermalZone thermostat = null;
+                    List<double> rec_flow_each = new List<double>() { };
+                    
+                    for (int j = 0; j < jsSpaces.Count; j++)
                     {
-                        if (jsNode.degree == 1) // in a tree, the source node and relay node all have degree 1
+                        string zoneName = $"zon_{z}_{j}";
+
+                        ThermalZone newZone = new ThermalZone(zoneName, jsSpaces[j].name, jsSpaces[j].volume, 0);
+                        // internal gain should be a value defined by space function
+                        // or you can leave it to EnergyPlus to solve
+                        // array q_gain has 3 numbers as inputs
+
+                        // only apply one-direction connetion between constant/bus with component?
+                        newZone.qGai_flow.to = newZone.qIntGai.y;
+                        newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for mass flow
+                        newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for p drop
+                        newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for air loop inlet
+                        newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for air loop outlet
+
+
+                        if (newZone.zoneName == jsZone.thermostat)
+                            thermostat = newZone;
+
+                        // recirculation air flow rate of each room
+                        // this can be the inherit attribute of a space, the flow rate should be designated while system sizing
+                        //MassFlowRate recFlow = new MassFlowRate($"mRec_flow_nominal_{i}_{j}", jsSpaces[j].flowrate);
+                        //MassFlowRate outFlow = new MassFlowRate($"mOut_flow_nominal_{i}_{j}", 0.3 * jsSpaces[j].volume * 1.2 / 3600);
+                        rec_flow_each.Add(jsSpaces[j].flowrate);
+                        newZone.recFlow = jsSpaces[j].flowrate;
+                        newZone.outFlow = 0.3 * jsSpaces[j].volume * 1.2 / 3600;
+                        // only cache the data. it will not be used
+
+                        // paired with a mass flow port
+                        string flowName = $"freshAir_{z}_{j}";
+                        MassFlowSource newFlow = new MassFlowSource(flowName, "Medium", 0.3 * jsSpaces[j].volume * 1.2 / 3600);
+                        newFlow.ports.Add(new Port($"ports[{newFlow.ports.Count + 1}]", flowName));
+                        newFlow.weaBus.to = building.weaBus; // is it bi-direction?
+                        newZone.newFlow = newFlow;
+
+                        // paired with a pressure drop with outdoor air
+                        string ductName = $"outDuc_{z}_{j}";
+                        PressureDrop crack = new PressureDrop(ductName, "Medium", false, true, true,
+                            20, 0.3 * jsSpaces[j].volume * 1.2 / 3600); /////////////////////////////////////////////////////////////////////-CHECK-///////
+                        // paired with airloop
+                        // add another port to the global pAtm component
+                        pAtm.ports.Add(new Port($"ports[{pAtm.ports.Count + 1}]", pAtm.Name));
+                        // this mutual assignment indicates a bad data structure, we'll fix it later
+                        Port.Connect(pAtm.ports.Last(), crack.port_b);
+
+                        Port.Connect(newZone.ports[0], newFlow.ports[0]);
+                        newZone.ports[1].to = crack.port_a;
+
+                        newZone.crack = crack;
+
+                        // network connection
+                        // leave this part to zone level connection
+
+                        flows.Add(newFlow);
+                        zones.Add(newZone);
+                        zoneDict.Add(jsSpaces[j].id, newZone);
+                    }
+                    nested_zones.Add(zones);
+
+                    // paired with a heater set
+                    // name the heater one by one, start from 0
+                    // the flow_nominal is a place holder. it is a cummulative value based on rooms within the zone
+                    HeaterT heater = new HeaterT($"hea_{z}", rec_flow_each.Sum(), 200);
+                    ControlledMassFlow fan = new ControlledMassFlow($"fan_{z}", heater.flow_nominal);
+                    heaters.Add(heater);
+                    fans.Add(fan);
+
+
+                    // compile the network in this zone
+                    // in this process, the relay points are removed
+                    // be careful that the flowrate attribute is assigned when creating a bridging edge
+                    // this part should be isolated as another function()
+                    List<ConduitNode> jsZonNodes = jsZone.network.nodes;
+                    List<ConduitEdge> jsZonEdges = jsZone.network.edges;
+
+                    // this is a lenient version function
+                    // I will make a more adaptive one and put it in the PathFinding.cs
+                    SimplifyTree(jsZonNodes, jsZonEdges);
+
+                    // now the jsEdges represent all pipes/ducts
+                    // however, the jsEdge is connected to the terminal node, not the room port
+                    // according to the terminalId attribute of each node, connect each jsEdge to room id
+                    //foreach (ConduitEdge jsEdge in jsEdges)
+                    //{
+                    //    if (jsNodeDict[jsEdge.endId].linkedTerminalId != null)
+                    //    {
+                    //        jsEdge.endId = jsNodeDict[jsEdge.endId].linkedTerminalId;
+                    //    }
+                    //}
+
+                    // iterate all terminal node to find the target zone's ports
+                    Dictionary<string, Port> zonInlets = new Dictionary<string, Port>() { };
+                    Dictionary<string, Port> zonOutlets = new Dictionary<string, Port>() { };
+                    foreach (ConduitNode jsNode in jsZonNodes)
+                    {
+                        if (jsNode.linkedTerminalId != null)
                         {
-                            if (jsNode.type == nodeTypeEnum.source)
-                                continue;
-                            node_counter += 1;
-                            string start_id = "";
-                            string end_id = "";
-                            double weight = 0;
-                            for (int j = jsEdges.Count - 1; j >= 0; j--)
-                            {
-                                if (jsEdges[j].startId == jsNode.id)
-                                {
-                                    end_id = jsEdges[j].endId;
-                                    weight += jsEdges[j].length;
-                                    jsEdges.RemoveAt(j);
-                                    jsNode.degree -= 1;
-                                }
-                                else if (jsEdges[j].endId == jsNode.id)
-                                {
-                                    start_id = jsEdges[j].startId;
-                                    weight += jsEdges[j].length;
-                                    jsEdges.RemoveAt(j);
-                                    jsNode.degree -= 1;
-                                }
-                            }
-                            weight += 0.023;
-                            if (start_id != "" && end_id != "")
-                                jsEdges.Add(new ConduitEdge
-                                {
-                                    startId = start_id,
-                                    endId = end_id,
-                                    length = weight,
-                                    flowrate = jsNodeDict[end_id].flowrate
-                                });
-                            break;
+                            zonInlets.Add(jsNode.id, zoneDict[jsNode.linkedTerminalId].ports[2]);
+                            zonOutlets.Add(jsNode.id, zoneDict[jsNode.linkedTerminalId].ports[3]);
                         }
                     }
-                    if (node_counter == 0)
-                        flag = false;
+
+                    SerializeNetwork(jsZonNodes, jsZonEdges, fan.port_a, heater.port_b, zonInlets, zonOutlets,
+                        $"netZon{z}", isIdealFlow, out List<PressureDrop> zonPDrops, out List<Junction> zonTJoints);
+
+                    nested_zon_pDrops.Add(zonPDrops);
+                    nested_zon_tJoints.Add(zonTJoints);
+
+                    // retrieve control logic
+                    Tuple<string, string> fanHeating = ControlPreset.FanHeating(
+                        $"_zon{z}", thermostat.TAir, fan.m_flow_in, heater.TSet,
+                        heater.flow_nominal, 2, 8, 6, 16);
+                    controls.Add(fanHeating);
+
+                    // move to next step
+                    z++;
                 }
 
-                // now the jsEdges represent all pipes/ducts
-                // however, the jsEdge is connected to the terminal node, not the room port
-                // according to the terminalId attribute of each node, connect each jsEdge to room id
-                //foreach (ConduitEdge jsEdge in jsEdges)
-                //{
-                //    if (jsNodeDict[jsEdge.endId].linkedTerminalId != null)
-                //    {
-                //        jsEdge.endId = jsNodeDict[jsEdge.endId].linkedTerminalId;
-                //    }
-                //}
+                // continue with the system network part, network-A
+                /*
+                List<ConduitNode> jsSysNodes = jsSystem.network.nodes;
+                List<ConduitEdge> jsSysEdges = jsSystem.network.edges;
+                SimplifyTree(jsSysNodes, jsSysEdges);
 
-                // do we have to recreate another graph, or we can just create T-joint and pressure drops directly?
-                Dictionary<string, Junction> jointDict = new Dictionary<string, Junction>() { };
-                Dictionary<string, Junction> jointDict_rev = new Dictionary<string, Junction>() { };
-                List<PressureDrop> pDrops = new List<PressureDrop>() { };
-                List<Junction> tJoints = new List<Junction>() { };
-                foreach (ConduitNode jsNode in jsNodes)
+                Dictionary<string, Port> ahuInlets = new Dictionary<string, Port>() { };
+                Dictionary<string, Port> ahuipOutlets = new Dictionary<string, Port>() { };
+                foreach (ConduitNode jsNode in jsSysNodes)
                 {
-                    if (jsNode.degree == 2)
+                    if (jsNode.linkedTerminalId != null)
                     {
-                        // predefined pressure drop, nominal flow and res array, can be fixed later
-                        // note that "Medium" is a default setting. You need to replace it when water/air are introduced
-                        jointDict.Add(jsNode.id, new Junction(
-                            $"netZone{i}_TI{jointDict.Count}", "Medium", false, true,
-                            100, 0, new double[] { 0, 0, 0 } ));
-                        tJoints.Add(jointDict[jsNode.id]);
-                        jointDict_rev.Add(jsNode.id, new Junction(
-                            $"netZone{i}_TO{jointDict_rev.Count}", "Medium", false, true,
-                            100, 0, new double[] { 0, 0, 0 } ));
-                        tJoints.Add(jointDict_rev[jsNode.id]);
+                        // add the equipment inlet and outlet to the dictionary
                     }
                 }
-                // it is a tree, you cannot guarantee that each edge follows the flow direction
-                // ventilating direction path
-                foreach (ConduitEdge jsEdge in jsEdges)
-                {
-                    PressureDrop pDrop = new PressureDrop(
-                        $"netZone{i}_PI{jsEdges.IndexOf(jsEdge)}", "Medium", false, false, true, 10, jsEdge.flowrate);
 
-                    // what is the start point? to source root or to any of the out port of T-joint
-                    if (jsNodeDict[jsEdge.startId].type == nodeTypeEnum.source)
-                    {
-                        Port.Connect(pDrop.port_a, fan.port_a);
-                        // leave the res blank for the sum flowrate
-                    }
-                    else
-                    {
-                        Junction inputJunction = jointDict[jsEdge.startId]; // get the inward flow port
-                        if (inputJunction.outPort == 0)
-                        {
-                            // connect to the 1st out port
-                            Port.Connect(pDrop.port_a, inputJunction.port_2);
-                            // round to the top by granularity 0.05
-                            // negative value means the fuild is leaving the component
-                            inputJunction.res[0] = -Math.Ceiling(jsEdge.flowrate * 20) / 20;
-                            inputJunction.outPort += 1;
-                        }
-                        else if (inputJunction.outPort == 1)
-                        {
-                            // connect to the 2nd out port
-                            Port.Connect(pDrop.port_a, inputJunction.port_3);
-                            // round to the top by granularity 0.05
-                            // negative value means the fuild is leaving the component
-                            inputJunction.res[1] = -Math.Ceiling(jsEdge.flowrate * 20) / 20;
-                            inputJunction.outPort += 1;
-                        }
-                        else
-                            Debug.Print("Port not enough for a T-joint");
-                    }
+                // pending to update
+                SerializeNetwork(jsSysNodes, jsSysEdges, pump.port, chiller/boiler.port, ahuInlets, ahuipOutlets,
+                        $"netSys{s}", isIdealFlow, out List<PressureDrop> sysPDrops, out List<Junction> sysTJoints);
 
-                    // what is the end point? to room or to T-joint
-                    if (jsNodeDict[jsEdge.endId].type == nodeTypeEnum.terminal)
-                    {
-                        Port.Connect(pDrop.port_b, zoneDict[jsNodeDict[jsEdge.endId].linkedTerminalId].ports[2]);
-                    }
-                    else
-                    {
-                        // there is no stream merge in this ducting work
-                        Port.Connect(pDrop.port_b, jointDict[jsEdge.endId].port_1);
-                        // leave the res blank for the sum flowrate
-                    }
-                    pDrops.Add(pDrop);
-                }
-                // return loop?
-                foreach (ConduitEdge jsEdge in jsEdges)
-                {
-                    PressureDrop pDrop = new PressureDrop(
-                        $"netZone{i}_PO{jsEdges.IndexOf(jsEdge)}", "Medium", false, false, true, 100, jsEdge.flowrate);
-                    // note that the start and end points of the edge remains the same
-                    // you need to reverse them when connecting the pipe/duct
-                    // either TO from the source or TO the T-joint (merging flow)
-                    if (jsNodeDict[jsEdge.startId].type == nodeTypeEnum.source)
-                    {
-                        Port.Connect(pDrop.port_b, heater.port_b);
-                    }
-                    else
-                    {
-                        Junction outputJunction = jointDict_rev[jsEdge.startId]; // get the inward flow port
-                        if (outputJunction.outPort == 0)
-                        {
-                            // connect to the 1st out port
-                            Port.Connect(pDrop.port_b, outputJunction.port_2);
-                            // round to the top by granularity 0.05
-                            outputJunction.res[0] = Math.Ceiling(jsEdge.flowrate * 20) / 20;
-                            outputJunction.outPort += 1;
-                        }
-                        else if (outputJunction.outPort == 1)
-                        {
-                            // connect to the 2nd out port
-                            Port.Connect(pDrop.port_b, outputJunction.port_3);
-                            // round to the top by granularity 0.05
-                            outputJunction.res[1] = Math.Ceiling(jsEdge.flowrate * 20) / 20;
-                            outputJunction.outPort += 1;
-                        }
-                        else
-                            Debug.Print("Port not enough for a T-joint");
-                    }
-                    // either starting from the terminal or the merging port of a junction
-                    if (jsNodeDict[jsEdge.endId].type == nodeTypeEnum.terminal)
-                    {
-                        Port.Connect(zoneDict[jsNodeDict[jsEdge.endId].linkedTerminalId].ports[3], pDrop.port_a);
-                    }
-                    else
-                    {
-                        Port.Connect(pDrop.port_a, jointDict_rev[jsEdge.endId].port_1);
-                    }
-                    pDrops.Add(pDrop);
-                }
+                nested_sys_pDrops.Add(sysPDrops);
+                nested_sys_tJoints.Add(sysTJoints);
 
-                // for all T-joints, fulfil their res value
-                foreach (Junction tJoint in tJoints)
-                {
-                    tJoint.res[2] = -(tJoint.res[0] + tJoint.res[1]);
-                    tJoint.m_flow_nominal = tJoint.res[0] + tJoint.res[1];
-                }
+                */
 
-                // 20231013 ------------------------------------------------------------------------------------
-                // what if we remove all presure drops, only keep T-joints?
-                // this is a temporal test because the pressure drops lead to fatal error in Modelica somehow
-                if (!isRealFriction)
-                    foreach (PressureDrop pDrop in pDrops)
-                    {
-                        Port port_1 = pDrop.port_a.to;
-                        Port port_2 = pDrop.port_b.to;
-                        Port.Connect(port_1, port_2);
-                    }
-                // --------------------------------------------------------------------------------------------
+                // pump serialization part
 
-                nested_net_pDrops.Add(pDrops);
-                nested_net_tJoints.Add(tJoints);
 
-                // retrieve control logic
-                Tuple<string, string> fanHeating = ControlPreset.FanHeating(
-                    $"FanHeating_zone_{i}", thermostat.TAir, fan.m_flow_in, heater.TSet,
-                    heater.flow_nominal, 2, 8, 6, 16);
-                controls.Add(fanHeating);
+                s++;
             }
-            
-            
+
+
             // ----------------------------------------------------------- //
 
             // serialize header
@@ -603,7 +494,7 @@ namespace Tellinclam
                     //scripts += zone.outFlow.Serialize();
                     // each zone is paired with a mass flow rate port, which names after the zone
                     // for example: zone1 -> freshAir1
-                    scripts += zone.newFlow.Serialize();
+                    scripts += zone.newFlow.Serialize(); // flow source
                     scripts += zone.qIntGai.Serialize();
                     scripts += zone.crack.Serialize();
                 }
@@ -612,7 +503,7 @@ namespace Tellinclam
                 scripts += fans[i].Serialize();
                 scripts += controls[i].Item1;
 
-                foreach (Junction tJoint in nested_net_tJoints[i])
+                foreach (Junction tJoint in nested_zon_tJoints[i])
                 {
                     scripts += tJoint.Serialize();
                 }
@@ -662,7 +553,7 @@ namespace Tellinclam
                 //}
 
                 // if not using pDrop for connection, iterate port_2 and port_3 of T-joint
-                foreach (Junction tJoint in nested_net_tJoints[i])
+                foreach (Junction tJoint in nested_zon_tJoints[i])
                 {
                     scripts += $"connect({tJoint.port_2.Name}, {tJoint.port_2.to.Name});\n";
                     scripts += $"connect({tJoint.port_3.Name}, {tJoint.port_3.to.Name});\n";
@@ -696,5 +587,234 @@ namespace Tellinclam
             return scripts;
         }
 
+
+        // UTILITY ----------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------
+        public static void SimplifyTree(List<ConduitNode> jsNodes, List<ConduitEdge> jsEdges)
+        {
+            Dictionary<string, ConduitNode> jsNodeDict = new Dictionary<string, ConduitNode>() { };
+            foreach (ConduitNode jsNode in jsNodes)
+            {
+                jsNodeDict.Add(jsNode.id, jsNode);
+            }
+
+            bool flag = true;
+            int inf_counter = 0;
+            while (flag || inf_counter > 30)
+            {
+                inf_counter += 1;
+                int node_counter = 0;
+                // do not remove node with degree = 2
+                // just add new edges that bridge them over
+                foreach (ConduitNode jsNode in jsNodes)
+                {
+                    if (jsNode.degree == 1) // in a tree, the source node and relay node all have degree 1
+                    {
+                        if (jsNode.type == nodeTypeEnum.source)
+                            continue;
+                        node_counter += 1;
+                        string start_id = "";
+                        string end_id = "";
+                        double weight = 0;
+                        for (int j = jsEdges.Count - 1; j >= 0; j--)
+                        {
+                            if (jsEdges[j].startId == jsNode.id)
+                            {
+                                end_id = jsEdges[j].endId;
+                                weight += jsEdges[j].length;
+                                jsEdges.RemoveAt(j);
+                                jsNode.degree -= 1;
+                            }
+                            else if (jsEdges[j].endId == jsNode.id)
+                            {
+                                start_id = jsEdges[j].startId;
+                                weight += jsEdges[j].length;
+                                jsEdges.RemoveAt(j);
+                                jsNode.degree -= 1;
+                            }
+                        }
+                        weight += 0.023;
+                        if (start_id != "" && end_id != "")
+                            jsEdges.Add(new ConduitEdge
+                            {
+                                startId = start_id,
+                                endId = end_id,
+                                length = weight,
+                                flowrate = jsNodeDict[end_id].flowrate
+                            });
+                        break;
+                    }
+                }
+                if (node_counter == 0)
+                    flag = false;
+            }
+        }
+
+        /// <summary>
+        /// //
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="nodes"></param>
+        /// <param name="edges"></param>
+        /// <param name="inlet"></param>
+        /// <param name="outlet"></param>
+        /// <param name="terminalOutletDict"></param>
+        /// <param name="terminalInletDict"></param>
+        /// <param name="prefix"></param>
+        /// <param name="isIdealFlow"></param>
+        /// <param name="pDrops"></param>
+        /// <param name="tJoints"></param>
+        public static void SerializeNetwork(List<ConduitNode> nodes, List<ConduitEdge> edges, 
+            Port inlet, Port outlet, Dictionary<string, Port> terminalOutletDict, Dictionary<string, Port> terminalInletDict, 
+            string prefix, bool isIdealFlow, 
+            out List<PressureDrop> pDrops, out List<Junction> tJoints)
+        {
+            Dictionary<string, ConduitNode> jsNodeDict = new Dictionary<string, ConduitNode>();
+            foreach (ConduitNode node in nodes)
+            {
+                jsNodeDict.Add(node.id, node);
+            }
+
+            // do we have to recreate another graph, or we can just create T-joint and pressure drops directly?
+            Dictionary<string, Junction> jointDict = new Dictionary<string, Junction>() { };
+            Dictionary<string, Junction> jointDict_rev = new Dictionary<string, Junction>() { };
+            pDrops = new List<PressureDrop>() { };
+            tJoints = new List<Junction>() { };
+            foreach (ConduitNode jsNode in nodes)
+            {
+                if (jsNode.degree == 2)
+                {
+                    // predefined pressure drop, nominal flow and res array, can be fixed later
+                    // note that "Medium" is a default setting. You need to replace it when water/air are introduced
+                    jointDict.Add(jsNode.id, new Junction(
+                        $"{prefix}_TI{jointDict.Count}", "Medium", false, true,
+                        100, 0, new double[] { 0, 0, 0 }));
+                    tJoints.Add(jointDict[jsNode.id]);
+                    jointDict_rev.Add(jsNode.id, new Junction(
+                        $"{prefix}_TO{jointDict_rev.Count}", "Medium", false, true,
+                        100, 0, new double[] { 0, 0, 0 }));
+                    tJoints.Add(jointDict_rev[jsNode.id]);
+                }
+            }
+            // it is a tree, you cannot guarantee that each edge follows the flow direction
+            // ventilating direction path
+            foreach (ConduitEdge jsEdge in edges)
+            {
+                PressureDrop pDrop = new PressureDrop(
+                    $"{prefix}_PI{edges.IndexOf(jsEdge)}", "Medium", false, false, true, 10, jsEdge.flowrate);
+
+                // what is the start point? to source root or to any of the out port of T-joint
+                if (jsNodeDict[jsEdge.startId].type == nodeTypeEnum.source)
+                {
+                    Port.Connect(pDrop.port_a, inlet);
+                    // leave the res blank for the sum flowrate
+                }
+                else
+                {
+                    Junction inputJunction = jointDict[jsEdge.startId]; // get the inward flow port
+                    if (inputJunction.outPort == 0)
+                    {
+                        // connect to the 1st out port
+                        Port.Connect(pDrop.port_a, inputJunction.port_2);
+                        // round to the top by granularity 0.05
+                        // negative value means the fuild is leaving the component
+                        inputJunction.res[0] = -Math.Ceiling(jsEdge.flowrate * 20) / 20;
+                        inputJunction.outPort += 1;
+                    }
+                    else if (inputJunction.outPort == 1)
+                    {
+                        // connect to the 2nd out port
+                        Port.Connect(pDrop.port_a, inputJunction.port_3);
+                        // round to the top by granularity 0.05
+                        // negative value means the fuild is leaving the component
+                        inputJunction.res[1] = -Math.Ceiling(jsEdge.flowrate * 20) / 20;
+                        inputJunction.outPort += 1;
+                    }
+                    else
+                        Debug.Print("Port not enough for a T-joint");
+                }
+
+                // what is the end point? to room or to T-joint
+                if (jsNodeDict[jsEdge.endId].type == nodeTypeEnum.terminal)
+                {
+                    //Port.Connect(pDrop.port_b, terminals[jsNodeDict[jsEdge.endId].linkedTerminalId].ports[2]);
+                    Port.Connect(pDrop.port_b, terminalOutletDict[jsNodeDict[jsEdge.endId].id]);
+                }
+                else
+                {
+                    // there is no stream merge in this ducting work
+                    Port.Connect(pDrop.port_b, jointDict[jsEdge.endId].port_1);
+                    // leave the res blank for the sum flowrate
+                }
+                pDrops.Add(pDrop);
+            }
+            // return loop?
+            foreach (ConduitEdge jsEdge in edges)
+            {
+                PressureDrop pDrop = new PressureDrop(
+                    $"{prefix}_PO{edges.IndexOf(jsEdge)}", "Medium", false, false, true, 100, jsEdge.flowrate);
+                // note that the start and end points of the edge remains the same
+                // you need to reverse them when connecting the pipe/duct
+                // either TO from the source or TO the T-joint (merging flow)
+                if (jsNodeDict[jsEdge.startId].type == nodeTypeEnum.source)
+                {
+                    Port.Connect(pDrop.port_b, outlet);
+                }
+                else
+                {
+                    Junction outputJunction = jointDict_rev[jsEdge.startId]; // get the inward flow port
+                    if (outputJunction.outPort == 0)
+                    {
+                        // connect to the 1st out port
+                        Port.Connect(pDrop.port_b, outputJunction.port_2);
+                        // round to the top by granularity 0.05
+                        outputJunction.res[0] = Math.Ceiling(jsEdge.flowrate * 20) / 20;
+                        outputJunction.outPort += 1;
+                    }
+                    else if (outputJunction.outPort == 1)
+                    {
+                        // connect to the 2nd out port
+                        Port.Connect(pDrop.port_b, outputJunction.port_3);
+                        // round to the top by granularity 0.05
+                        outputJunction.res[1] = Math.Ceiling(jsEdge.flowrate * 20) / 20;
+                        outputJunction.outPort += 1;
+                    }
+                    else
+                        Debug.Print("Port not enough for a T-joint");
+                }
+                // either starting from the terminal or the merging port of a junction
+                if (jsNodeDict[jsEdge.endId].type == nodeTypeEnum.terminal)
+                {
+                    //Port.Connect(zoneDict[jsNodeDict[jsEdge.endId].linkedTerminalId].ports[3], pDrop.port_a);
+                    Port.Connect(terminalInletDict[jsNodeDict[jsEdge.endId].id], pDrop.port_a);
+                }
+                else
+                {
+                    Port.Connect(pDrop.port_a, jointDict_rev[jsEdge.endId].port_1);
+                }
+                pDrops.Add(pDrop);
+            }
+
+            // for all T-joints, fulfil their res value
+            foreach (Junction tJoint in tJoints)
+            {
+                tJoint.res[2] = -(tJoint.res[0] + tJoint.res[1]);
+                tJoint.m_flow_nominal = tJoint.res[0] + tJoint.res[1];
+            }
+
+            // 20231013 ------------------------------------------------------------------------------------
+            // what if we remove all presure drops, only keep T-joints?
+            // this is a temporal test because the pressure drops lead to fatal error in Modelica somehow
+            if (!isIdealFlow)
+                foreach (PressureDrop pDrop in pDrops)
+                {
+                    Port port_1 = pDrop.port_a.to;
+                    Port port_2 = pDrop.port_b.to;
+                    Port.Connect(port_1, port_2);
+                }
+            
+            return;
+        }
     }
 }

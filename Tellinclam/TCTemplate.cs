@@ -50,8 +50,9 @@ namespace Tellinclam
             pManager.AddIntegerParameter("System template", "sys",
                 "Choose the system configuration template, for example, AHU self-circulation with personalized AC.", GH_ParamAccess.item);
             Param_Integer param = pManager[4] as Param_Integer;
-            param.AddNamedValue("AHU self-circulation + personalized AC", 0);
-            param.AddNamedValue("VAV + personalized AC", 1);
+            param.AddNamedValue("Rooftop packaged unit", 0);
+            param.AddNamedValue("AHU self-circulation", 1);
+            param.AddNamedValue("VAV + personalized AC", 2);
         }
 
         /// <summary>

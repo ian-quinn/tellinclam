@@ -219,6 +219,7 @@ namespace Tellinclam
                     PathFinding.Graph<int> graph = new PathFinding.Graph<int>(true, true);
                     PathFinding.Node<int> root = graph.AddNode(0);
                     graph.Nodes.Last().Coords = ahu;
+                    graph.Nodes.Last().isRoot = true;
                     PathFinding.Node<int> terminal = graph.AddNode(1);
                     graph.Nodes.Last().Coords = cons[0].PointAt(0);
                     graph.AddEdge(root, terminal, (float)cons[0].Length);
@@ -283,6 +284,7 @@ namespace Tellinclam
                 }
             }
             
+            // group all points in AHUs by their nearest shaft points
             for (int i = 0; i < shaft_entry_pts.Count; i++)
                 sys_zones.Add(new List<Point3d>() { });
 
@@ -321,6 +323,7 @@ namespace Tellinclam
                     new List<Point3d>() { shaft_entry_pts[i] }, PathFinding.algoEnum.SPT);
 
                 PathFinding.Graph<int> sys_graph = PathFinding.RebuildGraph(sys_network);
+                // how rookie finds the root/terminal node by comparing coordinates
                 foreach (PathFinding.Node<int> junc in sys_graph.Nodes)
                 {
                     if (junc.Coords.DistanceTo(shaft_entry_pts[i]) < 0.0001)

@@ -50,6 +50,9 @@ namespace Tellinclam.Serialization
             public string thermostat { get; set; } 
             public List<FunctionSpace> rooms { get; set; }
             public ConduitGraph network { get; set; }
+            // the terminal/control unit location of this zone, id targets to the root point of the zone's network
+            // necessary?
+            public string id_root { get; set; }
         }
         // distribution level, for better organization and balance
         public class SystemZone
