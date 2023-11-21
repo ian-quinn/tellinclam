@@ -29,7 +29,7 @@ namespace Tellinclam
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("-", "Ls", "-", GH_ParamAccess.list);
+            pManager.AddCurveParameter("Lines", "Ls", "Line segments to be welded", GH_ParamAccess.list);
             pManager.AddNumberParameter("-", "0", "-", GH_ParamAccess.item);
             pManager.AddNumberParameter("-", "d", "-", GH_ParamAccess.item);
         }

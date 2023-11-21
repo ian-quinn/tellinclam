@@ -28,12 +28,15 @@ namespace Tellinclam
              double rec_flow, double minTemp, double gain, double amp, double offset)
         {
             string model = "";
-            model += $"Buildings.Controls.OBC.CDL.Continuous.Sources.Pulse TSet{id}(amplitude = {amp}, offset = 273.15 + {offset}, period(displayUnit = \"d\") = 86400, \r\n    shift(displayUnit = \"h\") = 21600, y(displayUnit = \"degC\", unit = \"K\"));\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Sources.Pulse THig{id}(amplitude = 0, offset = {offset + 273.15}, period = 86400, \r\n shift = 21600, width = 0.5, y(displayUnit = \"degC\", unit = \"K\"));\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Sources.Pulse TLow{id}(amplitude = {amp - 0}, offset = 0, period = 86400, \r\n shift = 32400, width = 0.375, y(displayUnit = \"degC\", unit = \"K\"));\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Add TSet{id};\n";
             model += $"Buildings.Controls.OBC.CDL.Continuous.PID conPID{id}(Ti(displayUnit = \"min\") = 1800, controllerType = Buildings.Controls.OBC.CDL.Types.SimpleController.PI, \r\n    k = 1, u_m(displayUnit = \"degC\", unit = \"K\"), u_s(displayUnit = \"degC\", unit = \"K\"), yMax = 1, yMin = 0);\n";
             model += $"Buildings.Controls.OBC.CDL.Continuous.Hysteresis staA{id}(uLow = 0.05, uHigh = 0.5);\n";
             model += $"Buildings.Controls.OBC.CDL.Continuous.Hysteresis staB{id}(uLow = 0.5, uHigh = 0.75);\n";
-            model += $"Buildings.Controls.OBC.CDL.Conversions.BooleanToReal mSetFanA{id}_flow(realTrue = {rec_flow/2});\n";
-            model += $"Buildings.Controls.OBC.CDL.Conversions.BooleanToReal mSetFanB{id}_flow(realTrue = {rec_flow/2});\n";
+            // two level of speed control
+            model += $"Buildings.Controls.OBC.CDL.Conversions.BooleanToReal mSetFanA{id}_flow(realTrue = {rec_flow / 2});\n";
+            model += $"Buildings.Controls.OBC.CDL.Conversions.BooleanToReal mSetFanB{id}_flow(realTrue = {rec_flow / 2});\n";
             model += $"Buildings.Controls.OBC.CDL.Continuous.Add m_fan_set{id};\n";
             model += $"Buildings.Controls.OBC.CDL.Continuous.Add TAirLvgSet{id};\n";
             model += $"Buildings.Controls.OBC.CDL.Continuous.MultiplyByParameter gai{id}(final k = {gain});\n";
@@ -41,6 +44,8 @@ namespace Tellinclam
 
             string equation = "";
             // PID controller setting
+            equation += $"connect(THig{id}.y, TSet{id}.u1);\n";
+            equation += $"connect(TLow{id}.y, TSet{id}.u2);\n";
             equation += $"connect(TSet{id}.y, conPID{id}.u_s);\n";
             equation += $"connect(conPID{id}.u_m, {thermostat.Name});\n";
             equation += $"connect(conPID{id}.y, staA{id}.u);\n";
@@ -60,193 +65,83 @@ namespace Tellinclam
 
             return new Tuple<string, string>(model, equation);
         }
+
+        /// <summary>
+        /// pending for detail settings
+        /// </summary>
+        /// <returns></returns>
+        public static Tuple<string, string> FanHeaterCooler(string id, Port thermostat, Port fan, Port coil,
+             double rec_flow, double ramp0, double ramp1, double ramp2,  Tuple<double, double> span1, Tuple<double, double> span2)
+        {
+            string model = "";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Sources.Pulse THig{id}(amplitude = {ramp2 - ramp1}, offset = 0, period = 86400, \r\n shift = {3600 * span2.Item1}, width = {(span2.Item2 - span2.Item1) / 24}, y(displayUnit = \"degC\", unit = \"K\"));\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Sources.Pulse TLow{id}(amplitude = {ramp1 - ramp0}, offset = {ramp0 + 273.15}, period = 86400, \r\n shift = {3600 * span1.Item1}, width = {(span1.Item2 - span1.Item1) / 24}, y(displayUnit = \"degC\", unit = \"K\"));\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Add TSet{id};\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.PID conPID{id}(Ti(displayUnit = \"min\") = 1800, controllerType = Buildings.Controls.OBC.CDL.Types.SimpleController.PI, \r\n    k = 1, u_m(displayUnit = \"degC\", unit = \"K\"), u_s(displayUnit = \"degC\", unit = \"K\"), yMax = 1, yMin = 0);\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Hysteresis staA{id}(uLow = 0.05, uHigh = 0.5);\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Hysteresis staB{id}(uLow = 0.5, uHigh = 0.75);\n";
+            // two level of speed control
+            model += $"Buildings.Controls.OBC.CDL.Conversions.BooleanToReal mSetFanA{id}_flow(realTrue = {rec_flow * 0.8 / 2});\n";
+            model += $"Buildings.Controls.OBC.CDL.Conversions.BooleanToReal mSetFanB{id}_flow(realTrue = {rec_flow * 0.8 / 2});\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Add m_fan_set{id};\n";
+            // control lock-up to prevent the overheat of coil
+            model += $"Buildings.Controls.OBC.CDL.Conversions.BooleanToReal boo{id}(realTrue = 1);\n";
+            model += $"Buildings.Controls.OBC.CDL.Continuous.Multiply mul{id}();\n";
+
+            string equation = "";
+            // PID controller setting
+            equation += $"connect(THig{id}.y, TSet{id}.u1);\n";
+            equation += $"connect(TLow{id}.y, TSet{id}.u2);\n";
+            equation += $"connect(TSet{id}.y, conPID{id}.u_s);\n";
+            equation += $"connect(conPID{id}.u_m, {thermostat.Name});\n";
+            equation += $"connect(conPID{id}.y, staA{id}.u);\n";
+            equation += $"connect(staA{id}.y, mSetFanA{id}_flow.u);\n";
+            equation += $"connect(conPID{id}.y, staB{id}.u);\n";
+            equation += $"connect(staB{id}.y, mSetFanB{id}_flow.u);\n";
+            
+            // fan controller
+            equation += $"connect(mSetFanB{id}_flow.y, m_fan_set{id}.u1);\n";
+            equation += $"connect(mSetFanA{id}_flow.y, m_fan_set{id}.u2);\n";
+            equation += $"connect(m_fan_set{id}.y, {fan.Name});\n";
+
+            // make the heater respond with delays
+            equation += $"connect(staA{id}.y, boo{id}.u);\n";
+            equation += $"connect(boo{id}.y, mul{id}.u1);\n";
+            equation += $"connect(conPID{id}.y, mul{id}.u2);\n";
+            equation += $"connect(mul{id}.y, {coil.Name});\n";
+
+            return new Tuple<string, string>(model, equation);
+        }
     }
     class SerializeMO
     {
-
-        //public static string AirHeating(string modelName, List<string> labels, List<double> vols, int primary, string idf)
-        //{
-        //    string scripts = "";
-        //    string idfPath = idf.Replace(@"\", @"\\");
-        //    string epwPath = "modelica://Buildings/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw";
-        //    string mosPath = "modelica://Buildings/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.mos";
-
-        //    MO.Building building = new MO.Building(idfPath, epwPath, mosPath);
-
-        //    Boundary pAtm = new Boundary("pAtm", "Medium");
-        //    Constant qIntGai = new Constant("qIntGai", 0);
-
-        //    // legacy for only one set of heating system
-        //    //HeaterT heater = new HeaterT("hea", "mRec_flow_nominal1", 200);
-        //    //ControlledMassFlow fan = new ControlledMassFlow("fan", "mRec_flow_nominal1");
-
-        //    List<ThermalZone> zones = new List<ThermalZone>() { };
-        //    List<MassFlowSource> flows = new List<MassFlowSource>() { };
-        //    List<PressureDrop> outdoorDucts = new List<PressureDrop>() { };
-
-        //    // try to make each room a separate heating fan-coil system
-        //    List<HeaterT> heaters = new List<HeaterT>() { };
-        //    List<ControlledMassFlow> fans = new List<ControlledMassFlow>() { };
-        //    List<Tuple<string, string>> controls = new List<Tuple<string, string>>() { };
-
-        //    for (int i = 0; i < labels.Count; i++)
-        //    {
-        //        string zoneName = $"zon{i + 1}";
-        //        ThermalZone newZone = new ThermalZone(zoneName, labels[i], vols[i], 0);
-        //        newZone.qGai_flow.to = qIntGai.y;
-        //        newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for mass flow
-        //        newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for p drop
-        //        newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for air loop inlet
-        //        newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for air loop outlet
-
-        //        // paired with a heater set
-        //        HeaterT heater = new HeaterT($"hea{i + 1}", $"mRec_flow_nominal{i + 1}", 200);
-        //        ControlledMassFlow fan = new ControlledMassFlow($"fan{i + 1}", heater.flow_nominal);
-        //        heaters.Add(heater);
-        //        fans.Add(fan);
-
-        //        // retrieve control logic
-        //        Tuple<string, string> fanHeating = ControlPreset.FanHeating(
-        //            $"{i + 1}", newZone.TAir, fan.m_flow_in, heater.TSet,
-        //            heater.flow_nominal, 2, 8, 6, 16);
-        //        controls.Add(fanHeating);
-
-        //        // paired with a mass flow port
-        //        string flowName = $"freshAir{i + 1}";
-        //        //MassFlowSource newFlow = new MassFlowSource(flowName, "Medium", $"mOut_flow_nominal{i + 1}");
-        //        MassFlowSource newFlow = new MassFlowSource(flowName, "Medium", 0);
-        //        newFlow.ports.Add(new Port($"ports[{newFlow.ports.Count + 1}]", flowName));
-        //        newFlow.weaBus.to = building.weaBus;
-
-        //        // paired with a pressure drop with outdoor air
-        //        string ductName = $"outDuc{i + 1}";
-        //        //PressureDrop newDrop = new PressureDrop(ductName, "Medium", false, true, true, 
-        //        //    100, $"mOut_flow_nominal{i + 1}");
-        //        PressureDrop newDrop = new PressureDrop(ductName, "Medium", false, true, true,
-        //            10, 0);
-        //        outdoorDucts.Add(newDrop);
-
-        //        // paired with airloop
-        //        newZone.ports[2].to = fan.port_a;
-        //        newZone.ports[3].to = heater.port_b;
-
-        //        pAtm.ports.Add(new Port($"ports[{pAtm.ports.Count + 1}]", pAtm.Name));
-        //        pAtm.ports.Last().to = newDrop.port_b;
-        //        newDrop.port_b.to = pAtm.ports.Last();
-
-        //        newZone.ports[0].to = newFlow.ports[0];
-        //        newZone.ports[1].to = newDrop.port_a;
-        //        newFlow.ports[0].to = newZone.ports[0];
-
-        //        flows.Add(newFlow);
-        //        zones.Add(newZone);
-        //    }
-
-
-        //    // legacy retrieve templates
-        //    //Tuple<string, string> fanHeating = ControlPreset.FanHeating(
-        //    //    zones[0].TAir, fan.m_flow_in, heater.TSet,
-        //    //    "mRec_flow_nominal1", 2, 8, 6, 16);
-
-        //    // ----------------------------------------------------------- //
-
-        //    // serialize header
-        //    scripts += "within Buildings.ThermalZones.EnergyPlus_9_6_0.Examples.SingleFamilyHouse;\n\n";
-        //    // model declearation
-        //    scripts += $"model {modelName}\n";
-        //    scripts += $"extends Modelica.Icons.Example;\n";
-        //    scripts += $"package Medium = Buildings.Media.Air;\n";
-
-        //    // serialize Building
-        //    scripts += building.Serialize();
-        //    scripts += pAtm.Serialize();
-        //    scripts += qIntGai.Serialize();
-
-        //    // serialize ThermalZone
-        //    // note that the naming convention is fixed
-        //    for (int i = 0; i < zones.Count; i++)
-        //    {
-        //        scripts += zones[i].Serialize();
-        //        scripts += $"constant Modelica.Units.SI.Volume VRoo{i + 1} = {zones[i].volume};\n";
-        //        //scripts += $"constant Modelica.Units.SI.Area AFlo{i + 1} = {zones[i].area};\n";
-        //        scripts += $"parameter Modelica.Units.SI.MassFlowRate mOut_flow_nominal{i + 1} = 0.3*VRoo{i + 1}*1.2/3600;\n";
-        //        scripts += $"parameter Modelica.Units.SI.MassFlowRate mRec_flow_nominal{i + 1} = 8*VRoo{i + 1}*1.2/3600;\n";
-        //        // each zone is paired with a mass flow rate port, which names after the zone
-        //        // for example: zone1 -> freshAir1
-        //        scripts += flows[i].Serialize();
-        //        scripts += outdoorDucts[i].Serialize();
-
-        //        scripts += heaters[i].Serialize();
-        //        scripts += fans[i].Serialize();
-        //        scripts += controls[i].Item1;
-        //    }
-        //    // set fan and heater
-        //    //scripts += heater.Serialize();
-        //    //scripts += fan.Serialize();
-        //    // set control
-        //    //scripts += fanHeating.Item1;
-
-        //    // set fluid network
-
-
-        //    // initial equation
-        //    scripts += "initial equation\n";
-
-        //    // -----------------------------------------------------------------------------------
-        //    // equation part
-        //    scripts += "equation\n";
-        //    // you may use a list recording all ports connected
-        //    // thermal zone session
-        //    List<string> portNames = new List<string>() { };
-        //    for (int i = 0; i < zones.Count; i++)
-        //    {
-        //        scripts += $"connect({zones[i].qGai_flow.Name}, {zones[i].qGai_flow.to.Name});\n";
-        //        foreach (Port prt in zones[i].ports)
-        //        {
-        //            scripts += $"connect({prt.Name}, {prt.to.Name});\n";
-        //        }
-        //    }
-        //    for (int i = 0; i < flows.Count; i++)
-        //    {
-        //        scripts += $"connect({flows[i].weaBus.Name}, {flows[i].weaBus.to.Name});\n";
-        //    }
-        //    foreach (Port prt in pAtm.ports)
-        //    {
-        //        scripts += $"connect({prt.Name}, {prt.to.Name});\n";
-        //    }
-        //    // set fluid network connection
-
-        //    for (int i = 0; i < controls.Count; i++)
-        //    {
-        //        scripts += $"connect({fans[i].port_b.Name}, {heaters[i].port_a.Name});\n";
-        //        scripts += controls[i].Item2;
-        //    }
-        //    // set fan and heater
-        //    //scripts += $"connect({fan.port_b.Name}, {heater.port_a.Name});\n";
-        //    // set control logic
-        //    //scripts += fanHeating.Item2;
-
-        //    // simulation configurations
-        //    // wire this with another component for general settings
-        //    Documentation newSim = new Documentation();
-        //    newSim.StopTime = 86400;
-        //    newSim.Interval = 600;
-        //    newSim.Tolerance = 0.000001;
-        //    newSim.Algorithm = "Dassl";
-        //    scripts += newSim.Serialize();
-
-        //    // enclosed
-        //    scripts += $"end {modelName};";
-
-        //    return scripts;
-        //}
+        public static string BlockMassAvg()
+        {
+            string scripts = "";
+            scripts += "block MassAverage\n" +
+                "  parameter Integer n;\n" + 
+                "  parameter Real w[n];\n" + 
+                "  Buildings.Controls.OBC.CDL.Interfaces.RealInput u[n];\n" +
+                "  Buildings.Controls.OBC.CDL.Interfaces.RealOutput y;\n" +
+                "protected\n" + 
+                "  Real mass;\n" + 
+                "algorithm\n" +
+                "  mass := 0;\n" + 
+                "  for i in 1:n loop\n" + 
+                "    mass := mass + w[i]*u[i];\n" + 
+                "  end for;\n" + 
+                "  y := mass / sum(w);\n" +
+                "end MassAverage;\n";
+            return scripts;
+        }
 
         /// <summary>
         /// Serialize 1 system zone to Modelica model for test purpose.
         /// 20231013 add a toggle to switch the mode how pipe/duct are modeled: whether to use pressure drops or
         /// just consider the friction by tee-joint (at each port)
         /// </summary>
-        public static string RecFancoil(Floorplan jsFloorplan, string modelName, string idf, string epw, bool isIdealFlow)
+        public static string RecFancoil(Floorplan jsFloorplan, SimulationSettings simSets,
+            string modelName, string idf, string epw, bool isIdealFlow)
         {
             string scripts = "";
             string idfPath = idf.Replace(@"\", @"\\");
@@ -270,11 +165,13 @@ namespace Tellinclam
                     //jsZoneDict.Add(jsZone.id, jsZone);
                     //foreach (FunctionSpace jsRoom in jsZone.rooms)
                     //    jsRoomDict.Add(jsRoom.id, jsRoom);
-                    foreach (ConduitNode node in jsZone.network.nodes)
-                        jsNodeDict.Add(node.id, node);
+                    if (jsZone.network != null)
+                        foreach (ConduitNode node in jsZone.network.nodes)
+                            jsNodeDict.Add(node.id, node);
                 }
-                foreach (ConduitNode node in jsSystem.network.nodes)
-                    jsNodeDict.Add(node.id, node);
+                if (jsSystem.network != null)
+                    foreach (ConduitNode node in jsSystem.network.nodes)
+                        jsNodeDict.Add(node.id, node);
             }
 
             // the global module
@@ -287,8 +184,11 @@ namespace Tellinclam
             // generate MO class in a hierarchy way while make the serialization flat
 
             // zone level attributes
-            List<HeaterT> heaters = new List<HeaterT>() { };
+            List<Exchanger> exchangers = new List<Exchanger>() { };
             List<ControlledMassFlow> fans = new List<ControlledMassFlow>() { };
+            List<SensorT> sensors = new List<SensorT>() { };
+            // additional blocks
+            List<MassAverage> avgs = new List<MassAverage>() { };
             // tuple.item1 -> serialized components / tuple.item2 -> serialized connections
             List<Tuple<string, string>> controls = new List<Tuple<string, string>>() { };
 
@@ -316,7 +216,7 @@ namespace Tellinclam
                     List<MassFlowSource> flows = new List<MassFlowSource>() { };
 
                     // mark the Modelica room that is treated as thermostat loc
-                    ThermalZone thermostat = null;
+                    ThermalZone delegateZone = null;
                     List<double> rec_flow_each = new List<double>() { };
                     
                     for (int j = 0; j < jsSpaces.Count; j++)
@@ -335,9 +235,10 @@ namespace Tellinclam
                         newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for air loop inlet
                         newZone.ports.Add(new Port($"ports[{newZone.ports.Count + 1}]", zoneName)); // for air loop outlet
 
-
+                        // not so good to represent the room control in this way
+                        // better to change the jsZone.thermostat to the id of a specific room
                         if (newZone.zoneName == jsZone.thermostat)
-                            thermostat = newZone;
+                            delegateZone = newZone;
 
                         // recirculation air flow rate of each room
                         // this can be the inherit attribute of a space, the flow rate should be designated while system sizing
@@ -381,12 +282,41 @@ namespace Tellinclam
 
                     // paired with a heater set
                     // name the heater one by one, start from 0
-                    // the flow_nominal is a place holder. it is a cummulative value based on rooms within the zone
-                    HeaterT heater = new HeaterT($"hea_{z}", rec_flow_each.Sum(), 200);
-                    ControlledMassFlow fan = new ControlledMassFlow($"fan_{z}", heater.flow_nominal);
-                    heaters.Add(heater);
-                    fans.Add(fan);
+                    // calculate and input the a cummulative value based on rooms within the zone
+                    double mass_flow_nominal = Math.Ceiling(rec_flow_each.Sum() * 20) / 20;
+                    int exTypeId = 0;
+                    if (jsSystem.type == "RecHeaterElectric") exTypeId = 0;
+                    if (jsSystem.type == "RecHeaterCoolerIdeal") exTypeId = 1;
+                    Port monitor = new Port("null", "null");
+                    // note thte pressure drop, replace it when the equipment list is ready
+                    Exchanger exchanger = new Exchanger($"exc_{z}", exTypeId, mass_flow_nominal, 200, jsZone.sizingLoad);
+                    ControlledMassFlow fan = new ControlledMassFlow($"fan_{z}", mass_flow_nominal);
+                    SensorT sensor = new SensorT($"sen_{z}", mass_flow_nominal);
 
+                    fans.Add(fan);
+                    sensors.Add(sensor);
+                    exchangers.Add(exchanger);
+
+                    if (jsZone.thermostat == "TempAverage")
+                    {
+                        // generate an array of room volume
+                        double[] volumes = new double[jsSpaces.Count];
+                        for (int k = 0; k < jsSpaces.Count; k++)
+                        {
+                            volumes[k] = jsSpaces[k].volume;
+                        }
+                        MassAverage avg = new MassAverage($"AvgTemp_{z}", zones.Count, volumes);
+                        for (int k = 0; k < zones.Count; k++)
+                        {
+                            Port.Connect(avg.u[k], zones[k].TAir);
+                        }
+                        monitor = avg.y;
+                        avgs.Add(avg);
+                    }
+                    else if (jsZone.thermostat == "TempReturnDuct")
+                        monitor = sensor.T;
+                    else
+                        monitor = delegateZone.TAir;
 
                     // compile the network in this zone
                     // in this process, the relay points are removed
@@ -422,17 +352,28 @@ namespace Tellinclam
                         }
                     }
 
-                    SerializeNetwork(jsZonNodes, jsZonEdges, fan.port_a, heater.port_b, zonInlets, zonOutlets,
+                    SerializeNetwork(jsZonNodes, jsZonEdges, fan.port_a, exchanger.port_b, zonInlets, zonOutlets,
                         $"netZon{z}", isIdealFlow, out List<PressureDrop> zonPDrops, out List<Junction> zonTJoints);
 
                     nested_zon_pDrops.Add(zonPDrops);
                     nested_zon_tJoints.Add(zonTJoints);
 
                     // retrieve control logic
-                    Tuple<string, string> fanHeating = ControlPreset.FanHeating(
-                        $"_zon{z}", thermostat.TAir, fan.m_flow_in, heater.TSet,
-                        heater.flow_nominal, 2, 8, 6, 16);
-                    controls.Add(fanHeating);
+                    // which monitor point to use? thermostat.TAir / sensor.T
+
+                    Tuple<string, string> ctrlSchema = new Tuple<string, string>($"_{z}", "--ERROR-- No control template assigned\n");
+                    if (jsSystem.type == "RecHeaterElectric")
+                    {
+                        ctrlSchema = ControlPreset.FanHeating($"_zon{z}", monitor, fan.m_flow_in, exchanger.set,
+                            exchanger.flow_nominal, 2, 8, jsZone.heating_set, 0);
+                        // two level temp control from example file, 2, 8, 6, 16, fluctuates between 10~22
+                    }
+                    else if (jsSystem.type == "RecHeaterCoolerIdeal")
+                    {
+                        ctrlSchema = ControlPreset.FanHeaterCooler($"_zon{z}", monitor, fan.m_flow_in, exchanger.set,
+                            exchanger.flow_nominal, 0, 14, jsZone.heating_set, new Tuple<double, double> (6, 18), new Tuple<double, double>(9, 18));
+                    }
+                    controls.Add(ctrlSchema);
 
                     // move to next step
                     z++;
@@ -473,10 +414,14 @@ namespace Tellinclam
             // ----------------------------------------------------------- //
 
             // serialize header
-            scripts += "within Buildings.ThermalZones.EnergyPlus_9_6_0;\n\n";
+            scripts += "within ;\n\n";
             // model declearation
             scripts += $"model {modelName}\n";
             scripts += $"extends Modelica.Icons.Example;\n";
+
+            // load custom blocks
+            scripts += BlockMassAvg();
+
             scripts += $"package Medium = Buildings.Media.Air;\n";
 
             // serialize Building
@@ -499,8 +444,11 @@ namespace Tellinclam
                     scripts += zone.crack.Serialize();
                 }
 
-                scripts += heaters[i].Serialize();
+                scripts += exchangers[i].Serialize();
                 scripts += fans[i].Serialize();
+                scripts += sensors[i].Serialize();
+                if (i < avgs.Count)
+                    scripts += avgs[i].Serialize();
                 scripts += controls[i].Item1;
 
                 foreach (Junction tJoint in nested_zon_tJoints[i])
@@ -508,10 +456,10 @@ namespace Tellinclam
                     scripts += tJoint.Serialize();
                 }
 
-                //foreach (PressureDrop pDrop in nested_net_pDrops[i])
-                //{
-                //    scripts += pDrop.Serialize();
-                //}
+                foreach (PressureDrop pDrop in nested_zon_pDrops[i])
+                {
+                    scripts += pDrop.Serialize();
+                }
             }
             // set fan and heater
             //scripts += heater.Serialize();
@@ -546,11 +494,11 @@ namespace Tellinclam
 
                 // set fluid network connection
 
-                //foreach (PressureDrop pDrop in nested_net_pDrops[i])
-                //{
-                //    scripts += $"connect({pDrop.port_a.Name}, {pDrop.port_a.to.Name});\n";
-                //    scripts += $"connect({pDrop.port_b.Name}, {pDrop.port_b.to.Name});\n";
-                //}
+                foreach (PressureDrop pDrop in nested_zon_pDrops[i])
+                {
+                    scripts += $"connect({pDrop.port_a.Name}, {pDrop.port_a.to.Name});\n";
+                    scripts += $"connect({pDrop.port_b.Name}, {pDrop.port_b.to.Name});\n";
+                }
 
                 // if not using pDrop for connection, iterate port_2 and port_3 of T-joint
                 foreach (Junction tJoint in nested_zon_tJoints[i])
@@ -560,10 +508,22 @@ namespace Tellinclam
                 }
                 // then add the source
                 scripts += $"connect({fans[i].port_a.Name}, {fans[i].port_a.to.Name});\n";
-                scripts += $"connect({heaters[i].port_b.Name}, {heaters[i].port_b.to.Name});\n";
+                scripts += $"connect({exchangers[i].port_b.Name}, {exchangers[i].port_b.to.Name});\n";
+
+                // use average temperature to control?
+                if (i < avgs.Count)
+                {
+                    foreach (Port input in avgs[i].u)
+                    {
+                        scripts += $"connect({input.Name}, {input.to.Name});\n";
+                    }
+                }
+                    
 
                 // source side connection
-                scripts += $"connect({fans[i].port_b.Name}, {heaters[i].port_a.Name});\n";
+                // it is not right to put the sensor here, but, for convenience...
+                scripts += $"connect({fans[i].port_b.Name}, {sensors[i].port_a.Name});\n";
+                scripts += $"connect({sensors[i].port_b.Name}, {exchangers[i].port_a.Name});\n";
                 scripts += controls[i].Item2;
             }
             
@@ -575,10 +535,12 @@ namespace Tellinclam
             // simulation configurations
             // wire this with another component for general settings
             Documentation newSim = new Documentation();
-            newSim.StopTime = 86400;
-            newSim.Interval = 600;
-            newSim.Tolerance = 0.000001;
-            newSim.Algorithm = "Dassl";
+            newSim.Info = simSets.info;
+            newSim.StartTime = simSets.startTime;
+            newSim.StopTime = simSets.stopTime;
+            newSim.Interval = simSets.interval;
+            newSim.Tolerance = simSets.tolerance;
+            newSim.Algorithm = simSets.algorithm;
             scripts += newSim.Serialize();
 
             // enclosed
@@ -617,12 +579,14 @@ namespace Tellinclam
                         string start_id = "";
                         string end_id = "";
                         double weight = 0;
+                        double friction = 0;
                         for (int j = jsEdges.Count - 1; j >= 0; j--)
                         {
                             if (jsEdges[j].startId == jsNode.id)
                             {
                                 end_id = jsEdges[j].endId;
                                 weight += jsEdges[j].length;
+                                friction += jsEdges[j].friction;
                                 jsEdges.RemoveAt(j);
                                 jsNode.degree -= 1;
                             }
@@ -630,6 +594,7 @@ namespace Tellinclam
                             {
                                 start_id = jsEdges[j].startId;
                                 weight += jsEdges[j].length;
+                                friction += jsEdges[j].friction;
                                 jsEdges.RemoveAt(j);
                                 jsNode.degree -= 1;
                             }
@@ -641,7 +606,8 @@ namespace Tellinclam
                                 startId = start_id,
                                 endId = end_id,
                                 length = weight,
-                                flowrate = jsNodeDict[end_id].flowrate
+                                flowrate = jsNodeDict[end_id].flowrate,
+                                friction = friction
                             });
                         break;
                     }
@@ -688,21 +654,21 @@ namespace Tellinclam
                     // predefined pressure drop, nominal flow and res array, can be fixed later
                     // note that "Medium" is a default setting. You need to replace it when water/air are introduced
                     jointDict.Add(jsNode.id, new Junction(
-                        $"{prefix}_TI{jointDict.Count}", "Medium", false, true,
-                        100, 0, new double[] { 0, 0, 0 }));
+                        $"{prefix}_TI{jointDict.Count}", "Medium", true, true,
+                        10, 0, new double[] { 0, 1, 1 }, new double[] { 0, 0, 0 }));
                     tJoints.Add(jointDict[jsNode.id]);
                     jointDict_rev.Add(jsNode.id, new Junction(
-                        $"{prefix}_TO{jointDict_rev.Count}", "Medium", false, true,
-                        100, 0, new double[] { 0, 0, 0 }));
+                        $"{prefix}_TO{jointDict_rev.Count}", "Medium", true, true,
+                        10, 0, new double[] { 0, 1, 1 }, new double[] { 0, 0, 0 }));
                     tJoints.Add(jointDict_rev[jsNode.id]);
                 }
             }
             // it is a tree, you cannot guarantee that each edge follows the flow direction
-            // ventilating direction path
+            // ventilating direction path 
             foreach (ConduitEdge jsEdge in edges)
             {
                 PressureDrop pDrop = new PressureDrop(
-                    $"{prefix}_PI{edges.IndexOf(jsEdge)}", "Medium", false, false, true, 10, jsEdge.flowrate);
+                    $"{prefix}_PI{edges.IndexOf(jsEdge)}", "Medium", false, true, true, jsEdge.friction, jsEdge.flowrate);
 
                 // what is the start point? to source root or to any of the out port of T-joint
                 if (jsNodeDict[jsEdge.startId].type == nodeTypeEnum.source)
@@ -719,7 +685,7 @@ namespace Tellinclam
                         Port.Connect(pDrop.port_a, inputJunction.port_2);
                         // round to the top by granularity 0.05
                         // negative value means the fuild is leaving the component
-                        inputJunction.res[0] = -Math.Ceiling(jsEdge.flowrate * 20) / 20;
+                        inputJunction.flows[1] = -jsEdge.flowrate;
                         inputJunction.outPort += 1;
                     }
                     else if (inputJunction.outPort == 1)
@@ -728,7 +694,7 @@ namespace Tellinclam
                         Port.Connect(pDrop.port_a, inputJunction.port_3);
                         // round to the top by granularity 0.05
                         // negative value means the fuild is leaving the component
-                        inputJunction.res[1] = -Math.Ceiling(jsEdge.flowrate * 20) / 20;
+                        inputJunction.flows[2] = -jsEdge.flowrate;
                         inputJunction.outPort += 1;
                     }
                     else
@@ -753,7 +719,7 @@ namespace Tellinclam
             foreach (ConduitEdge jsEdge in edges)
             {
                 PressureDrop pDrop = new PressureDrop(
-                    $"{prefix}_PO{edges.IndexOf(jsEdge)}", "Medium", false, false, true, 100, jsEdge.flowrate);
+                    $"{prefix}_PO{edges.IndexOf(jsEdge)}", "Medium", false, true, true, jsEdge.friction, jsEdge.flowrate);
                 // note that the start and end points of the edge remains the same
                 // you need to reverse them when connecting the pipe/duct
                 // either TO from the source or TO the T-joint (merging flow)
@@ -769,7 +735,7 @@ namespace Tellinclam
                         // connect to the 1st out port
                         Port.Connect(pDrop.port_b, outputJunction.port_2);
                         // round to the top by granularity 0.05
-                        outputJunction.res[0] = Math.Ceiling(jsEdge.flowrate * 20) / 20;
+                        outputJunction.flows[1] = jsEdge.flowrate;
                         outputJunction.outPort += 1;
                     }
                     else if (outputJunction.outPort == 1)
@@ -777,7 +743,7 @@ namespace Tellinclam
                         // connect to the 2nd out port
                         Port.Connect(pDrop.port_b, outputJunction.port_3);
                         // round to the top by granularity 0.05
-                        outputJunction.res[1] = Math.Ceiling(jsEdge.flowrate * 20) / 20;
+                        outputJunction.flows[2] = jsEdge.flowrate;
                         outputJunction.outPort += 1;
                     }
                     else
@@ -797,22 +763,57 @@ namespace Tellinclam
             }
 
             // for all T-joints, fulfil their res value
+            // take the port_1, e.g. the res[0] as the main port, [1], [2] are the branches
             foreach (Junction tJoint in tJoints)
             {
-                tJoint.res[2] = -(tJoint.res[0] + tJoint.res[1]);
-                tJoint.m_flow_nominal = tJoint.res[0] + tJoint.res[1];
+                tJoint.flows[0] = -(tJoint.flows[1] + tJoint.flows[2]);
+                //tJoint.m_flow_nominal = Math.Abs(tJoint.res[1] + tJoint.res[2]);
+                tJoint.m_flow_nominal = 1;
             }
 
             // 20231013 ------------------------------------------------------------------------------------
             // what if we remove all presure drops, only keep T-joints?
             // this is a temporal test because the pressure drops lead to fatal error in Modelica somehow
+            Dictionary<string, Junction> jointNameDict = new Dictionary<string, Junction>() { };
+            foreach (Junction tj in tJoints)
+            {
+                jointNameDict.Add(tj.Name, tj);
+            }
             if (!isIdealFlow)
+            {
                 foreach (PressureDrop pDrop in pDrops)
                 {
                     Port port_1 = pDrop.port_a.to;
                     Port port_2 = pDrop.port_b.to;
                     Port.Connect(port_1, port_2);
+
+                    if (tJoints.Count > 0)
+                    {
+                        if (port_1.parent.Contains("TI"))
+                        {
+                            var tags = port_1.Name.Split('_');
+                            if (tags.Last() == "2")
+                                jointNameDict[port_1.parent].res[1] = -pDrop.dp_nominal;
+                            if (tags.Last() == "3")
+                                jointNameDict[port_1.parent].res[2] = -pDrop.dp_nominal;
+                        }
+                        else if (port_2.parent.Contains("TI"))
+                            jointNameDict[port_2.parent].res[0] = pDrop.dp_nominal;
+                        if (port_2.parent.Contains("TO"))
+                        {
+                            var tags = port_2.Name.Split('_');
+                            if (tags.Last() == "2")
+                                jointNameDict[port_2.parent].res[1] = pDrop.dp_nominal;
+                            if (tags.Last() == "3")
+                                jointNameDict[port_2.parent].res[2] = pDrop.dp_nominal;
+                        }
+                        else if (port_1.parent.Contains("TO"))
+                            jointNameDict[port_1.parent].res[0] = -pDrop.dp_nominal;
+                    }
                 }
+                pDrops = new List<PressureDrop>() { }; // empty the pDrop list
+            }
+                
             
             return;
         }

@@ -26,8 +26,9 @@ namespace Tellinclam.Serialization
         {
             List<SchemaJSON.ConduitNode> jsNodes = new List<SchemaJSON.ConduitNode>() { };
             List<SchemaJSON.ConduitEdge> jsEdges = new List<SchemaJSON.ConduitEdge>() { };
-            float sum_weight = 0;
-            float sum_res = 0;
+            float sum_length = 0;
+            float max_res = 0;
+            int max_node = -1;
             bool[] isTraversed = new bool[graph.Count];
             for (int i = 0; i < graph.Count; i++)
             {
@@ -37,6 +38,8 @@ namespace Tellinclam.Serialization
             // generate jsNodes with different IDs, then by the same sequence, refered by the jsEdge
             // the node index must be 0, 1, 2, 3...
             //int max_depth = 0;
+            int numJunction = 0;
+            int numBend = 0;
             foreach (Node<int> node in graph.Nodes)
             {
                 // the last step is to grow a tree from the graph, 
@@ -47,9 +50,15 @@ namespace Tellinclam.Serialization
                 if (node.isRoot)
                     type = nodeTypeEnum.source;
                 else if (degree == 1)
+                {
                     type = nodeTypeEnum.relay;
+                    numBend += 1;
+                }
                 else if (degree == 2)
+                {
                     type = nodeTypeEnum.tjoint;
+                    numJunction += 1;
+                }
 
                 string node_id = Guid.NewGuid().ToString("N").Substring(0, 8);
                 jsNodes.Add(new SchemaJSON.ConduitNode
@@ -66,22 +75,35 @@ namespace Tellinclam.Serialization
                 //if (node.depth > max_depth)
                 //    max_depth = node.depth;
 
-                isTraversed[node.Index] = true;
-                for (int i = 0; i < node.Neighbors.Count; i++)
-                {
-                    if (isTraversed[node.Neighbors[i].Index])
-                    {
-                        sum_weight += node.Weights[i];
-                    }
-                }
+                //isTraversed[node.Index] = true;
+                //for (int i = 0; i < node.Neighbors.Count; i++)
+                //{
+                //    if (isTraversed[node.Neighbors[i].Index])
+                //    {
+                //        sum_length += node.Weights[i];
+                //    }
+                //}
 
+                // find the furthest path. Normally the one with max pressure drop
                 if (node.isRoot)
                 {
                     List<Edge<int>> path = graph.GetFurthestPathDijkstra(node, out int remoteIdx);
-                    foreach (Edge<int> edge in path)
+                    for (int i = 0; i < path.Count; i++)
                     {
-                        sum_res += edge.Weight;
+                        max_res += path[i].Weight;
+                        if (i == path.Count - 1)
+                            max_node = path[i].To.Index;
                     }
+                }
+            }
+
+            // iterate once again to assign parent to each node
+            // DANGEROUS!
+            for (int i = 0; i < graph.Nodes.Count; i++)
+            {
+                foreach (Node<int> node in graph.Nodes[i].Neighbors)
+                {
+                    jsNodes[node.Index].parent = jsNodes[i].id;
                 }
             }
 
@@ -98,10 +120,14 @@ namespace Tellinclam.Serialization
             }
             SchemaJSON.ConduitGraph jsGraph = new SchemaJSON.ConduitGraph
             {
+                maxLength = max_res,
+                maxNode = jsNodes[max_node].id,
+                sumLength = 0,
+                sumMaterial = 0,
+                numJunction = numJunction,
+                numBend = numBend,
                 nodes = jsNodes,
                 edges = jsEdges,
-                maxRes = sum_res,
-                sumLength = sum_weight
             };
             return jsGraph;
         }
@@ -136,7 +162,8 @@ namespace Tellinclam.Serialization
                         function = "",
                         area = areas[spaceId],
                         volume = areas[spaceId] * 3.0,
-                        load = 0.0
+                        maxLoad = 0.0,
+                        avgLoad = 0.0
                     });
                 }
 

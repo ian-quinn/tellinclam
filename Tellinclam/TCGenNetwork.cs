@@ -354,7 +354,7 @@ namespace Tellinclam
         {
             get
             {
-                return Properties.Resources.clam;
+                return Properties.Resources.network;
             }
         }
 

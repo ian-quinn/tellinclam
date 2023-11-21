@@ -101,7 +101,7 @@ namespace Tellinclam.MO
         {
             string scripts = "";
             // initiation
-            scripts += $"inner Building {Name}(idfName = Modelica.Utilities.Files.loadResource(\"{idf}\"), \n";
+            scripts += $"inner {Path} {Name}(idfName = Modelica.Utilities.Files.loadResource(\"{idf}\"), \n";
             scripts += $"weaName = Modelica.Utilities.Files.loadResource(\"{wea}\"), \n";
             scripts += $"epwName = Modelica.Utilities.Files.loadResource(\"{epw}\"), \n";
             scripts += "computeWetBulbTemperature = false);\n";
@@ -129,7 +129,7 @@ namespace Tellinclam.MO
         public string Serialize()
         {
             string scripts = "";
-            scripts += $"{Path} {Name}(redeclare package Medium = {medium}, m_flow = {m_flow}, nPorts = {ports.Count});\n";
+            scripts += $"{Path} {Name}(redeclare package Medium = {medium}, m_flow = {m_flow:0.00000}, nPorts = {ports.Count});\n";
             return scripts;
         }
     }
@@ -246,8 +246,8 @@ namespace Tellinclam.MO
             scripts += $"{Path} {Name}(redeclare package Medium = {medium}, " +
                 $"allowFlowReversal = {allowFlowReversal.ToString().ToLower()}, " +
                 $"linearized = {linearized.ToString().ToLower()}, " +
-                $"from_dp = {from_dp.ToString().ToLower()}, dp_nominal = {dp_nominal}, " +
-                $"m_flow_nominal = {m_flow_nominal});\n";
+                $"from_dp = {from_dp.ToString().ToLower()}, dp_nominal = {dp_nominal:0.000}, " +
+                $"m_flow_nominal = {m_flow_nominal:0.000});\n";
             return scripts;
         }
     }
@@ -261,13 +261,14 @@ namespace Tellinclam.MO
         public bool from_dp { get; set; }
         public double dp_nominal { get; set; }
         public double m_flow_nominal { get; set; }
+        public double[] flows { get; set; }
         public double[] res { get; set; }
         public Port port_1 { get; set; }
         public Port port_2 { get; set; }
         public Port port_3 { get; set; }
         public int outPort { get; set; }
         public Junction(string name, string medium, bool isLinearized,
-            bool from_dp, double dp_nominal, double m_flow_nominal, double[] res)
+            bool from_dp, double dp_nominal, double m_flow_nominal, double[] res, double[] flows)
         {
             Name = name;
             Path = "Buildings.Fluid.FixedResistances.Junction";
@@ -277,6 +278,7 @@ namespace Tellinclam.MO
             this.dp_nominal = dp_nominal;
             this.m_flow_nominal = m_flow_nominal;
             this.res = res;
+            this.flows = flows;
             port_1 = new Port("port_1", name); // typically inlet
             port_2 = new Port("port_2", name); // typically outlet
             port_3 = new Port("port_3", name); // typically inlet/outlet
@@ -285,9 +287,12 @@ namespace Tellinclam.MO
         public string Serialize()
         {
             string scripts = "";
+            // presuming the pressure drop of the main inlet has been covered by the upstream
             scripts += $"{Path} {Name}(redeclare package Medium = {medium}, " +
-                $"dp_nominal = {{{dp_nominal * res[0]}, {dp_nominal * res[1]}, {dp_nominal * res[2]}}}, " +
-                $"m_flow_nominal = {{{m_flow_nominal * res[0]}, {m_flow_nominal * res[1]}, {m_flow_nominal * res[2]}}}, " + 
+                $"linearized = {linearized.ToString().ToLower()}, from_dp = {from_dp.ToString().ToLower()}, " +
+                //$"dp_nominal = {{0, {dp_nominal}, {dp_nominal * Math.Pow(res[1], 2) / Math.Pow(res[2], 2)}}}, " +
+                $"dp_nominal = {{{res[0]:0.000}, {res[1]:0.000}, {res[2]:0.000}}}, " +
+                $"m_flow_nominal = {{{flows[0]:0.000}, {flows[1]:0.000}, {flows[2]:0.000}}}, " + 
                 $"energyDynamics = Modelica.Fluid.Types.Dynamics.SteadyState);\n";
             return scripts;
         }
@@ -342,30 +347,90 @@ namespace Tellinclam.MO
         }
     }
 
-    public class HeaterT
+    public class Exchanger
     {
         public string Name { get; set; }
         public string Path { get; set; }
+        public int type { get; set; }
         public double flow_nominal { get; set; }
         public double dp_nominal { get; set; }
+        public double q_nominal { get; set; }
         public Port port_a { get; set; }
         public Port port_b { get; set; }
-        public Port TSet { get; set; }
-        public HeaterT(string name, double flow_nominal, double dp_nominal)
+        public Port set { get; set; }
+        public Exchanger(string name, int type, double flow_nominal, double dp_nominal, double q_nominal)
         {
             Name = name;
             this.flow_nominal = flow_nominal;
             this.dp_nominal = dp_nominal;
-            Path = "Buildings.Fluid.HeatExchangers.Heater_T";
+            this.q_nominal = q_nominal;
             port_a = new Port("port_a", name);
             port_b = new Port("port_b", name);
-            TSet = new Port("TSet", name);
+            if (type == 0)
+            {
+                Path = "Buildings.Fluid.HeatExchangers.Heater_T";
+                this.type = 1;
+                set = new Port("TSet", name);
+            }
+            else if (type == 1)
+            {
+                Path = "Buildings.Fluid.HeatExchangers.HeaterCooler_u";
+                this.type = 2;
+                set = new Port("u", name);
+            }
+            else
+            {
+                this.type = -1;
+            }
+        }
+        public string Serialize()
+        {
+            // you have to redeclare the medium, or, the equations will not be in line with the rest of the loop
+            if (type == 1)
+            {
+                string scripts = "";
+                scripts += $"{Path} {Name}(redeclare package Medium = Medium, " +
+                    $"m_flow_nominal = {flow_nominal:0.000}, dp_nominal = {dp_nominal:0.000}, tau = 0, show_T = true);\n";
+                return scripts;
+            }
+            else if (type == 2)
+            {
+                string scripts = "";
+                scripts += $"{Path} {Name}(redeclare package Medium = Medium, " +
+                    $"m_flow_nominal = {flow_nominal:0.000}, dp_nominal = {dp_nominal:0.000}, Q_flow_nominal = {q_nominal:0.000}, " +
+                    $"energyDynamics=Modelica.Fluid.Types.Dynamics.SteadyState);\n";
+                // for static model, use Dynamics.SteadyState. Choose this if you are not confident with the whole system control
+                // for dynamic model, use Dynamics. SteadyStateInitial
+                return scripts;
+            }
+            else
+            {
+                return "--ERROR-- No type definition for exchanger serialization\n";
+            }
+        }
+    }
+
+    public class SensorT
+    {
+        public string Name { get; set; }
+        public string Path { get; set; }
+        public double flow_nominal { get; set; }
+        public Port port_a { get; set; }
+        public Port port_b { get; set; }
+        public Port T { get; set; }
+        public SensorT(string name, double flow_nominal)
+        {
+            Name = name;
+            this.flow_nominal = flow_nominal;
+            Path = "Buildings.Fluid.Sensors.TemperatureTwoPort";
+            port_a = new Port("port_a", name);
+            port_b = new Port("port_b", name);
+            T = new Port("T", name);
         }
         public string Serialize()
         {
             string scripts = "";
-            scripts += $"{Path} {Name}(redeclare package Medium = Medium, " +
-                $"m_flow_nominal = {flow_nominal}, dp_nominal = {dp_nominal}, tau = 0, show_T = true);\n";
+            scripts += $"{Path} {Name}(redeclare package Medium = Medium, m_flow_nominal = {flow_nominal});\n";
             return scripts;
         }
     }
@@ -374,6 +439,7 @@ namespace Tellinclam.MO
     public class Documentation
     {
         public string Info { get; set; }
+        public double StartTime { get; set; }
         public double StopTime { get; set; }
         public double Interval { get; set; }
         public double Tolerance { get; set; }
@@ -383,7 +449,44 @@ namespace Tellinclam.MO
             string scripts = "";
             scripts += $"annotation(\n" + 
                 $"Documentation(info = \"{Info}\"),\n" + 
-                $"experiment(StopTime = {StopTime}, Interval = {Interval}, Tolerance = {Tolerance}, __Dymola_Algorithm = \"{Algorithm}\"));\n";
+                $"experiment(StartTime = {StartTime}, StopTime = {StopTime}, Interval = {Interval}, Tolerance = {Tolerance}));\n";
+            return scripts;
+        }
+    }
+
+    // embedded blocks
+    public class MassAverage
+    {
+        public string Name { get; set; }
+        public string Path { get; set; }
+        public int num { get; set; }
+        public double[] weights { get; set; }
+        public Port[] u { get; set; }
+        public Port y { get; set; }
+        public MassAverage(string name, int num, double[] weights)
+        {
+            Name = name;
+            Path = "MassAverage";
+            this.num = num;
+            this.weights = weights;
+            u = new Port[num];
+            y = new Port("y", $"{name}");
+            for (int i = 0; i < num; i++)
+            {
+                u[i] = new Port($"u[{i + 1}]", $"{name}");
+            }
+        }
+        public string Serialize()
+        {
+            string factors = "";
+            for (int i = 0; i < weights.Length; i++)
+            {
+                factors += $"{weights[i]:0.00}";
+                if (i != weights.Length - 1)
+                    factors += ", ";
+            }
+            string scripts = "";
+            scripts += $"{Path} {Name}(n = {num}, w = {{{factors}}});\n";
             return scripts;
         }
     }

@@ -18,6 +18,48 @@ namespace Tellinclam
 {
     class Util
     {
+        static public string ExecuteBatch(string path)
+        {
+            //int exitCode;
+            //ProcessStartInfo processInfo;
+            //Process process;
+
+            //processInfo = new ProcessStartInfo("cmd.exe", path);
+            //processInfo.CreateNoWindow = false;
+            //processInfo.UseShellExecute = false;
+            //// *** Redirect the output ***
+            //processInfo.RedirectStandardError = true;
+            //processInfo.RedirectStandardOutput = true;
+
+            //process = Process.Start(processInfo);
+            //process.WaitForExit();
+
+            //// *** Read the streams ***
+            //// Warning: This approach can lead to deadlocks, see Edit #2
+            //// https://stackoverflow.com/questions/5519328/executing-batch-file-in-c-sharp
+            //string output = process.StandardOutput.ReadToEnd();
+            //string error = process.StandardError.ReadToEnd();
+
+            //exitCode = process.ExitCode;
+
+            Process p = new Process();
+            p.StartInfo.FileName = "cmd.exe";
+            //p.StartInfo.WorkingDirectory = workingDir;
+            p.StartInfo.Arguments = $"/C python {path}";
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.CreateNoWindow = true;
+            p.Start();
+
+            string output = p.StandardOutput.ReadToEnd();
+
+            Console.WriteLine("output>>" + (string.IsNullOrEmpty(output) ? "(none)" : output));
+            //Console.WriteLine("error>>" + (String.IsNullOrEmpty(error) ? "(none)" : error));
+            //Console.WriteLine("ExitCode: " + exitCode.ToString(), "ExecuteCommand");
+            p.Close();
+
+            return output;
+        }
 
         public static void ScriptPrint(string msg, string filename, string outPath)
         {
