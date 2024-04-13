@@ -2,18 +2,19 @@ oz.ttl is a sample file for the ontology supporting thermal zoning. It will be s
 
 The sample floor plan:
 
+```
 ┌─────────21────────┬──────────4──────────┐
 |                   |                     |
 22        #5        5          #1         10
 |                   |                     |
 |                   |                     |
-├ ─ ─ 16─ ─ ┬───12──┼────1──■─┬ ─ ─ 2 ─ ─ ┤
+├ ─ ─ 16─ ─ ┬───12──┼────1──■─┬ ─ ─ 2 ─ ─ ┤   ──■── Physical partition & door entry
 |           31 #10  32        |           |
-|           ├───30──┤    #2   3     #3    9
+|           ├───30──┤    #2   3     #3    9   ─ ─ ─ Virtual partition
 |           ■       ■         |           |
-23    #4    |       6         |           |
+23    #4    |       6         |           |    #11  Function space index
 |           11 #9   └────7────┼─────8─────┤
-|           |                 15          |
+|           |                 15          |   ──2── Partition index
 |           |                 |           |
 ├ ─ ─ 17─ ─ ┼───13─■┬────14──■┤           |
 |           |       |         |     #8    |
@@ -22,8 +23,4 @@ The sample floor plan:
 24          18      19        20          29
 |           |       |         |           |
 └─────25────┴───26──┴────27───┴─────28────┘
-
-──■── Physical partition wall and the door entry
-─ ─ ─ Virtual partition
- #11  Function space index
-──2── Partition index
+```
