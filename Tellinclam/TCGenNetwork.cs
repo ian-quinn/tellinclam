@@ -16,6 +16,8 @@ using Rhino.DocObjects;
 using System.Security.Cryptography;
 using System.Collections;
 using System.IO;
+using static Tellinclam.Serialization.SchemaJSON;
+using System.Text.Json;
 
 namespace Tellinclam
 {
@@ -51,6 +53,8 @@ namespace Tellinclam
                 "List of door location as entry points (which will be paired automatically with each room)", GH_ParamAccess.list);
             pManager.AddIntegerParameter("Zoned index", "zones",
                 "Nested lists including all space index of each zoning cluster", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Space load profile", "loads",
+                "List of space loads for AHU sizing and further balanced partitioning", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -58,14 +62,20 @@ namespace Tellinclam
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddLineParameter("System network", "netG",
+                "The global piping/ducting guidelines", GH_ParamAccess.list);
             pManager.AddLineParameter("System network", "netA",
-                "Minimum tree connecting AHU within current system", GH_ParamAccess.tree);
+                "Minimum tree connecting AHU within current floorplan", GH_ParamAccess.tree);
             pManager.AddLineParameter("Zone network", "netB",
                 "Minimum tree connecting terminals within current thermal zone", GH_ParamAccess.tree);
             pManager.AddPointParameter("Equipment Position", "relay",
                 "Pre layout of AHU for each thermal zone", GH_ParamAccess.list);
             pManager.AddTextParameter("JSON file", "json",
                 "The JSON file for internal information flow", GH_ParamAccess.item);
+            pManager.AddTextParameter("JSON file", "jsall",
+                "The JSON file for G(V,E) with w(v) of each AHU and guidelines", GH_ParamAccess.item);
+            pManager.AddPointParameter("netG node", "idG",
+                "-", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -78,10 +88,11 @@ namespace Tellinclam
             List<Curve> network_crvs = new List<Curve>() { };
             List<Curve> room_crvs = new List<Curve>() { };
             List<string> tags = new List<string>() { };
+            List<double> loads = new List<double>() { };
             List<Point3d> door_pts = new List<Point3d>() { };
             GH_Structure<GH_Integer> zone_ids = new GH_Structure<GH_Integer>() { };
             if (!DA.GetDataList(0, network_crvs) || !DA.GetDataList(1, room_crvs) || !DA.GetDataList(2, tags) ||
-                !DA.GetDataList(3, door_pts) || !DA.GetDataTree(4, out zone_ids))
+                !DA.GetDataList(3, door_pts) || !DA.GetDataTree(4, out zone_ids) || !DA.GetDataList(5, loads))
             {
                 return;
             }
@@ -177,6 +188,79 @@ namespace Tellinclam
             {
                 nested_ids.Add(branch.Select(s => s.Value).ToList());
             }
+
+
+            // 20240415 Temperal code for testing
+            // generate a sample graph including all space entry points and loads for partitioning
+            // in the future, the space loads will be aggregated for AHU sizing and the graph after 
+            // such a nodes merging will go for balanced partitioning
+
+            // represent each space-zone with one entry point
+            List<Point3d> space_zone_entry_pts = new List<Point3d>() { };
+            foreach (List<Point3d> pts in nested_entry_pts)
+            {
+                space_zone_entry_pts.Add(pts[0]);
+            }
+
+            List<Line> guidelines = PathFinding.GetTerminalConnection(edges,
+                    space_zone_entry_pts, out List<Line> sub_guidelines);
+            PathFinding.Graph<int> guide_graph = PathFinding.RebuildGraph(guidelines);
+
+            // 20240425 something wrong with the graph generation causing self-connected edge
+            // no time to debug it I just remove the node itself from its neighbors
+            foreach (PathFinding.Node<int> node in guide_graph.Nodes)
+                if (node.Neighbors.Contains(node))
+                    node.RemoveNeighbors(node);
+
+            // parse this graph into D3.js format // the data model of PathFinding.Graph needs update
+            List<SchemaJSON.node> jsonNodes = new List<SchemaJSON.node>() { };
+            List<SchemaJSON.link> jsonLinks = new List<SchemaJSON.link>() { };
+            List<Point3d> nodelist = new List<Point3d>() { };
+            
+            foreach (PathFinding.Node<int> node in guide_graph.Nodes)
+            {
+                // visualize the node index by a sequential list
+                nodelist.Add(node.Coords);
+
+                bool matched_flag = false;
+                for (int i = 0; i < space_zone_entry_pts.Count; i++)
+                {
+                    if (space_zone_entry_pts[i].DistanceTo(node.Coords) < 0.000001)
+                    {
+                        jsonNodes.Add(new SchemaJSON.node
+                        {
+                            id = node.Value,
+                            weight = loads[i]
+                        });
+                        matched_flag = true;
+                    }
+                }
+                if (!matched_flag)
+                {
+                    jsonNodes.Add(new SchemaJSON.node
+                    {
+                        id = node.Value,
+                        weight = 0.0
+                    });
+                }
+            }
+            // batch edges
+            foreach (PathFinding.Edge<int> edge in guide_graph.GetEdges())
+            {
+                // 20240425 GetEdges() returns bi-directional edges
+                // for undirected graph this should be one edge with any source/target setup
+                jsonLinks.Add(new SchemaJSON.link
+                {
+                    source = edge.From.Value,
+                    target = edge.To.Value,
+                    weight = edge.Weight
+                });
+            }
+            var tempGraph = new SchemaJSON.graph { nodes = jsonNodes, links = jsonLinks };
+            string serializedGraph = JsonSerializer.Serialize(tempGraph, new JsonSerializerOptions { WriteIndented = true });
+
+            // ----------------------------- temporal test ending -----------------------------------
+
 
             // generation of network-B, zone level
             List<List<Line>> zone_networks = new List<List<Line>>() { };
@@ -334,14 +418,20 @@ namespace Tellinclam
                 sys_graphs.Add(sys_graph);
             }
 
-            DA.SetDataTree(0, Util.ListToTree(sys_networks));
-            DA.SetDataTree(1, Util.ListToTree(zone_networks));
-            DA.SetDataList(2, AHUs);
+            DA.SetDataList(0, guidelines);
+            DA.SetDataTree(1, Util.ListToTree(sys_networks));
+            DA.SetDataTree(2, Util.ListToTree(zone_networks));
+            DA.SetDataList(3, AHUs);
+            
             // pairing each system network and the zones it controls
             
             string jsonString = SerializeJSON.InitiateSystem(sys_graphs, zone_graphs, nested_ids, nested_entry_pts, AHUs, areas, true);
 
-            DA.SetData(3, jsonString);
+            DA.SetData(4, jsonString);
+
+            DA.SetData(5, serializedGraph);
+
+            DA.SetDataList(6, nodelist);
         }
 
         /// <summary>

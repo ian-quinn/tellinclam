@@ -24,6 +24,25 @@ namespace Tellinclam.Serialization
             pipe,
             duct
         }
+
+        // JSON for general graph representation, D3.js and NetworkX compatitable
+        public class node
+        {
+            public int id { get; set; }
+            public double weight { get; set; }
+        }
+        public class link
+        {
+            public int source { get; set; }
+            public int target { get; set; }
+            public double weight { get; set; }
+        }
+        public class graph
+        {
+            public List<node> nodes { get; set; }
+            public List<link> links { get; set; }
+        }
+
         // actual functional unit. architectural level
         public class FunctionSpace
         {

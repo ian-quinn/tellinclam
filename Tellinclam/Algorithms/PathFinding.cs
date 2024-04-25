@@ -43,7 +43,7 @@ namespace Tellinclam.Algorithms
             public bool isRoot { get; set; } = false;
             public int depth { get; set; } = -1; // invalid value by default
             public List<Node<T>> Neighbors { get; set; } = new List<Node<T>>();
-            public List<float> Weights { get; set; } = new List<float>(); 
+            public List<float> Weights { get; set; } = new List<float>();
 
 
             public bool AddNeighbors(Node<T> neighbor)
@@ -61,7 +61,12 @@ namespace Tellinclam.Algorithms
 
             public bool RemoveNeighbors(Node<T> neighbor)
             {
-                return Neighbors.Remove(neighbor);
+                // 20240425 remove neighbor's weight as well
+                // current graph data structure is not that ideal, use 3rd Pkg
+                int id_neighbor = Neighbors.IndexOf(neighbor);
+                Weights.RemoveAt(id_neighbor);
+                Neighbors.RemoveAt(id_neighbor);
+                return true;
             }
 
             public bool RemoveAllNeighbors()
@@ -314,11 +319,21 @@ namespace Tellinclam.Algorithms
 
             public List<Edge<T>> GetEdges()
             {
+                // 20240425 directed/undirected graph applies different formulation
+                // current structure saves (u, v) edge as v is one neighbor of u and vice versa
+                // thus returning two arcs for one edge in undirected graph
+                // if the graph is marked as undirected, then restrict that edge always targets node with larger index
+                // (1,4) is okay but (4,1) is illegal
+
                 List<Edge<T>> edges = new List<Edge<T>>();
                 foreach (Node<T> from in Nodes)
                 {
                     for (int i = 0; i < from.Neighbors.Count; i++)
                     {
+                        // new conditions here // beware that it uses .Index for comparing
+                        if (!_isDirected && from.Index > from.Neighbors[i].Index)
+                            continue;
+
                         Edge<T> edge = new Edge<T>()
                         {
                             From = from,
@@ -558,7 +573,8 @@ namespace Tellinclam.Algorithms
         // ################################# END OF GRAPH MODEL ###################################
 
         /// <summary>
-        /// Connect all terminals to current main trunk
+        /// Connect all terminals to the main pipe guidelines as sub-guidelines
+        /// then return shattered line segments based on the union of main and sub guidelines
         /// Elevation: use Manhatten distance, punish any connection across the wall
         /// </summary>
         public static List<Line> GetTerminalConnection(List<Line> edges, List<Point3d> terminals, out List<Line> connections)
@@ -887,6 +903,8 @@ namespace Tellinclam.Algorithms
                 foreach (Edge<int> edge in treeSPT.GetEdges())
                 {
                     branches.Add(new Tuple<int, int>(edge.From.Value, edge.To.Value));
+                    // 20240425 the consequnce of removing half edges from GetEdges() results
+                    branches.Add(new Tuple<int, int>(edge.To.Value, edge.From.Value));
                 }
                 branch_counter = branches.Count;
             }
