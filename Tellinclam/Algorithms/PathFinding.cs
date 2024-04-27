@@ -42,8 +42,11 @@ namespace Tellinclam.Algorithms
             public string label { get; set; }
             public bool isRoot { get; set; } = false;
             public int depth { get; set; } = -1; // invalid value by default
+            public double Weight { get; set; } = 0;
             public List<Node<T>> Neighbors { get; set; } = new List<Node<T>>();
-            public List<float> Weights { get; set; } = new List<float>();
+            public List<Node<T>> Successors { get; set; } = new List<Node<T>>();
+            public List<Node<T>> Predecessors { get; set; } = new List<Node<T>>();
+            public List<double> Weights { get; set; } = new List<double>();
 
 
             public bool AddNeighbors(Node<T> neighbor)
@@ -55,6 +58,32 @@ namespace Tellinclam.Algorithms
                 else
                 {
                     Neighbors.Add(neighbor);
+                    return true;
+                }
+            }
+
+            public bool AddSuccessor(Node<T> successor)
+            {
+                if (Successors.Contains(successor))
+                {
+                    return false;
+                }
+                else
+                {
+                    Successors.Add(successor);
+                    return true;
+                }
+            }
+
+            public bool AddPredecessor(Node<T> predecessor)
+            {
+                if (Predecessors.Contains(predecessor))
+                {
+                    return false;
+                }
+                else
+                {
+                    Predecessors.Add(predecessor);
                     return true;
                 }
             }
@@ -95,7 +124,7 @@ namespace Tellinclam.Algorithms
         {
             public Node<T> From { get; set; }
             public Node<T> To { get; set; }
-            public float Weight { get; set; }
+            public double Weight { get; set; }
             public bool isMarked { get; set; }
 
             public override string ToString()
@@ -161,7 +190,7 @@ namespace Tellinclam.Algorithms
             // this .Equals() method limits the usage of graph model
             // two points are not equal with tiny little bit coordinate difference
             // so the comparision between points must have some tolerance, like .DistanceTo() < tol
-            // the safe choic is to use integer to construct the graph, then append point to the node
+            // the safe choice is to use integer to construct the graph, then append point to the node
             // or, you need to override Point3d.Equals() to make it useful
             public Node<T> Find(Node<T> graphNode)
             {
@@ -187,9 +216,9 @@ namespace Tellinclam.Algorithms
                 return null;
             }
 
-            public Node<T> AddNode(T value)
+            public Node<T> AddNode(T value, double weight)
             {
-                Node<T> node = new Node<T>() { Value = value };
+                Node<T> node = new Node<T>() { Value = value, Weight = weight};
                 if (Find(node) != null)
                 {
                     return null;
@@ -202,33 +231,35 @@ namespace Tellinclam.Algorithms
                 }
             }
 
-            public bool AddEdge(Node<T> from, Node<T> to, float weight)
+            public bool AddEdge(Node<T> from, Node<T> to, double weight)
             {
                 Node<T> source = Find(from);
-                Node<T> destination = Find(to);
-                if (source == null || destination == null)
+                Node<T> destin = Find(to);
+                if (source == null || destin == null)
                 {
                     return false;
                 }
-                else if (source.Neighbors.Contains(destination))
+                else if (source.Neighbors.Contains(destin))
                 {
                     return false;
                 }
                 else
                 {
                     //for direted graph only below 1st line is required  node1->node2
-                    from.AddNeighbors(to);
+                    source.AddNeighbors(destin);
                     if (_isWeighted)
                     {
                         source.Weights.Add(weight);
                     }
-                    //for undireted graph need below line as well
+                    //for undireted graph the neighbors are both successors and predecessors
                     if (!_isDirected)
                     {
-                        to.AddNeighbors(from);
+                        source.AddSuccessor(destin);
+                        destin.AddPredecessor(source);
+                        destin.AddNeighbors(source);
                         if (_isWeighted)
                         {
-                            to.Weights.Add(weight);
+                            destin.Weights.Add(weight);
                             // for junction you need to add different ratios to 
                             // different weight values
                         }
@@ -402,12 +433,12 @@ namespace Tellinclam.Algorithms
                     for (int i = 0; i < node.Neighbors.Count; i++)
                     {
                         Node<T> neighbor = node.Neighbors[i];
-                        float weight = i < node.Weights.Count ? node.Weights[i] : 0;
-                        float weightTotal = distances[node.Index] + weight;
+                        double weight = i < node.Weights.Count ? node.Weights[i] : 0;
+                        double weightTotal = distances[node.Index] + weight;
 
                         if (distances[neighbor.Index] > weightTotal)
                         {
-                            distances[neighbor.Index] = weightTotal;
+                            distances[neighbor.Index] = (float)weightTotal;
                             previous[neighbor.Index] = node.Index;
                             nodes.UpdatePriority(neighbor, distances[neighbor.Index]);
                         }
@@ -415,7 +446,7 @@ namespace Tellinclam.Algorithms
                 }
 
                 List<float> distPile = distances.ToList();
-                foreach (float num in distPile)
+                foreach (double num in distPile)
                 {
                     Console.Write($"{num} ");
                 }
@@ -442,13 +473,13 @@ namespace Tellinclam.Algorithms
                 return result;
             }
 
-            public List<Edge<T>> GetShortestPathDijkstra(Node<T> source, Node<T> target, out float distance)
+            public List<Edge<T>> GetShortestPathDijkstra(Node<T> source, Node<T> target, out double distance)
             {
                 int[] previous = new int[Nodes.Count];
                 //Set Every Previous node with initial value -1
                 Fill(previous, -1);
 
-                float[] distances = new float[Nodes.Count];
+                double[] distances = new double[Nodes.Count];
                 //Set Every Previous node with initial value -1
                 Fill(distances, int.MaxValue);
                 //Initially distance will be 0 on starting node
@@ -458,7 +489,7 @@ namespace Tellinclam.Algorithms
                 SimplePriorityQueue<Node<T>> nodes = new SimplePriorityQueue<Node<T>>();
                 for (int i = 0; i < Nodes.Count; i++)
                 {
-                    nodes.Enqueue(Nodes[i], distances[i]);
+                    nodes.Enqueue(Nodes[i], (float)distances[i]);
                 }
 
                 while (nodes.Count != 0)
@@ -467,14 +498,14 @@ namespace Tellinclam.Algorithms
                     for (int i = 0; i < node.Neighbors.Count; i++)
                     {
                         Node<T> neighbor = node.Neighbors[i];
-                        float weight = i < node.Weights.Count ? node.Weights[i] : 0;
-                        float weightTotal = distances[node.Index] + weight;
+                        double weight = i < node.Weights.Count ? node.Weights[i] : 0;
+                        double weightTotal = distances[node.Index] + weight;
 
                         if (distances[neighbor.Index] > weightTotal)
                         {
                             distances[neighbor.Index] = weightTotal;
                             previous[neighbor.Index] = node.Index;
-                            nodes.UpdatePriority(neighbor, distances[neighbor.Index]);
+                            nodes.UpdatePriority(neighbor, (float)distances[neighbor.Index]);
                         }
                     }
                 }
@@ -874,14 +905,14 @@ namespace Tellinclam.Algorithms
                     if (!nodelist.Contains(edge.Item1))
                     {
                         nodelist.Add(edge.Item1);
-                        Node<int> newNode = graph.AddNode(edge.Item1);
+                        Node<int> newNode = graph.AddNode(edge.Item1, 0);
                         if (edge.Item1 == sourceIdx[0])
                             graph.Nodes.Last().isRoot = true;
                     }
                     if (!nodelist.Contains(edge.Item2))
                     {
                         nodelist.Add(edge.Item2);
-                        Node<int> newNode = graph.AddNode(edge.Item2);
+                        Node<int> newNode = graph.AddNode(edge.Item2, 0);
                         if (edge.Item2 == sourceIdx[0])
                             graph.Nodes.Last().isRoot = true;
                     }
@@ -894,7 +925,7 @@ namespace Tellinclam.Algorithms
                         if (node.Value == edge.Item2)
                             nodeTo = node;
                     }
-                    graph.AddEdge(nodeFrom, nodeTo, (float)subWeights[subEdges.IndexOf(edge)]);
+                    graph.AddEdge(nodeFrom, nodeTo, subWeights[subEdges.IndexOf(edge)]);
                 }
 
                 // calculate the SPT
@@ -1067,18 +1098,18 @@ namespace Tellinclam.Algorithms
                 if (!VtsContain(vts, edge.PointAt(0), out startIdx))
                 {
                     vts.Add(edge.PointAt(0));
-                    Node<int> newNode = graph.AddNode(graph.Count);
+                    Node<int> newNode = graph.AddNode(graph.Count, 0);
                     newNode.Coords = edge.PointAt(0);
                     startIdx = graph.Count - 1;
                 }
                 if (!VtsContain(vts, edge.PointAt(1), out endIdx))
                 {
                     vts.Add(edge.PointAt(1));
-                    Node<int> newNode = graph.AddNode(graph.Count);
+                    Node<int> newNode = graph.AddNode(graph.Count, 0);
                     newNode.Coords = edge.PointAt(1);
                     endIdx = graph.Count - 1;
                 }
-                if (graph.AddEdge(graph.Nodes[startIdx], graph.Nodes[endIdx], (float)edge.Length))
+                if (graph.AddEdge(graph.Nodes[startIdx], graph.Nodes[endIdx], edge.Length))
                     droppedEdges.Add(edge);
             }
 
@@ -1091,18 +1122,18 @@ namespace Tellinclam.Algorithms
         /// </summary>
         public static Graph<int> DijkstraSPT(Graph<int> graph)
         {
-            var _tree = new Dictionary<int, List<Tuple<int, float>>>() { };
+            var _tree = new Dictionary<int, List<Tuple<int, double>>>() { };
             int source = -1;
 
             // rebuild the graph to dictionary
-            var _graph = new Dictionary<int, List<Tuple<int, float>>>() { };
+            var _graph = new Dictionary<int, List<Tuple<int, double>>>() { };
             foreach (Node<int> node in graph.Nodes)
             {
-                _graph.Add(node.Value, new List<Tuple<int, float>>() { });
+                _graph.Add(node.Value, new List<Tuple<int, double>>() { });
                 for (int i = 0; i < node.Neighbors.Count; i++)
                 {
                     _graph[node.Value].Add(
-                        new Tuple<int, float>(node.Neighbors[i].Value, node.Weights[i]));
+                        new Tuple<int, double>(node.Neighbors[i].Value, node.Weights[i]));
                 }
                 if (node.isRoot)
                 {
@@ -1120,12 +1151,12 @@ namespace Tellinclam.Algorithms
             node_visited.Add(source);
 
             // get all nodes then assign them with infinite distance
-            var cost_prev = new Dictionary<int, Tuple<float, int, float>>() { };
+            var cost_prev = new Dictionary<int, Tuple<double, int, double>>() { };
             foreach (int key in _graph.Keys)
             {
-                cost_prev.Add(key, new Tuple<float, int, float>(float.PositiveInfinity, -1, 0));
+                cost_prev.Add(key, new Tuple<double, int, double>(double.PositiveInfinity, -1, 0));
             }
-            cost_prev[source] = new Tuple<float, int, float>(0, -1, 0);
+            cost_prev[source] = new Tuple<double, int, double>(0, -1, 0);
 
             // new graph for cache
             //Graph<int> tree = new Graph<int>(false, true);
@@ -1134,7 +1165,7 @@ namespace Tellinclam.Algorithms
             while (node_unvisited.Count > 0)
             {
                 int current = -1;
-                float min_cost = float.PositiveInfinity;
+                double min_cost = double.PositiveInfinity;
                 foreach (int nodeIdx in node_unvisited)
                 {
                     if (cost_prev[nodeIdx].Item1 < min_cost)
@@ -1148,22 +1179,22 @@ namespace Tellinclam.Algorithms
 
                 for (int i = 0; i < _graph[current].Count; i++)
                 {
-                    float new_cost = 0;
+                    double new_cost = 0;
                     int neighbor = _graph[current][i].Item1;
-                    float cost = _graph[current][i].Item2;
+                    double cost = _graph[current][i].Item2;
                     if (node_unvisited.Contains(neighbor))
                     {
                         new_cost = cost_prev[current].Item1 + cost;
                         if (new_cost < cost_prev[neighbor].Item1)
                         {
-                            cost_prev[neighbor] = new Tuple<float, int, float>(new_cost, current, cost);
+                            cost_prev[neighbor] = new Tuple<double, int, double>(new_cost, current, cost);
                         }
                     }
                 }
             }
 
             // iterate through cost_prev dict and create the return graph
-            foreach (KeyValuePair<int, Tuple<float, int, float>> pair in cost_prev)
+            foreach (KeyValuePair<int, Tuple<double, int, double>> pair in cost_prev)
             {
                 if (pair.Value.Item2 != -1)
                 {
@@ -1171,20 +1202,20 @@ namespace Tellinclam.Algorithms
                     if (_tree.Keys.Contains(pair.Key))
                     {
                         _tree[pair.Key].Add(
-                            new Tuple<int, float>(pair.Value.Item2, pair.Value.Item3));
+                            new Tuple<int, double>(pair.Value.Item2, pair.Value.Item3));
                     }
                     else
                     {
-                        _tree[pair.Key] = new List<Tuple<int, float>>()
+                        _tree[pair.Key] = new List<Tuple<int, double>>()
                         {
-                            new Tuple<int, float>(pair.Value.Item2, pair.Value.Item3)
+                            new Tuple<int, double>(pair.Value.Item2, pair.Value.Item3)
                         };
                     }
                 }
             }
 
             // 
-            foreach (KeyValuePair<int, Tuple<float, int, float>> pair in cost_prev)
+            foreach (KeyValuePair<int, Tuple<double, int, double>> pair in cost_prev)
             {
                 if (pair.Value.Item2 != -1)
                 {
@@ -1192,24 +1223,24 @@ namespace Tellinclam.Algorithms
                     if (_tree.Keys.Contains(pair.Value.Item2))
                     {
                         _tree[pair.Value.Item2].Add(
-                            new Tuple<int, float>(pair.Key, pair.Value.Item3));
+                            new Tuple<int, double>(pair.Key, pair.Value.Item3));
                     }
                     else
                     {
-                        _tree[pair.Value.Item2] = new List<Tuple<int, float>>()
+                        _tree[pair.Value.Item2] = new List<Tuple<int, double>>()
                         {
-                            new Tuple<int, float>(pair.Key, pair.Value.Item3)
+                            new Tuple<int, double>(pair.Key, pair.Value.Item3)
                         };
                     }
                 }
             }
 
             Graph<int> tree = new Graph<int>(false, true);
-            foreach (KeyValuePair<int, List<Tuple<int, float>>> pair in _tree)
+            foreach (KeyValuePair<int, List<Tuple<int, double>>> pair in _tree)
             {
-                Node<int> newNode = tree.AddNode(pair.Key);
+                Node<int> newNode = tree.AddNode(pair.Key, 0);
             }
-            foreach (KeyValuePair<int, List<Tuple<int, float>>> pair in _tree)
+            foreach (KeyValuePair<int, List<Tuple<int, double>>> pair in _tree)
             {
                 for (int i = 0; i < pair.Value.Count; i++)
                 {
@@ -1234,12 +1265,12 @@ namespace Tellinclam.Algorithms
             List<Edge<int>> path_1 = graph.GetFurthestPathDijkstra(graph.Nodes[0], out int remoteIdx_1);
             List<Edge<int>> path_2 = graph.GetFurthestPathDijkstra(graph.Nodes[remoteIdx_1], out int remoteIdx_2);
 
-            float distance = 0;
+            double distance = 0;
             foreach (Edge<int> edge in path_2)
             {
                 distance += edge.Weight;
             }
-            float midDist = distance / 2;
+            double midDist = distance / 2;
             distance = 0;
             int edgeRemoveIdx = -1;
             int prevNodeIdx = remoteIdx_1;
@@ -1265,10 +1296,10 @@ namespace Tellinclam.Algorithms
                     // offset a little bit as the equiptment position
                     Vector3d dir_offset = Basic.GetPendicularUnitVec(targetEdge.Direction, true);
                     loc_equip = midPt + 0.5 * dir_offset;
-                    Node<int> root = graph.AddNode(graph.Count);
+                    Node<int> root = graph.AddNode(graph.Count, 0);
                     graph.Nodes.Last().Coords = loc_equip;
                     graph.Nodes.Last().isRoot = true;
-                    graph.AddEdge(root, mid, (float)0.5);
+                    graph.AddEdge(root, mid, 0.5);
 
                     break;
                 }
@@ -1278,7 +1309,7 @@ namespace Tellinclam.Algorithms
                     Point3d midPt = targetEdge.PointAt((midDist - distance + edge.Weight) / edge.Weight);
                     graph.RemoveEdge(edge.From, edge.To);
 
-                    Node<int> mid = graph.AddNode(graph.Count);
+                    Node<int> mid = graph.AddNode(graph.Count, 0);
                     graph.Nodes.Last().Coords = midPt;
                     //graph.Nodes.Last().isRoot = true;
                     graph.AddEdge(edge.From, mid, midDist - distance + edge.Weight);
@@ -1287,10 +1318,10 @@ namespace Tellinclam.Algorithms
                     // offset a little bit as the equiptment position
                     Vector3d dir_offset = Basic.GetPendicularUnitVec(targetEdge.Direction, true);
                     loc_equip = midPt + 0.5 * dir_offset;
-                    Node<int> root = graph.AddNode(graph.Count);
+                    Node<int> root = graph.AddNode(graph.Count, 0);
                     graph.Nodes.Last().Coords = loc_equip;
                     graph.Nodes.Last().isRoot = true;
-                    graph.AddEdge(root, mid, (float)0.5);
+                    graph.AddEdge(root, mid, 0.5);
 
                     break;
                 }

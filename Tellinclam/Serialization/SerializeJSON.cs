@@ -26,8 +26,8 @@ namespace Tellinclam.Serialization
         {
             List<SchemaJSON.ConduitNode> jsNodes = new List<SchemaJSON.ConduitNode>() { };
             List<SchemaJSON.ConduitEdge> jsEdges = new List<SchemaJSON.ConduitEdge>() { };
-            float sum_length = 0;
-            float max_res = 0;
+            double sum_length = 0;
+            double max_res = 0;
             int max_node = -1;
             bool[] isTraversed = new bool[graph.Count];
             for (int i = 0; i < graph.Count; i++)

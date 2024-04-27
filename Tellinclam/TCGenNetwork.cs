@@ -64,6 +64,8 @@ namespace Tellinclam
         {
             pManager.AddLineParameter("System network", "netG",
                 "The global piping/ducting guidelines", GH_ParamAccess.list);
+            pManager.AddLineParameter("Demo network", "netD",
+                "Demo", GH_ParamAccess.tree);
             pManager.AddLineParameter("System network", "netA",
                 "Minimum tree connecting AHU within current floorplan", GH_ParamAccess.tree);
             pManager.AddLineParameter("Zone network", "netB",
@@ -227,6 +229,9 @@ namespace Tellinclam
                 {
                     if (space_zone_entry_pts[i].DistanceTo(node.Coords) < 0.000001)
                     {
+                        // update graph with load information
+                        node.Weight = loads[i];
+
                         jsonNodes.Add(new SchemaJSON.node
                         {
                             id = node.Value,
@@ -257,7 +262,23 @@ namespace Tellinclam
                 });
             }
             var tempGraph = new SchemaJSON.graph { nodes = jsonNodes, links = jsonLinks };
-            string serializedGraph = JsonSerializer.Serialize(tempGraph, new JsonSerializerOptions { WriteIndented = true });
+            string graph_json = JsonSerializer.Serialize(tempGraph, new JsonSerializerOptions { WriteIndented = true });
+
+            // 20240426 Gurobi test
+            var clusters = IntegerPrograms.BalancedConnectedPartition(guide_graph, 2, new List<int>() { 111, 112 });
+            // replicate the grouped edges from grapn
+            List<List<Line>> demo_networks = new List<List<Line>>() { };
+            foreach (List<Tuple<int, int>> cluster in clusters)
+            {
+                List<Line> tree = new List<Line>();
+                foreach (Tuple<int, int> edge in cluster)
+                {
+                    tree.Add(new Line(
+                        guide_graph.Nodes[edge.Item1].Coords,
+                        guide_graph.Nodes[edge.Item2].Coords));
+                }
+                demo_networks.Add(tree);
+            }
 
             // ----------------------------- temporal test ending -----------------------------------
 
@@ -301,10 +322,10 @@ namespace Tellinclam
                     Point3d ahu = cons[min_idx].PointAt(1) - 0.5 * cons[min_idx].Direction / cons[min_idx].Length;
                     AHUs.Add(ahu);
                     PathFinding.Graph<int> graph = new PathFinding.Graph<int>(true, true);
-                    PathFinding.Node<int> root = graph.AddNode(0);
+                    PathFinding.Node<int> root = graph.AddNode(0, 0);
                     graph.Nodes.Last().Coords = ahu;
                     graph.Nodes.Last().isRoot = true;
-                    PathFinding.Node<int> terminal = graph.AddNode(1);
+                    PathFinding.Node<int> terminal = graph.AddNode(1, 0);
                     graph.Nodes.Last().Coords = cons[0].PointAt(0);
                     graph.AddEdge(root, terminal, (float)cons[0].Length);
                     zone_graphs.Add(graph);
@@ -379,11 +400,11 @@ namespace Tellinclam
                 {
                     if (pt.DistanceTo(node.Coords) < 0.000001) // valid node
                     {
-                        float min_dist = float.PositiveInfinity;
+                        double min_dist = double.PositiveInfinity;
                         int min_id = 0;
                         for (int i = 0; i < shaft_nodes.Count; i++)
                         {
-                            sys_whole_graph.GetShortestPathDijkstra(node, shaft_nodes[i], out float distance);
+                            sys_whole_graph.GetShortestPathDijkstra(node, shaft_nodes[i], out double distance);
                             if (distance < min_dist)
                             {
                                 min_dist = distance;
@@ -419,19 +440,20 @@ namespace Tellinclam
             }
 
             DA.SetDataList(0, guidelines);
-            DA.SetDataTree(1, Util.ListToTree(sys_networks));
-            DA.SetDataTree(2, Util.ListToTree(zone_networks));
-            DA.SetDataList(3, AHUs);
+            DA.SetDataTree(1, Util.ListToTree(demo_networks));
+            DA.SetDataTree(2, Util.ListToTree(sys_networks));
+            DA.SetDataTree(3, Util.ListToTree(zone_networks));
+            DA.SetDataList(4, AHUs);
             
             // pairing each system network and the zones it controls
             
             string jsonString = SerializeJSON.InitiateSystem(sys_graphs, zone_graphs, nested_ids, nested_entry_pts, AHUs, areas, true);
 
-            DA.SetData(4, jsonString);
+            DA.SetData(5, jsonString);
 
-            DA.SetData(5, serializedGraph);
+            DA.SetData(6, graph_json);
 
-            DA.SetDataList(6, nodelist);
+            DA.SetDataList(7, nodelist);
         }
 
         /// <summary>
