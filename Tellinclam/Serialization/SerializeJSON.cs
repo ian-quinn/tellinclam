@@ -121,7 +121,7 @@ namespace Tellinclam.Serialization
             SchemaJSON.ConduitGraph jsGraph = new SchemaJSON.ConduitGraph
             {
                 maxLength = max_res,
-                maxNode = jsNodes[max_node].id,
+                maxNode = max_node == -1? null : jsNodes[max_node].id,
                 sumLength = 0,
                 sumMaterial = 0,
                 numJunction = numJunction,

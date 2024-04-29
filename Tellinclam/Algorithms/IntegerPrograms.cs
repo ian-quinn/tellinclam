@@ -12,7 +12,7 @@ namespace Tellinclam.Algorithms
         /// Handles the mixed integer linear program on balanced k-partition on graph, outputs connected sub-graphs with
         /// pre-defined source nodes assigned for each
         /// </summary>
-        public static List<List<Tuple<int, int>>> BalancedConnectedPartition(PathFinding.Graph<int> graph, int k, List<int> sources)
+        public static List<List<Tuple<int, int>>> BalancedConnectedPartition(PathFinding.Graph<int> graph, int k, List<int> sources, out List<List<double>> flowParcel)
         {
             bool isJoined(Tuple<int, int> e1, Tuple<int, int> e2)
             {
@@ -71,6 +71,9 @@ namespace Tellinclam.Algorithms
                 }
                 return expr;
             }
+
+            // initiate
+            flowParcel = new List<List<double>>();
 
             // ----------------------------------- Prepare Graph Info -------------------------------------
 
@@ -159,7 +162,7 @@ namespace Tellinclam.Algorithms
             {
                 GRBEnv env = new GRBEnv(true);
                 env.Set("LogFile", "bcp_k.log");
-                env.Set(GRB.DoubleParam.TimeLimit, 600);
+                env.Set(GRB.DoubleParam.TimeLimit, 120);
                 env.Start();
 
                 GRBModel mo = new GRBModel(env);
@@ -206,10 +209,10 @@ namespace Tellinclam.Algorithms
                 mo.Optimize();
                 Debug.Print("Obj: " + mo.ObjVal);
 
-                double[] x = mo.Get(GRB.DoubleAttr.X, y);
+                double[] x = mo.Get(GRB.DoubleAttr.X, f);
                 foreach (KeyValuePair<Tuple<int, int>, int> kvp in eid)
                 {
-                    if (y[kvp.Value].X > 0)
+                    if (f[kvp.Value].X > 0)
                     {
                         // if no source node is provided before hand, remove the edges incident to S
                         if (sources.Count == 0)
@@ -242,6 +245,16 @@ namespace Tellinclam.Algorithms
                         clusters.Add(new List<Tuple<int, int>>() { connections[connections.Count - 1] });
                         connections.RemoveAt(connections.Count - 1);
                     }
+                }
+                // retreive f[] for each cluster
+                foreach (List<Tuple<int, int>> cluster in clusters)
+                {
+                    List<double> flows = new List<double>();
+                    foreach (Tuple<int, int> key in cluster)
+                    {
+                        flows.Add(f[eid[key]].X);
+                    }
+                    flowParcel.Add(flows);
                 }
 
                 mo.Dispose();
