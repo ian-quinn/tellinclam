@@ -18,6 +18,7 @@ using System.Collections;
 using System.IO;
 using static Tellinclam.Serialization.SchemaJSON;
 using System.Text.Json;
+using Rhino.Geometry.Intersect;
 
 namespace Tellinclam
 {
@@ -89,6 +90,7 @@ namespace Tellinclam
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            double _tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
             List<Curve> guideCrvs = new List<Curve>();
             List<Curve> spaceCrvs = new List<Curve>();
             List<Point3d> doorPts = new List<Point3d>();
@@ -104,7 +106,7 @@ namespace Tellinclam
             DA.GetData(6, ref netGenMode);
 
             // initialize ------------------------------------------------------------------------------------
-            // convert the main conduit chases to Line
+            // force the main guidelines to be Line segments (to prevent some errors)
             List<Line> edges = new List<Line>() { };
             foreach (Curve crv in guideCrvs)
             {
@@ -138,7 +140,7 @@ namespace Tellinclam
                     continue;
                 }
 
-                // get the room area
+                // get the room area -----------------------------------------------------------------
                 if (room_crv.IsPolyline())
                 {
                     if (room_crv.TryGetPolyline(out Polyline pline))
@@ -148,31 +150,47 @@ namespace Tellinclam
                 }
                 else
                 {
-                    Brep[] allBreps = Brep.CreatePlanarBreps(room_crv);
+                    Brep[] allBreps = Brep.CreatePlanarBreps(room_crv, _tol);
                     var amp = AreaMassProperties.Compute(allBreps[0]);
                     areas.Add(amp.Area);
                 }
 
-                // prepare the entry point list for this room
+                // prepare the entry point list for this room ----------------------------------------
                 List<Point3d> entry_pts = new List<Point3d>() { };
                 int entry_counter = 0;
-
                 // if the room is on the last level, assign door locations to it
                 // if not, it acts like a circulation area and should be excluded
                 if (tags[spaceCrvs.IndexOf(room_crv)] == "Lv0")
                 {
-                    foreach (Point3d pt in doorPts)
+                    // check if the room boundary intersects with the guideline
+                    // if so, take the intersection points as the entry points instead of door locations
+                    foreach (Line edge in edges)
                     {
-                        double t;
-                        if (room_crv.ClosestPoint(pt, out t, 0.001))
+                        Curve edge_crv = new LineCurve(edge);
+                        var ccx = Intersection.CurveCurve(room_crv, edge_crv, _tol, _tol);
+                        if (ccx != null & ccx.Count > 0)
                         {
-                            entry_pts.Add(pt);
+                            entry_pts.Add(ccx[0].PointA);
                             entry_counter++;
+                        }
+                    }
+                    // if nothing found, take door locations as entry points
+                    if (entry_counter == 0)
+                    {
+                        foreach (Point3d pt in doorPts)
+                        {
+                            double t;
+                            // in future replace this with manhattan distance 
+                            if (room_crv.ClosestPoint(pt, out t, _tol))
+                            {
+                                entry_pts.Add(pt);
+                                entry_counter++;
+                            }
                         }
                     }
                 }
                 
-                // if there is no door accessing this room
+                // if there is no door accessing this room, take centroid instead
                 if (entry_counter == 0)
                 {
                     if (room_crv.IsPolyline())
@@ -236,7 +254,7 @@ namespace Tellinclam
                 // get all possible connections for all terminal candidates
                 List<Line> zone_edge_complete = PathFinding.GetTerminalConnection(edges, 
                     Util.FlattenList(zoned_entry_pts), out List<Line> cons);
-                if (nested_ids[i].Count == 1) // if a space forms a zone itself, just connect the entry point to the chases
+                if (nested_ids[i].Count == 1) // if a space forms a zone itself, just connect the entry point to the guideline
                 {
                     // select the shorter connections from cons
                     int min_idx = 0;
@@ -253,17 +271,20 @@ namespace Tellinclam
                         }
                     }
                     zone_networks.Add(new List<Line>() { cons[min_idx] }); // only for visualization
-                    Point3d ahu = cons[min_idx].PointAt(1) - 0.5 * cons[min_idx].Direction / cons[min_idx].Length;
+                    // take the midpoint of line:(entry point, guideline) as location of ahu
+                    // Point3d ahu = cons[min_idx].PointAt(1) - 0.5 * cons[min_idx].Direction / cons[min_idx].Length;
+                    // or take the entry point as the location of ahu?
+                    Point3d ahu = cons[min_idx].PointAt(0);
                     AHUs.Add(ahu);
                     zoneLoads.Add(spaceLoads[nested_ids[i][0]]);
 
-                    PathFinding.Graph<int> graph = new PathFinding.Graph<int>(true, true);
+                    PathFinding.Graph<int> graph = new PathFinding.Graph<int>(true);
                     PathFinding.Node<int> root = graph.AddNode(0, 0);
                     graph.Nodes.Last().Coords = ahu;
                     graph.Nodes.Last().isRoot = true;
                     PathFinding.Node<int> terminal = graph.AddNode(1, 0);
                     graph.Nodes.Last().Coords = cons[0].PointAt(0);
-                    graph.AddEdge(root, terminal, (float)cons[0].Length);
+                    graph.AddEdge(root, terminal, cons[0].Length);
                     zone_graphs.Add(graph);
                 }
                 else
@@ -293,7 +314,7 @@ namespace Tellinclam
                     PathFinding.Graph<int> zone_graph = PathFinding.RebuildGraph(zone_network);
                     Point3d ahu = PathFinding.GetPseudoRootOfGraph(zone_graph);
                     AHUs.Add(ahu); // only for visualization
-                    zoneLoads.Add(spaceLoads.Where((load, id) => nested_ids[i].Contains(id + 1)).Sum());
+                    zoneLoads.Add(spaceLoads.Where((load, id) => nested_ids[i].Contains(id)).Sum());
 
                     zone_graph.Graft();
                     zone_graphs.Add(zone_graph); // for JSON serialization
@@ -306,19 +327,19 @@ namespace Tellinclam
             // PENDING FOR UPDATE
             // for now, assuming each AHU will go to the nearest shaft
             // however, you should consider the total conditioning volume and make it even (as possible)
-            List<List<Line>> sys_networks = new List<List<Line>>() { };
+            List<List<List<Line>>> sys_forests = new List<List<List<Line>>>() { };
             // generate system zones based on grouped zones
             List<PathFinding.Graph<int>> sys_graphs = new List<PathFinding.Graph<int>>() { };
 
             // in this step, all possible candidate points become valid ones
             List<Line> sys_edge_complete = PathFinding.GetTerminalConnection(edges, 
-                Util.ConcateLists(AHUs, shaft_entry_pts), out List<Line> connections);
+                Util.ConcateLists(AHUs, shaft_entry_pts), out List<Line> _);
 
             // in this graph, try to find which shaft is the nearest for which AHU
             PathFinding.Graph<int> sys_whole_graph = PathFinding.RebuildGraph(sys_edge_complete);
             List<PathFinding.Node<int>> shaft_nodes = new List<PathFinding.Node<int>>() { };
             List<int> source_ids = new List<int>();
-            List<List<double>> sys_flows = new List<List<double>>();
+            List<List<List<double>>> sys_flows = new List<List<List<double>>>();
             
             foreach (PathFinding.Node<int> node in sys_whole_graph.Nodes)
             {
@@ -326,7 +347,7 @@ namespace Tellinclam
                     node.RemoveNeighbors(node);
                 foreach (Point3d pt in shaft_entry_pts)
                 {
-                    if (pt.DistanceTo(node.Coords) < 0.000001)
+                    if (pt.DistanceTo(node.Coords) < _tol)
                     {
                         shaft_nodes.Add(node);
                         source_ids.Add(node.Index);
@@ -334,7 +355,7 @@ namespace Tellinclam
                 }
                 for (int i = 0; i < AHUs.Count; i++)
                 {
-                    if (AHUs[i].DistanceTo(node.Coords) < 0.000001)
+                    if (AHUs[i].DistanceTo(node.Coords) < _tol)
                     {
                         node.Weight = zoneLoads[i];
                     }
@@ -354,7 +375,7 @@ namespace Tellinclam
                     // locate the terminal point
                     foreach (PathFinding.Node<int> node in sys_whole_graph.Nodes)
                     {
-                        if (pt.DistanceTo(node.Coords) < 0.000001) // valid node
+                        if (pt.DistanceTo(node.Coords) < _tol) // valid node
                         {
                             double min_dist = double.PositiveInfinity;
                             int min_id = 0;
@@ -380,41 +401,55 @@ namespace Tellinclam
                         Util.ConcateLists(sys_zones[i], new List<Point3d>() { shaft_entry_pts[i] }), out _);
                     List<Line> sys_network = PathFinding.GetSteinerTree(sys_edge_subgraph, sys_zones[i],
                         new List<Point3d>() { shaft_entry_pts[i] }, PathFinding.algoEnum.SPT);
-                    sys_networks.Add(sys_network);
-
+                    sys_forests.Add(new List<List<Line>>() { sys_network });
                 }
             }
             else
             {
-                var BCPs = new List<List<Tuple<int, int>>>();
+                var BCP = new List<List<List<Tuple<int, int>>>>();
                 if (netGenMode == 1)
-                    BCPs = IntegerPrograms.BalancedConnectedPartition(sys_whole_graph, source_ids.Count, source_ids, out sys_flows);
+                    IntegerPrograms.BalancedConnectedPartition(sys_whole_graph, source_ids.Count, source_ids, out BCP, out sys_flows);
                 else
-                    BCPs = IntegerPrograms.BalancedConnectedPartition(sys_whole_graph, netGenMode, new List<int>() { }, out sys_flows);
-                foreach (List<Tuple<int, int>> partition in BCPs)
+                    IntegerPrograms.BalancedConnectedPartition(sys_whole_graph, netGenMode, new List<int>() { }, out BCP, out sys_flows);
+                foreach (List<List<Tuple<int ,int>>> solution in BCP)
                 {
-                    List<Line> sys_network = new List<Line>();
-                    List<double> sys_flow = new List<double>();
-                    foreach (Tuple<int, int> edge in partition)
+                    var sys_forest = new List<List<Line>>();
+                    foreach (List<Tuple<int, int>> partition in solution)
                     {
-                        sys_network.Add(new Line(
-                            sys_whole_graph.Nodes[edge.Item1].Coords,
-                            sys_whole_graph.Nodes[edge.Item2].Coords));
+                        List<Line> sys_tree = new List<Line>();
+                        List<double> sys_flow = new List<double>();
+                        foreach (Tuple<int, int> connection in partition)
+                        {
+                            // from IntegerPrograms.cs, connections may have phantom sources with .Item1 outside the Nodes list
+                            // by default, Nodes are indexed from 0 to Nodes.Count
+                            // the source will be offset ↙ a bit to its entry point in the network
+                            if (connection.Item1 >= sys_whole_graph.Nodes.Count)
+                                sys_tree.Add(new Line(
+                                sys_whole_graph.Nodes[connection.Item2].Coords - new Vector3d(-1,-1,0),
+                                sys_whole_graph.Nodes[connection.Item2].Coords));
+                            else
+                                sys_tree.Add(new Line(
+                                sys_whole_graph.Nodes[connection.Item1].Coords,
+                                sys_whole_graph.Nodes[connection.Item2].Coords));
+                        }
+                        sys_forest.Add(sys_tree);
                     }
-                    sys_networks.Add(sys_network);
+                    sys_forests.Add(sys_forest);
                 }
+                
             }
             
             // batch from sys_networks to sys_graphs
-            foreach (List<Line> sys_network in sys_networks)
+            // only take the optimum solution forest
+            foreach (List<Line> sys_tree in sys_forests[0])
             {
-                PathFinding.Graph<int> sys_graph = PathFinding.RebuildGraph(sys_network);
+                PathFinding.Graph<int> sys_graph = PathFinding.RebuildGraph(sys_tree);
                 // how rookie finds the root/terminal node by comparing coordinates
                 foreach (Point3d shaft_entry_pt in shaft_entry_pts)
                 {
                     foreach (PathFinding.Node<int> junc in sys_graph.Nodes)
                     {
-                        if (junc.Coords.DistanceTo(shaft_entry_pt) < 0.0001)
+                        if (junc.Coords.DistanceTo(shaft_entry_pt) < _tol)
                             junc.isRoot = true;
                     }
                 }
@@ -458,7 +493,7 @@ namespace Tellinclam
                 bool matched_flag = false;
                 for (int i = 0; i < space_zone_entry_pts.Count; i++)
                 {
-                    if (space_zone_entry_pts[i].DistanceTo(node.Coords) < 0.000001)
+                    if (space_zone_entry_pts[i].DistanceTo(node.Coords) < _tol)
                     {
                         // update graph with load information
                         node.Weight = spaceLoads[i];
@@ -498,7 +533,7 @@ namespace Tellinclam
             // -------------------------------------------------------------------------------------------------------
 
             DA.SetDataList(0, guidelines);
-            DA.SetDataTree(1, Util.ListToTree(sys_networks));
+            DA.SetDataTree(1, Util.ListToTree(sys_forests));
             DA.SetDataTree(2, Util.ListToTree(sys_flows));
             DA.SetDataTree(3, Util.ListToTree(zone_networks));
             DA.SetDataList(4, AHUs);

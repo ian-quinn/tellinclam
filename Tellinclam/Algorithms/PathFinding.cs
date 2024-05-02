@@ -156,12 +156,10 @@ namespace Tellinclam.Algorithms
         {
             List<Node<T>> nodes = new List<Node<T>>();
             private bool _isDirected = false;
-            private bool _isWeighted = false;
 
-            public Graph(bool isDirected, bool isWeighted)
+            public Graph(bool isDirected)
             {
                 _isDirected = isDirected;
-                _isWeighted = isWeighted;
             }
 
             public int Count { get { return nodes.Count; } }
@@ -247,22 +245,16 @@ namespace Tellinclam.Algorithms
                 {
                     //for direted graph only below 1st line is required  node1->node2
                     source.AddNeighbors(destin);
-                    if (_isWeighted)
-                    {
-                        source.Weights.Add(weight);
-                    }
+                    source.Weights.Add(weight);
                     //for undireted graph the neighbors are both successors and predecessors
                     if (!_isDirected)
                     {
                         source.AddSuccessor(destin);
                         destin.AddPredecessor(source);
                         destin.AddNeighbors(source);
-                        if (_isWeighted)
-                        {
-                            destin.Weights.Add(weight);
-                            // for junction you need to add different ratios to 
-                            // different weight values
-                        }
+                        destin.Weights.Add(weight);
+                        // for junction you need to add different ratios to 
+                        // different weight values
                     }
                     return true;
                 }
@@ -306,20 +298,14 @@ namespace Tellinclam.Algorithms
                     if (index >= 0)
                     {
                         from.Neighbors.RemoveAt(index);
-                        if (_isWeighted)
-                        {
-                            from.Weights.RemoveAt(index);
-                        }
+                        from.Weights.RemoveAt(index);
                     }
                     //for undireted graph need below line as well
                     index = to.Neighbors.FindIndex(n => n == from);
                     if (index >= 0)
                     {
                         to.Neighbors.RemoveAt(index);
-                        if (_isWeighted)
-                        {
-                            to.Weights.RemoveAt(index);
-                        }
+                        to.Weights.RemoveAt(index);
                     }
                     return true;
                 }
@@ -581,10 +567,7 @@ namespace Tellinclam.Algorithms
                                     if (isTraversed[index])
                                     {
                                         node.Neighbors.RemoveAt(i);
-                                        if (_isWeighted)
-                                        {
-                                            node.Weights.RemoveAt(i);
-                                        }
+                                        node.Weights.RemoveAt(i);
                                     }
                                 }
                             }
@@ -898,7 +881,7 @@ namespace Tellinclam.Algorithms
             }
             else if (algorithm == algoEnum.SPT)
             {
-                Graph<int> graph = new Graph<int>(false, true);
+                Graph<int> graph = new Graph<int>(false);
                 List<int> nodelist = new List<int>() { };
                 foreach (Tuple<int, int> edge in subEdges)
                 {
@@ -1088,7 +1071,7 @@ namespace Tellinclam.Algorithms
 
             List<Point3d> vts = new List<Point3d>() { };
             List<Line> droppedEdges = new List<Line>() { }; // for debug
-            Graph<int> graph = new Graph<int>(false, true);
+            Graph<int> graph = new Graph<int>(false);
 
             // iterate all edges, piling up vertices, then rebuild the graph
             foreach (Line edge in edges)
@@ -1235,7 +1218,7 @@ namespace Tellinclam.Algorithms
                 }
             }
 
-            Graph<int> tree = new Graph<int>(false, true);
+            Graph<int> tree = new Graph<int>(false);
             foreach (KeyValuePair<int, List<Tuple<int, double>>> pair in _tree)
             {
                 Node<int> newNode = tree.AddNode(pair.Key, 0);

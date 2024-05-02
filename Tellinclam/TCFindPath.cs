@@ -145,7 +145,7 @@ namespace Tellinclam
                 edges_subgraph, terminals_zoned, new List<Point3d>() { }, PathFinding.algoEnum.MST);
             PathFinding.Graph<int> graph = PathFinding.RebuildGraph(edges_steiner);
             
-            PathFinding.Graph<int> trunk = new PathFinding.Graph<int>(true, true);
+            PathFinding.Graph<int> trunk = new PathFinding.Graph<int>(true);
             Point3d ahu = PathFinding.GetPseudoRootOfGraph(graph);
             graph.Graft();
 
