@@ -49,9 +49,9 @@ namespace Tellinclam
             pManager.AddCurveParameter("Boundaries", "Space",
                 "List of space boundary (closed Polyline as Curve) as terminals", GH_ParamAccess.list);
             pManager.AddPointParameter("Door locations", "Door",
-                "List of door location as entry points (which will be paired automatically with each room)", GH_ParamAccess.list);
+                "List of door location as entry points (which will be paired automatically with each space)", GH_ParamAccess.list);
             pManager.AddTextParameter("Function Tag", "func",
-                "Room tag indicating functions for test only", GH_ParamAccess.list);
+                "Space tag indicating functions for test only", GH_ParamAccess.list);
             pManager.AddNumberParameter("Space load profile", "loads",
                 "List of space loads for AHU sizing and further balanced partitioning", GH_ParamAccess.list);
             pManager.AddIntegerParameter("Zoned index", "zones",
@@ -81,6 +81,8 @@ namespace Tellinclam
                 "The JSON file for internal information flow", GH_ParamAccess.item);
             pManager.AddTextParameter("Standard JSON format for 3.js graph", "D3.js",
                 "The JSON file for G(V,E) with w(v) of each AHU and guidelines", GH_ParamAccess.item);
+            pManager.AddPointParameter("Optimization space", "vals",
+                "A point list representing optimal or sub-optimal solutions", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -124,50 +126,50 @@ namespace Tellinclam
             List<double> areas = new List<double>() { };
             List<int> shaft_ids = new List<int>();
             // this is a data tree
-            // one room may have several entry points
+            // one space may have several entry points
             List<List<Point3d>> nested_entry_pts = new List<List<Point3d>>() { };
             List<Point3d> shaft_entry_pts = new List<Point3d>() { };
-            foreach (Curve room_crv in spaceCrvs)
+            foreach (Curve spaceCrv in spaceCrvs)
             {
-                if (!room_crv.IsValid || room_crv is null)
+                if (!spaceCrv.IsValid || spaceCrv is null)
                 {
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "One polyline is not valid.");
                     continue;
                 }
-                if (!room_crv.IsClosed)
+                if (!spaceCrv.IsClosed)
                 {
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "One polyline is not closed.");
                     continue;
                 }
 
                 // get the room area -----------------------------------------------------------------
-                if (room_crv.IsPolyline())
+                if (spaceCrv.IsPolyline())
                 {
-                    if (room_crv.TryGetPolyline(out Polyline pline))
+                    if (spaceCrv.TryGetPolyline(out Polyline pline))
                     {
                         areas.Add(Basic.GetPolyArea(pline.ToList()));
                     }
                 }
                 else
                 {
-                    Brep[] allBreps = Brep.CreatePlanarBreps(room_crv, _tol);
+                    Brep[] allBreps = Brep.CreatePlanarBreps(spaceCrv, _tol);
                     var amp = AreaMassProperties.Compute(allBreps[0]);
                     areas.Add(amp.Area);
                 }
 
-                // prepare the entry point list for this room ----------------------------------------
+                // prepare the entry point list for this space ----------------------------------------
                 List<Point3d> entry_pts = new List<Point3d>() { };
                 int entry_counter = 0;
-                // if the room is on the last level, assign door locations to it
+                // if the space is on level 0, assign the door location point to it
                 // if not, it acts like a circulation area and should be excluded
-                if (tags[spaceCrvs.IndexOf(room_crv)] == "Lv0")
+                if (tags[spaceCrvs.IndexOf(spaceCrv)] == "Lv0")
                 {
-                    // check if the room boundary intersects with the guideline
+                    // check if the space boundary intersects with the guideline
                     // if so, take the intersection points as the entry points instead of door locations
                     foreach (Line edge in edges)
                     {
                         Curve edge_crv = new LineCurve(edge);
-                        var ccx = Intersection.CurveCurve(room_crv, edge_crv, _tol, _tol);
+                        var ccx = Intersection.CurveCurve(spaceCrv, edge_crv, _tol, _tol);
                         if (ccx != null & ccx.Count > 0)
                         {
                             entry_pts.Add(ccx[0].PointA);
@@ -181,7 +183,7 @@ namespace Tellinclam
                         {
                             double t;
                             // in future replace this with manhattan distance 
-                            if (room_crv.ClosestPoint(pt, out t, _tol))
+                            if (spaceCrv.ClosestPoint(pt, out t, _tol))
                             {
                                 entry_pts.Add(pt);
                                 entry_counter++;
@@ -189,38 +191,39 @@ namespace Tellinclam
                         }
                     }
                 }
-                
-                // if there is no door accessing this room, take centroid instead
+
+                // if there is no door accessing this space (open area), take centroid instead
+                // this applies to both functional spaces and shafts
                 if (entry_counter == 0)
                 {
-                    if (room_crv.IsPolyline())
-                        if (room_crv.TryGetPolyline(out Polyline pline))
+                    if (spaceCrv.IsPolyline())
+                        if (spaceCrv.TryGetPolyline(out Polyline pline))
                         {
                             Point3d centroid = pline.CenterPoint();
                             entry_pts.Add(centroid);
                         }
                 }
 
-                if (tags[spaceCrvs.IndexOf(room_crv)] == "LvS")
+                if (tags[spaceCrvs.IndexOf(spaceCrv)] == "LvS")
                     shaft_entry_pts.AddRange(entry_pts);
 
                 nested_entry_pts.Add(entry_pts);
             }
 
-            // parse the input (input is a nested integer list indicating a zoning plan)
-            // each nested list contain the space id of the same thermal zone
+            // parse the input (the input is a nested integer list indicating a zoning plan)
+            // each nested list contains the space id within the same thermal zone
             List<List<int>> nested_ids = new List<List<int>>() { };
-            // if in debug mode, each space apart from the shaft/mech forms a zone
+            // in debug mode (netGenMode < 0), each space apart from the shaft/mech forms a zone
             if (netGenMode < 0)
             {
-                foreach (double area in areas)
+                for (int i = 0; i < areas.Count; i++)
                 {
-                    if (!shaft_ids.Contains(areas.IndexOf(area)))
+                    if (!shaft_ids.Contains(i))
                     {
-                        nested_ids.Add(new List<int>() { areas.IndexOf(area) });
+                        nested_ids.Add(new List<int>() { i });
                     }
                 }
-                netGenMode = -netGenMode; // direct to the normal partitions
+                netGenMode = -netGenMode; // dispatch to the normal partitions
             }
             else
             {
@@ -254,39 +257,43 @@ namespace Tellinclam
                 // get all possible connections for all terminal candidates
                 List<Line> zone_edge_complete = PathFinding.GetTerminalConnection(edges, 
                     Util.FlattenList(zoned_entry_pts), out List<Line> cons);
-                if (nested_ids[i].Count == 1) // if a space forms a zone itself, just connect the entry point to the guideline
+                // when Manhattan distance is applied, the output cons will be a list of polylines!
+
+                // if a zone has only one space, just connect the entry point to the guideline
+                // however, connection with the same length may have greater distribution cost
+                //
+                //      space_1                        ────┬──────┬───
+                // ──┬────────┬────                   ┌────┼────┐ |
+                //   | con_1  | con_2                 |    ●────┼─┤
+                //   └────────┴───────> source        └─────────┘ |
+                //  space has 2 doors                not cover this situation?
+                //
+                if (nested_ids[i].Count == 1)
                 {
-                    // select the shorter connections from cons
-                    int min_idx = 0;
-                    if (cons.Count > 1)
-                    {
-                        double min_dist = double.PositiveInfinity;
-                        foreach (Line con in cons)
-                        {
-                            if (con.Length < min_dist)
-                            {
-                                min_idx = cons.IndexOf(con);
-                                min_dist = con.Length;
-                            }
-                        }
-                    }
-                    zone_networks.Add(new List<Line>() { cons[min_idx] }); // only for visualization
-                    // take the midpoint of line:(entry point, guideline) as location of ahu
-                    // Point3d ahu = cons[min_idx].PointAt(1) - 0.5 * cons[min_idx].Direction / cons[min_idx].Length;
-                    // or take the entry point as the location of ahu?
-                    Point3d ahu = cons[min_idx].PointAt(0);
-                    AHUs.Add(ahu);
+                    // select the shorter one from cons
+                    Line con_min = cons.OrderByDescending(l => l.Length).LastOrDefault();
+                    // or you need to select the minimum path from this entry to the source
+                    // or the sum(graph.edges) reaches minimum after leaf trimming
+
+                    zone_networks.Add(new List<Line>() { con_min }); // only for visualization
+                    // take the midpoint of line:(entry point, guideline) as location of AHU
+                    // Point3d AHU = cons[min_idx].PointAt(1) - 0.5 * cons[min_idx].Direction / cons[min_idx].Length;
+                    // or take the entry point as the location of AHU?
+                    Point3d AHU = con_min.PointAt(0);
+                    AHUs.Add(AHU);
                     zoneLoads.Add(spaceLoads[nested_ids[i][0]]);
 
                     PathFinding.Graph<int> graph = new PathFinding.Graph<int>(true);
                     PathFinding.Node<int> root = graph.AddNode(0, 0);
-                    graph.Nodes.Last().Coords = ahu;
+                    graph.Nodes.Last().Coords = AHU;
                     graph.Nodes.Last().isRoot = true;
                     PathFinding.Node<int> terminal = graph.AddNode(1, 0);
                     graph.Nodes.Last().Coords = cons[0].PointAt(0);
                     graph.AddEdge(root, terminal, cons[0].Length);
                     zone_graphs.Add(graph);
                 }
+                // if a zone has several spaces, find the centroid of this MST then connect it to the guideline
+                // the MST aggregates spaces with the minimum length cost, so it removes the redundant entry points of space
                 else
                 {
                     // try to get the sub graph of each possible composition
@@ -312,8 +319,8 @@ namespace Tellinclam
                     zone_networks.Add(zone_network); // only for visualization
 
                     PathFinding.Graph<int> zone_graph = PathFinding.RebuildGraph(zone_network);
-                    Point3d ahu = PathFinding.GetPseudoRootOfGraph(zone_graph);
-                    AHUs.Add(ahu); // only for visualization
+                    Point3d AHU = PathFinding.GetPseudoRootOfGraph(zone_graph);
+                    AHUs.Add(AHU); // only for visualization
                     zoneLoads.Add(spaceLoads.Where((load, id) => nested_ids[i].Contains(id)).Sum());
 
                     zone_graph.Graft();
@@ -340,9 +347,12 @@ namespace Tellinclam
             List<PathFinding.Node<int>> shaft_nodes = new List<PathFinding.Node<int>>() { };
             List<int> source_ids = new List<int>();
             List<List<List<double>>> sys_flows = new List<List<List<double>>>();
-            
+            List<Point3d> optSpace = new List<Point3d>();
+
             foreach (PathFinding.Node<int> node in sys_whole_graph.Nodes)
             {
+                // 20240425 somehow this RebuildGraph() process may lead to self-pointing
+                // no time to debug it I just remove the node itself from its neighbors
                 if (node.Neighbors.Contains(node))
                     node.RemoveNeighbors(node);
                 foreach (Point3d pt in shaft_entry_pts)
@@ -404,13 +414,15 @@ namespace Tellinclam
                     sys_forests.Add(new List<List<Line>>() { sys_network });
                 }
             }
+            // MIP for BCP problems
             else
             {
                 var BCP = new List<List<List<Tuple<int, int>>>>();
+                var optVals = new List<double[]>();
                 if (netGenMode == 1)
-                    IntegerPrograms.BalancedConnectedPartition(sys_whole_graph, source_ids.Count, source_ids, out BCP, out sys_flows);
+                    IntegerPrograms.BalancedConnectedPartition(sys_whole_graph, source_ids.Count, source_ids, out BCP, out sys_flows, out optVals);
                 else
-                    IntegerPrograms.BalancedConnectedPartition(sys_whole_graph, netGenMode, new List<int>() { }, out BCP, out sys_flows);
+                    IntegerPrograms.BalancedConnectedPartition(sys_whole_graph, netGenMode, new List<int>() { }, out BCP, out sys_flows, out optVals);
                 foreach (List<List<Tuple<int ,int>>> solution in BCP)
                 {
                     var sys_forest = new List<List<Line>>();
@@ -425,7 +437,7 @@ namespace Tellinclam
                             // the source will be offset ↙ a bit to its entry point in the network
                             if (connection.Item1 >= sys_whole_graph.Nodes.Count)
                                 sys_tree.Add(new Line(
-                                sys_whole_graph.Nodes[connection.Item2].Coords - new Vector3d(-1,-1,0),
+                                sys_whole_graph.Nodes[connection.Item2].Coords - new Vector3d(-1, -1, 0),
                                 sys_whole_graph.Nodes[connection.Item2].Coords));
                             else
                                 sys_tree.Add(new Line(
@@ -436,7 +448,10 @@ namespace Tellinclam
                     }
                     sys_forests.Add(sys_forest);
                 }
-                
+                foreach (double[] optVal in optVals)
+                {
+                    optSpace.Add(new Point3d(optVal[0], optVal[1], optVal[2]));
+                }
             }
             
             // batch from sys_networks to sys_graphs
@@ -457,66 +472,22 @@ namespace Tellinclam
                 sys_graphs.Add(sys_graph);
             }
 
-
             // 20240415 Temperal code for testing -------------------------------------------------------------------------------
             // generate a sample graph including all space entry points and loads for partitioning
-            // in the future, the space loads will be aggregated for AHU sizing and the graph after 
-            // such a nodes merging will go for balanced partitioning
-
-            // represent each space-zone with one entry point
-            List<Point3d> space_zone_entry_pts = new List<Point3d>() { };
-            foreach (List<Point3d> pts in nested_entry_pts)
-            {
-                space_zone_entry_pts.Add(pts[0]);
-            }
-
-            List<Line> guidelines = PathFinding.GetTerminalConnection(edges,
-                    space_zone_entry_pts, out List<Line> sub_guidelines);
-            PathFinding.Graph<int> guide_graph = PathFinding.RebuildGraph(guidelines);
-
-            // 20240425 something wrong with the graph generation causing self-connected edge
-            // no time to debug it I just remove the node itself from its neighbors
-            foreach (PathFinding.Node<int> node in guide_graph.Nodes)
-                if (node.Neighbors.Contains(node))
-                    node.RemoveNeighbors(node);
-
             // parse this graph into D3.js format // the data model of PathFinding.Graph needs update
             List<SchemaJSON.node> jsonNodes = new List<SchemaJSON.node>() { };
             List<SchemaJSON.link> jsonLinks = new List<SchemaJSON.link>() { };
-            List<Point3d> nodelist = new List<Point3d>() { };
 
-            foreach (PathFinding.Node<int> node in guide_graph.Nodes)
+            foreach (PathFinding.Node<int> node in sys_whole_graph.Nodes)
             {
-                // visualize the node index by a sequential list
-                nodelist.Add(node.Coords);
-
-                bool matched_flag = false;
-                for (int i = 0; i < space_zone_entry_pts.Count; i++)
+                jsonNodes.Add(new SchemaJSON.node
                 {
-                    if (space_zone_entry_pts[i].DistanceTo(node.Coords) < _tol)
-                    {
-                        // update graph with load information
-                        node.Weight = spaceLoads[i];
-
-                        jsonNodes.Add(new SchemaJSON.node
-                        {
-                            id = node.Value,
-                            weight = spaceLoads[i]
-                        });
-                        matched_flag = true;
-                    }
-                }
-                if (!matched_flag)
-                {
-                    jsonNodes.Add(new SchemaJSON.node
-                    {
-                        id = node.Value,
-                        weight = 0.0
-                    });
-                }
+                    id = node.Value,
+                    weight = 0.0
+                });
             }
             // batch edges
-            foreach (PathFinding.Edge<int> edge in guide_graph.GetEdges())
+            foreach (PathFinding.Edge<int> edge in sys_whole_graph.GetEdges())
             {
                 // 20240425 GetEdges() returns bi-directional edges
                 // for undirected graph this should be one edge with any source/target setup
@@ -532,6 +503,16 @@ namespace Tellinclam
 
             // -------------------------------------------------------------------------------------------------------
 
+            List<Point3d> space_zone_entry_pts = new List<Point3d>() { };
+            foreach (List<Point3d> pts in nested_entry_pts)
+            {
+                space_zone_entry_pts.Add(pts[0]);
+            }
+            List<Line> guidelines = PathFinding.GetTerminalConnection(edges,
+                    space_zone_entry_pts, out List<Line> sub_guidelines);
+
+            // -------------------------------------------------------------------------------------------------------
+
             DA.SetDataList(0, guidelines);
             DA.SetDataTree(1, Util.ListToTree(sys_forests));
             DA.SetDataTree(2, Util.ListToTree(sys_flows));
@@ -543,6 +524,7 @@ namespace Tellinclam
             string sysJSON = SerializeJSON.InitiateSystem(sys_graphs, zone_graphs, nested_ids, nested_entry_pts, AHUs, areas, true);
             DA.SetData(6, sysJSON);
             DA.SetData(7, d3JSON);
+            DA.SetDataList(8, optSpace);
         }
 
         /// <summary>

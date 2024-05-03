@@ -13,7 +13,7 @@ namespace Tellinclam.Algorithms
         /// pre-defined source nodes assigned for each
         /// </summary>
         public static bool BalancedConnectedPartition(PathFinding.Graph<int> graph, int k, List<int> sources, 
-            out List<List<List<Tuple<int, int>>>> forests, out List<List<List<double>>> flowParcels)
+            out List<List<List<Tuple<int, int>>>> forests, out List<List<List<double>>> flowParcels, out List<double[]> optVals)
         {
             bool isJoined(Tuple<int, int> e1, Tuple<int, int> e2)
             {
@@ -94,6 +94,7 @@ namespace Tellinclam.Algorithms
             // ----------------------------------- Initiate outputs ---------------------------------------
             forests = new List<List<List<Tuple<int, int>>>>();
             flowParcels = new List<List<List<double>>>();
+            optVals = new List<double[]>();
 
             // ----------------------------------- Prepare Graph Info -------------------------------------
 
@@ -261,25 +262,24 @@ namespace Tellinclam.Algorithms
 
                 mo.Write("bcp_k.lp");
                 mo.Optimize();
-                Debug.Print("Obj: " + mo.ObjVal);
 
                 //double[] x = mo.Get(GRB.DoubleAttr.X, f);
 
                 int nSolutions = mo.SolCount;
                 int nObjectives = mo.NumObj;
-                Debug.Print($"Problem has {nObjectives} objectives");
-                Debug.Print($"Gurobi found {nSolutions} solutions");
-
+                Debug.Print($"Gurobi found {nSolutions} solutions for {nObjectives}-objective problem");
                 
                 for (int s = 0; s < nSolutions; s++)
                 {
                     mo.Parameters.SolutionNumber = s;
-                    Debug.Print($"Solution {s}: ");
+                    List<double> objNVals = new List<double>();
                     for (int o = 0; o < nObjectives; o++)
                     {
                         mo.Parameters.ObjNumber = o;
-                        Debug.Print($" {mo.ObjNVal} ");
+                        objNVals.Add(mo.ObjNVal);
                     }
+                    optVals.Add(objNVals.ToArray());
+                    Debug.Print($"{{{string.Join(", ", objNVals.Select(x => x.ToString()))}}}");
 
                     // this list stores all branches of this solution temperally, erased with iteration
                     var connections = new List<Tuple<int, int>>();
