@@ -19,6 +19,7 @@ using System.IO;
 using static Tellinclam.Serialization.SchemaJSON;
 using System.Text.Json;
 using Rhino.Geometry.Intersect;
+using System.Diagnostics.Eventing.Reader;
 
 namespace Tellinclam
 {
@@ -450,7 +451,12 @@ namespace Tellinclam
                 }
                 foreach (double[] optVal in optVals)
                 {
-                    optSpace.Add(new Point3d(optVal[0], optVal[1], optVal[2]));
+                    if (optVal.Length == 1)
+                        optSpace.Add(new Point3d(optVal[0], 0, 0));
+                    else if (optVal.Length == 2)
+                        optSpace.Add(new Point3d(optVal[0], optVal[1], 0));
+                    else if (optVal.Length == 3)
+                        optSpace.Add(new Point3d(optVal[0], optVal[1], optVal[2]));
                 }
             }
             
@@ -520,7 +526,7 @@ namespace Tellinclam
             DA.SetDataList(4, AHUs);
             DA.SetDataList(5, zoneLoads);
             
-            // pairing each system network and the zones it controls
+            // pairing each system network and the zones it Zcontrols
             string sysJSON = SerializeJSON.InitiateSystem(sys_graphs, zone_graphs, nested_ids, nested_entry_pts, AHUs, areas, true);
             DA.SetData(6, sysJSON);
             DA.SetData(7, d3JSON);

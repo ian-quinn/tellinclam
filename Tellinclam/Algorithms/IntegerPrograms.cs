@@ -63,7 +63,7 @@ namespace Tellinclam.Algorithms
                 }
                 return edge_ids.ToArray();
             }
-            GRBLinExpr LinearSumPar(GRBVar[] vars, double[] pars)
+            GRBLinExpr LinearSumByParam(GRBVar[] vars, double[] pars)
             {
                 GRBLinExpr expr = new GRBLinExpr();
                 for (int i = 0; i < vars.Length; i++)
@@ -72,7 +72,7 @@ namespace Tellinclam.Algorithms
                 }
                 return expr;
             }
-            GRBLinExpr LinearSumId(GRBVar[] vars, int[] ids)
+            GRBLinExpr LinearSumById(GRBVar[] vars, int[] ids)
             {
                 GRBLinExpr expr = new GRBLinExpr();
                 foreach (int id in ids)
@@ -81,7 +81,7 @@ namespace Tellinclam.Algorithms
                 }
                 return expr;
             }
-            GRBLinExpr LinearSum(GRBVar[] vars)
+            GRBLinExpr LinearSumAll(GRBVar[] vars)
             {
                 GRBLinExpr expr = new GRBLinExpr();
                 foreach (GRBVar var in vars)
@@ -100,24 +100,19 @@ namespace Tellinclam.Algorithms
 
             // by default, the source nodes are included in graph input
             // override k if source nodes are provided, in case of collision
+            int cardiS = k;
+            int cardiV = graph.Nodes.Count;
             if (sources.Count > 0)
-                k = sources.Count;
-            // figure out the dimension of adjacency matrix
-            int dim = graph.Nodes.Count;
-            if (sources.Count == 0)
-                dim = graph.Nodes.Count + k;
-            // S array for the index of source node
-            int[] S = new int[k];
-            for (int i = 0; i < k; i++)
-            {
-                if (sources.Count == 0)
-                    S[i] = graph.Nodes.Count + i;
-                else
-                    S[i] = sources[i];
-            }
+                cardiS = sources.Count;
             // V array for the index of terminal/relay nodes
-            int[] V = InitiateArray(dim - k);
+            int[] V = InitiateArray(cardiV);
+            // S array for the index of source node
+            int[] S = new int[cardiS];
+            for (int i = 0; i < cardiS; i++)
+                S[i] = cardiV + i;
 
+            // create directed graph G'. dimension = |V| + |S|
+            int dim = cardiV + cardiS;
             // for an undirected graph the adj matrix must be symmetric
             int[,] adj = new int[dim, dim];
             double[,] wgte = new double[dim, dim];
@@ -129,38 +124,17 @@ namespace Tellinclam.Algorithms
             int arc_counter = 0;
             for (int i = 0; i < edges.Count; i++)
             {
-                // for edges closed by V, generate two anti-parallel arcs
-                if (!S.Contains(edges[i].From.Value) && !S.Contains(edges[i].To.Value))
-                {
-                    adj[edges[i].From.Value, edges[i].To.Value] = 1;
-                    adj[edges[i].To.Value, edges[i].From.Value] = 1;
-                    wgte[edges[i].From.Value, edges[i].To.Value] = edges[i].Weight;
-                    wgte[edges[i].To.Value, edges[i].From.Value] = edges[i].Weight;
-                    eid.Add(new Tuple<int, int> ( edges[i].From.Value, edges[i].To.Value ), arc_counter);
-                    eid.Add(new Tuple<int, int> ( edges[i].To.Value, edges[i].From.Value ), arc_counter + 1);
-                    arc_counter += 2;
-                }
-                // for edges induced by S, generate arc from S to V
-                else if (S.Contains(edges[i].From.Value))
-                {
-                    adj[edges[i].From.Value, edges[i].To.Value] = 1;
-                    // presume a 0.1m length to shaft connection
-                    wgte[edges[i].From.Value, edges[i].To.Value] = 0.1;
-                    eid.Add(new Tuple<int, int>(edges[i].From.Value, edges[i].To.Value ), arc_counter);
-                    arc_counter += 1;
-                }
-                else if (S.Contains(edges[i].To.Value))
-                {
-                    adj[edges[i].To.Value, edges[i].From.Value] = 1;
-                    // presume a 0.1m length to shaft connection
-                    wgte[edges[i].From.Value, edges[i].To.Value] = 0.1;
-                    eid.Add(new Tuple<int, int>(edges[i].To.Value, edges[i].From.Value ), arc_counter);
-                    arc_counter += 1;
-                }
-                Debug.Print("Edge prev: " + edges[i].To.Value.ToString() + " , " + edges[i].From.Value.ToString());
+                // double the edges, to generate two anti-parallel arcs for each
+                adj[edges[i].From.Value, edges[i].To.Value] = 1;
+                adj[edges[i].To.Value, edges[i].From.Value] = 1;
+                wgte[edges[i].From.Value, edges[i].To.Value] = edges[i].Weight;
+                wgte[edges[i].To.Value, edges[i].From.Value] = edges[i].Weight;
+                eid.Add(new Tuple<int, int>(edges[i].From.Value, edges[i].To.Value), arc_counter);
+                eid.Add(new Tuple<int, int>(edges[i].To.Value, edges[i].From.Value), arc_counter + 1);
+                arc_counter += 2;
             }
-
-            // if no source node is provided, generate phantom source nodes pointing to all V
+            // additionally, pair each S with each V
+            // if shaft nodes are provided, only pair each S with each V_0 ⊂ V
             if (sources.Count == 0)
             {
                 for (int i = 0; i < S.Length; i++)
@@ -168,8 +142,21 @@ namespace Tellinclam.Algorithms
                     for (int j = 0; j < V.Length; j++)
                     {
                         adj[S[i], V[j]] = 1;
-                        wgte[S[i], V[j]] = 0.1;
+                        wgte[S[i], V[j]] = 0; // virtual connection with 0 weight
                         eid.Add(new Tuple<int, int>(S[i], V[j]), arc_counter);
+                        arc_counter += 1;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < S.Length; i++)
+                {
+                    for (int j = 0; j < sources.Count; j++)
+                    {
+                        adj[S[i], sources[j]] = 1;
+                        wgte[S[i], sources[j]] = 0; // virtual connection with 0 weight
+                        eid.Add(new Tuple<int, int>(S[i], sources[j]), arc_counter);
                         arc_counter += 1;
                     }
                 }
@@ -181,10 +168,10 @@ namespace Tellinclam.Algorithms
             }
 
             double W = wgtv.Sum();
-            double[] wgte_summarize = new double[eid.Count];
+            double[] wgte_dict = new double[eid.Count];
             foreach (KeyValuePair<Tuple<int, int>, int> kvp in eid)
             {
-                wgte_summarize[kvp.Value] = wgte[kvp.Key.Item1, kvp.Key.Item2];
+                wgte_dict[kvp.Value] = wgte[kvp.Key.Item1, kvp.Key.Item2];
             }
 
             Debug.Print("var numbers: " + eid.Count.ToString());
@@ -208,24 +195,29 @@ namespace Tellinclam.Algorithms
                 GRBVar[] mean = mo.AddVars(lb, null, null, type, null);
                 GRBVar[] vari = mo.AddVars(eid.Count, GRB.CONTINUOUS);
 
-                mo.SetObjective(LinearSumId(f, EdgeIndexMatch(S[0], RetrieveNeighbors(adj, S[0], 0), 0, eid)), GRB.MINIMIZE);
-                // additional for multi-objective programming
+                // single-objective programming
+                //mo.SetObjective(LinearSumId(f, EdgeIndexMatch(S[0], RetrieveNeighbors(adj, S[0], 0), 0, eid)), GRB.MINIMIZE);
+
+                // options for multi-objective programming: SetObjectiveN(*)
+                // arg:priority 2 > 1 > 0 solver finds the optimum in each priority tier then goes to the next level
+                // arg:weight defines the parameter of linear combination in the optimization of each level
+                // arg:index marks the output sequence in Model.Parameters.ObjNumber
                 mo.ModelSense = GRB.MINIMIZE;
-                mo.SetObjectiveN(LinearSumPar(f, wgte_summarize), 0, 2, 1.0, 1.0, 0.01, "UnitCoverage");
-                mo.SetObjectiveN(LinearSum(vari), 1, 1, 1.0, 1.0, 0.01, "FlowVariance");
-                mo.SetObjectiveN(LinearSumId(f, EdgeIndexMatch(S[0], RetrieveNeighbors(adj, S[0], 0), 0, eid)), 2, 0, 1.0, 1.0, 0.01, "LoadVariance");
+                mo.SetObjectiveN(LinearSumByParam(f, wgte_dict), 0, 2, 10.0, 1.0, 0.01, "UnitCoverage");
+                mo.SetObjectiveN(LinearSumById(f, EdgeIndexMatch(S[0], RetrieveNeighbors(adj, S[0], 0), 0, eid)), 1, 1, 1.0, 1.0, 0.01, "LoadVariance");
+                mo.SetObjectiveN(LinearSumAll(vari), 2, 1, 1.0, 1.0, 0.01, "FlowVariance");
 
                 for (int i = 0; i < S.Length - 1; i++)
                 {
-                    var flow_s_i = LinearSumId(f, EdgeIndexMatch(S[i], RetrieveNeighbors(adj, S[i], 0), 0, eid));
-                    var flow_s_j = LinearSumId(f, EdgeIndexMatch(S[i + 1], RetrieveNeighbors(adj, S[i + 1], 0), 0, eid));
+                    var flow_s_i = LinearSumById(f, EdgeIndexMatch(S[i], RetrieveNeighbors(adj, S[i], 0), 0, eid));
+                    var flow_s_j = LinearSumById(f, EdgeIndexMatch(S[i + 1], RetrieveNeighbors(adj, S[i + 1], 0), 0, eid));
                     mo.AddConstr(flow_s_i, GRB.GREATER_EQUAL, flow_s_j, $"c1_{i}");
                 }
 
                 for (int i = 0; i < V.Length; i++)
                 {
-                    var flow_v_in = LinearSumId(f, EdgeIndexMatch(V[i], RetrieveNeighbors(adj, V[i], 1), 1, eid));
-                    var flow_v_out = LinearSumId(f, EdgeIndexMatch(V[i], RetrieveNeighbors(adj, V[i], 0), 0, eid));
+                    var flow_v_in = LinearSumById(f, EdgeIndexMatch(V[i], RetrieveNeighbors(adj, V[i], 1), 1, eid));
+                    var flow_v_out = LinearSumById(f, EdgeIndexMatch(V[i], RetrieveNeighbors(adj, V[i], 0), 0, eid));
                     mo.AddConstr(flow_v_in - flow_v_out, GRB.EQUAL, wgtv[i], $"c2_{i}");
                 }
 
@@ -237,14 +229,14 @@ namespace Tellinclam.Algorithms
                 // S can only deliver flow to atmost 1 node
                 for (int i = 0; i < S.Length; i++)
                 {
-                    var pass_s_out = LinearSumId(y, EdgeIndexMatch(S[i], RetrieveNeighbors(adj, S[i], 0), 0, eid));
+                    var pass_s_out = LinearSumById(y, EdgeIndexMatch(S[i], RetrieveNeighbors(adj, S[i], 0), 0, eid));
                     mo.AddConstr(pass_s_out, GRB.LESS_EQUAL, 1, $"c4_{i}");
                 }
 
                 // V can only receive flow from atmost 1 node
                 for (int i = 0; i < V.Length; i++)
                 {
-                    var pass_v_in = LinearSumId(y, EdgeIndexMatch(V[i], RetrieveNeighbors(adj, V[i], 1), 1, eid));
+                    var pass_v_in = LinearSumById(y, EdgeIndexMatch(V[i], RetrieveNeighbors(adj, V[i], 1), 1, eid));
                     mo.AddConstr(pass_v_in, GRB.LESS_EQUAL, 1, $"c5_{i}");
                 }
 
@@ -252,7 +244,7 @@ namespace Tellinclam.Algorithms
                 // first, define the mean value for each outflow of node in V
                 for (int i = 0; i < V.Length; i++)
                 {
-                    mo.AddConstr(mean[i], GRB.EQUAL, f[i] - LinearSumId(f, EdgeIndexMatch(V[i], RetrieveNeighbors(adj, V[i], 0), 0, eid)), $"c6_{i}");
+                    mo.AddConstr(mean[i], GRB.EQUAL, f[i] - LinearSumById(f, EdgeIndexMatch(V[i], RetrieveNeighbors(adj, V[i], 0), 0, eid)), $"c6_{i}");
                 }
                 // second, take the absolute value 
                 for (int i = 0; i < eid.Count; i++)
@@ -338,6 +330,8 @@ namespace Tellinclam.Algorithms
                         {
                             // round the number to prevent tiny little bit thing
                             flows.Add(Math.Round(f[eid[key]].Xn));
+                            // switch to pipe length for testing
+                            //flows.Add(wgte_summarize[eid[key]]);
                         }
                         flowParcel.Add(flows);
                     }
