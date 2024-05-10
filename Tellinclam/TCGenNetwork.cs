@@ -70,6 +70,8 @@ namespace Tellinclam
                 "The global piping/ducting guidelines", GH_ParamAccess.list);
             pManager.AddLineParameter("System network", "netA",
                 "Minimum tree connecting AHU within current floorplan", GH_ParamAccess.tree);
+            pManager.AddLineParameter("Critical path", "path", 
+                "The maximum path of each system network", GH_ParamAccess.tree);
             pManager.AddNumberParameter("Flow label", "flow",
                 "The flow on each edge for testing", GH_ParamAccess.tree);
             pManager.AddLineParameter("Zone network", "netB",
@@ -84,6 +86,7 @@ namespace Tellinclam
                 "The JSON file for G(V,E) with w(v) of each AHU and guidelines", GH_ParamAccess.item);
             pManager.AddPointParameter("Optimization space", "vals",
                 "A point list representing optimal or sub-optimal solutions", GH_ParamAccess.list);
+            
         }
 
         /// <summary>
@@ -336,6 +339,7 @@ namespace Tellinclam
             // for now, assuming each AHU will go to the nearest shaft
             // however, you should consider the total conditioning volume and make it even (as possible)
             List<List<List<Line>>> sys_forests = new List<List<List<Line>>>() { };
+            List<List<List<Line>>> sys_forests_trunk = new List<List<List<Line>>>();
             // generate system zones based on grouped zones
             List<PathFinding.Graph<int>> sys_graphs = new List<PathFinding.Graph<int>>() { };
 
@@ -427,10 +431,12 @@ namespace Tellinclam
                 foreach (List<List<Tuple<int ,int>>> solution in BCP)
                 {
                     var sys_forest = new List<List<Line>>();
+                    var sys_forest_trunk = new List<List<Line>>();
+
                     foreach (List<Tuple<int, int>> partition in solution)
                     {
                         List<Line> sys_tree = new List<Line>();
-                        List<double> sys_flow = new List<double>();
+                        List<Line> sys_trunk = new List<Line>();
                         foreach (Tuple<int, int> connection in partition)
                         {
                             // from IntegerPrograms.cs, connections may have phantom sources with .Item1 outside the Nodes list
@@ -445,9 +451,27 @@ namespace Tellinclam
                                 sys_whole_graph.Nodes[connection.Item1].Coords,
                                 sys_whole_graph.Nodes[connection.Item2].Coords));
                         }
+
+                        // 20240509 temporary code to calculate the longest path in this tree
+                        // the arc with the maximum flow must point to the source node
+                        Point3d this_src_point = sys_tree[0].PointAt(1);
+                        PathFinding.Graph<int> this_tree = PathFinding.RebuildGraph(sys_tree);
+                        var this_src_node = this_tree.Nodes[0];
+                        foreach (PathFinding.Node<int> junc in this_tree.Nodes)
+                        {
+                            if (junc.Coords.DistanceTo(this_src_point) < _tol)
+                                this_src_node = junc;
+                        }
+                        List<PathFinding.Edge<int>> this_path = this_tree.GetFurthestPathDijkstra(this_src_node, out _);
+                        foreach (var step in this_path)
+                        {
+                            sys_trunk.Add(new Line(step.From.Coords, step.To.Coords));
+                        }
                         sys_forest.Add(sys_tree);
+                        sys_forest_trunk.Add(sys_trunk);
                     }
                     sys_forests.Add(sys_forest);
+                    sys_forests_trunk.Add(sys_forest_trunk);
                 }
                 foreach (double[] optVal in optVals)
                 {
@@ -459,7 +483,6 @@ namespace Tellinclam
                         optSpace.Add(new Point3d(optVal[0], optVal[1], optVal[2]));
                 }
             }
-            
             // batch from sys_networks to sys_graphs
             // only take the optimum solution forest
             foreach (List<Line> sys_tree in sys_forests[0])
@@ -521,16 +544,17 @@ namespace Tellinclam
 
             DA.SetDataList(0, guidelines);
             DA.SetDataTree(1, Util.ListToTree(sys_forests));
-            DA.SetDataTree(2, Util.ListToTree(sys_flows));
-            DA.SetDataTree(3, Util.ListToTree(zone_networks));
-            DA.SetDataList(4, AHUs);
-            DA.SetDataList(5, zoneLoads);
+            DA.SetDataTree(2, Util.ListToTree(sys_forests_trunk));
+            DA.SetDataTree(3, Util.ListToTree(sys_flows));
+            DA.SetDataTree(4, Util.ListToTree(zone_networks));
+            DA.SetDataList(5, AHUs);
+            DA.SetDataList(6, zoneLoads);
             
             // pairing each system network and the zones it Zcontrols
             string sysJSON = SerializeJSON.InitiateSystem(sys_graphs, zone_graphs, nested_ids, nested_entry_pts, AHUs, areas, true);
-            DA.SetData(6, sysJSON);
-            DA.SetData(7, d3JSON);
-            DA.SetDataList(8, optSpace);
+            DA.SetData(7, sysJSON);
+            DA.SetData(8, d3JSON);
+            DA.SetDataList(9, optSpace);
         }
 
         /// <summary>

@@ -203,9 +203,9 @@ namespace Tellinclam.Algorithms
                 // arg:weight defines the parameter of linear combination in the optimization of each level
                 // arg:index marks the output sequence in Model.Parameters.ObjNumber
                 mo.ModelSense = GRB.MINIMIZE;
-                mo.SetObjectiveN(LinearSumByParam(f, wgte_dict), 0, 2, 10.0, 1.0, 0.01, "UnitCoverage");
+                mo.SetObjectiveN(LinearSumByParam(f, wgte_dict), 0, 2, 1.0, 1.0, 0.01, "UnitCoverage");
                 mo.SetObjectiveN(LinearSumById(f, EdgeIndexMatch(S[0], RetrieveNeighbors(adj, S[0], 0), 0, eid)), 1, 1, 1.0, 1.0, 0.01, "LoadVariance");
-                mo.SetObjectiveN(LinearSumAll(vari), 2, 1, 1.0, 1.0, 0.01, "FlowVariance");
+                mo.SetObjectiveN(LinearSumAll(vari), 2, 0, 1.0, 1.0, 0.01, "FlowVariance");
 
                 for (int i = 0; i < S.Length - 1; i++)
                 {
@@ -276,8 +276,10 @@ namespace Tellinclam.Algorithms
                     // this list stores all branches of this solution temperally, erased with iteration
                     var connections = new List<Tuple<int, int>>();
                     // forest remembers each partition as a tree for this solution, erased with iteration
+                    // forest_graft has trees with branches ordered by flow values (descending)
                     // flowParcel packs flow value of each branch of each tree for this solution, erased with iteration
                     var forest = new List<List<Tuple<int, int>>>();
+                    var forest_graft = new List<List<Tuple<int, int>>>();
                     var flowParcel = new List<List<double>>();
 
                     foreach (KeyValuePair<Tuple<int, int>, int> kvp in eid)
@@ -333,12 +335,18 @@ namespace Tellinclam.Algorithms
                             // switch to pipe length for testing
                             //flows.Add(wgte_summarize[eid[key]]);
                         }
-                        flowParcel.Add(flows);
+
+                        // order the tree branches by flow values so you can easily locate the source node
+                        // no plan to use a graph data model here
+                        var taggedTree = flows.Zip(tree, (_f, _e) => new { FlowValue = _f, Branch = _e })
+                                    .OrderByDescending(item => item.FlowValue);
+                        flowParcel.Add(taggedTree.Select(item => item.FlowValue).ToList());
+                        forest_graft.Add(taggedTree.Select(item => item.Branch).ToList());
                     }
 
                     // output results
                     flowParcels.Add(flowParcel);
-                    forests.Add(forest);
+                    forests.Add(forest_graft);
                 }
 
                 mo.Dispose();

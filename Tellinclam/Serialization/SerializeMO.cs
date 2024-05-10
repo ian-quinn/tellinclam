@@ -773,7 +773,7 @@ namespace Tellinclam
 
             // 20231013 ------------------------------------------------------------------------------------
             // what if we remove all presure drops, only keep T-joints?
-            // this is a temporal test because the pressure drops lead to fatal error in Modelica somehow
+            // this is a temporary test because the pressure drops lead to fatal error in Modelica somehow
             Dictionary<string, Junction> jointNameDict = new Dictionary<string, Junction>() { };
             foreach (Junction tj in tJoints)
             {
