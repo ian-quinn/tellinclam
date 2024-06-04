@@ -186,7 +186,7 @@ void StraightSkeletonByPolygonWithHoles(
 }
 
 void CreateOffsetPolygons(
-	double* vert_xy_array, int* vert_count_array, size_t hole_count, 
+	double* vert_xy_array, int* vert_count_array, size_t hole_count, double offset, 
 	double*& ss_poly_xy, int*& ss_poly_vt, int*& ss_poly_count, int*& ss_pt_count
 )
 {
@@ -233,7 +233,7 @@ void CreateOffsetPolygons(
 	// set two array
 	// one to record the vertices coordinate [x1, y1, x2, y2, x3, y3, ... ]
 	// one to record the number of vertices of each polygon
-	double lOffset = 1.6;
+	double lOffset = offset;
 	PolygonPtrVector offset_polygons = CGAL::create_offset_polygons_2<Polygon_2>(lOffset, ss);
 
 	// only take the bisectors

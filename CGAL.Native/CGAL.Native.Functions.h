@@ -17,7 +17,7 @@ void StraightSkeletonByPolygonWithHoles(
 
 CGALNATIVE_C_FUNCTION
 void CreateOffsetPolygons(
-	double* vert_xy_array, int* vert_count_array, size_t hole_count,
+	double* vert_xy_array, int* vert_count_array, size_t hole_count, double offset, 
 	double*& ss_poly_xy, int*& ss_poly_vt, int*& ss_poly_count, int*& ss_pt_count
 );
 

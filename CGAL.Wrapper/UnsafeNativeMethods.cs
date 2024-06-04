@@ -33,7 +33,7 @@ namespace CGAL.Wrapper
         [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void CreateOffsetPolygons(
             [MarshalAs(UnmanagedType.LPArray)] double[] vert_xy_array, //ulong vert_count,
-            [MarshalAs(UnmanagedType.LPArray)] int[] vert_count_array, ulong hole_count,
+            [MarshalAs(UnmanagedType.LPArray)] int[] vert_count_array, ulong hole_count, double offset, 
             ref IntPtr ss_poly_xy, ref IntPtr ss_poly_vt, ref IntPtr ss_poly_count, ref IntPtr ss_pt_count
             );
 

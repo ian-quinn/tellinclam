@@ -146,7 +146,7 @@ namespace CGAL.Wrapper
                     numPts += 1;
                 }
             }
-            double time = depth;
+            double offset = depth;
 
             //var vertCount = (ulong)p.Count;
             var holeCount = (ulong)plines.Count;
@@ -162,6 +162,7 @@ namespace CGAL.Wrapper
                 vertXyArray,
                 vertCountArray,
                 holeCount,
+                offset,
                 ref poly_xy_pointer,
                 ref poly_vt_pointer,
                 ref poly_count_pointer,
