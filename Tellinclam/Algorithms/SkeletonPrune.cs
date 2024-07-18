@@ -1,175 +1,76 @@
-﻿using Grasshopper.Kernel.Geometry.Delaunay;
-using Grasshopper.Kernel.Utility;
-using Microsoft.SqlServer.Server;
-using Rhino;
-using Rhino.Commands;
+﻿using Rhino;
 using Rhino.Geometry;
 using Rhino.Geometry.Intersect;
-using Rhino.Input.Custom;
-using Rhino.UI.Controls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Tellinclam.Algorithms
 {
     internal class SkeletonPrune
     {
-        public static List<Line> Prune(List<Line> skeletons, List<Line> bisectors, 
-            double tol_h, double tol_d, double tol_theta, 
-            out List<Point3d> debug_vts, out List<double> debug_vts_height, out List<int> debug_vts_degree)
+        /// <summary>
+        /// Align skeletons. Step 1: Align edges by QT and DBSCAN clustering based on the offset/directional distance
+        /// between edges. Step 2: extend the node of graph (degree = 1) to the polygon boundary 
+        /// </summary>
+        /// <param name="skeletons"></param>
+        /// <param name="polylines"></param>
+        /// <param name="tol_d"> the offset distance between edges</param>
+        /// <param name="tol_theta"> the angle between two edges</param>
+        /// <param name="eta"> the radio of directional/offset distance</param>
+        /// <param name="debug_vts"></param>
+        /// <param name="debug_vts_degree"></param>
+        /// <param name="debug_bundles"></param>
+        /// <returns></returns>
+        public static List<Line> Align(List<Line> skeletons, List<Curve> polylines, double tol_d, double tol_theta, double eta,  
+            out List<Point3d> debug_vts, out List<int> debug_vts_degree, out List<Line> debug_axes, out List<List<Line>> debug_bundles)
         {
+
             // do not edit the original skeletons or bisectors
-
-            List<Point3d> vertice = GetNodes(skeletons, out List<int> _ds);
-
-            // retreive node incident to edge
-            // then extend remaining nodes to the corresponding contour
-            // (by connecting it to the midpoint)
-
-            List<Line> extended_edges = new List<Line>() { };
-            int init_num = vertice.Count;
-            for (int i = 0; i < init_num; i++)
-            {
-                Point3d contour_incident = new Point3d(0, 0, 0);
-                for (int j = 0; j < bisectors.Count; j++)
-                {
-                    if (bisectors[j].PointAt(0).DistanceTo(vertice[i]) < 0.0001)
-                        contour_incident = contour_incident + bisectors[j].PointAt(1);
-                    if (bisectors[j].PointAt(1).DistanceTo(vertice[i]) < 0.0001)
-                        contour_incident = contour_incident + bisectors[j].PointAt(0);
-                }
-                if (_ds[i] == 1)
-                {
-                    // extend the stray to contour by connecting incident point
-                    // with the corresponding mid-point of the contour edge it collapses from
-                    extended_edges.Add(new Line(vertice[i], contour_incident / 2));
-                    vertice.Add(contour_incident / 2);
-                }
-            }
-
-            List<Line> edges = new List<Line>() { };
-            edges.AddRange(skeletons);
-            edges.AddRange(extended_edges);
-
-            // regenerate the network, recording the vertices, adjacency matrix
-            // height and degree of each vertex
-            int[,] adjMat = GetAdjMat(edges, out Point3d[] vts, out int[] vts_degree);
-            double[] vts_height = new double[vts.Length];       // records height of each vertex
-
-            for (int i = 0; i < vts.Length; i++)
-            {
-                for (int j = 0; j < bisectors.Count; j++)
-                {
-                    if (bisectors[j].PointAt(0).DistanceTo(vts[i]) < 0.0001 ||
-                        bisectors[j].PointAt(1).DistanceTo(vts[i]) < 0.0001)
-                    {
-                        vts_height[i] = bisectors[j].Length / Math.Sqrt(2);
-                    }
-                }
-            }
-
-            // fullfil the vts_height list
-            // every node with degree <=2 must have bisectors connected
-            // which indicates the 'height' it rises from the base boundary contour
-            // those nodes with no bisectors can 'borrow' height value
-            // from other nodes connected to them, by choosing the maximum
-            // this only applies to general situation that the skeleton contains
-            // no 'tower tip', only the 'roof ridges'
-            // 'tower tip' usually collapses from regular polygons
-            // in which case the height of 'tip' node equals adjacent node's height
-            // plus the projection of the edge in between
-            for (int flag = 0; flag < 2; flag++)
-            {
-                for (int i = 0; i < vts.Length; i++)
-                    if (vts_height[i] == 0)
-                    {
-                        double max_height = 0;
-                        for (int j = 0; j < adjMat.GetLength(1); j++)
-                        {
-                            if (adjMat[i, j] > 0)
-                                if (vts_height[j] > max_height)
-                                    max_height = vts_height[j];
-                        }
-                        vts_height[i] = max_height;
-                    }
-            }
-
-            // info from original network
-            //debug_vts = vts.ToList();
-            //debug_vts_height = vts_height.ToList();
-            //debug_vts_degree = vts_degree.ToList();
-
-            // loop to remove all strays under certain height
-            // the height indicates the offset distance from the contour
-            // usually for indoor circulation area, this value should not 
-            // be smaller than 0.75, or else the corridor width is too narrow
-            List<int> removable_edge_idx = new List<int>() { };
-            bool flag_rerun = true;
-            while (flag_rerun)
-            {
-                int trimmable_counter = 0;
-                for (int i = 0; i < vts.Count(); i++)
-                {
-                    if (vts_height[i] < tol_h && vts_degree[i] == 1)
-                    {
-                        trimmable_counter++;
-                        for (int j = 0; j < adjMat.GetLength(1); j++)
-                        {
-                            if (adjMat[i, j] > 0)
-                            {
-                                removable_edge_idx.Add(adjMat[i, j]);
-                                vts_degree[i] -= 1;
-                                vts_degree[j] -= 1;
-                            }
-                        }
-                    }
-                }
-                if (trimmable_counter == 0)
-                    flag_rerun = false;
-            }
-
-            // remove inqualified edges
-            for (int i = edges.Count - 1; i >= 0; i--)
-            {
-                if (removable_edge_idx.Contains(i))
-                    edges.RemoveAt(i);
-            }
-
+            List<Line> edges = Util.DeepCopy(skeletons);
             // flatten all edges then solve the adjacency
             // get graph in form of vertex list and adjacency matrix
             // the matrix records the id of the edge connecting these nodes
-
             // update the node list and their degrees
-            adjMat = GetAdjMat(edges, out vts, out vts_degree);              // update the adjacency matrix
+            int[,] adjMat = GetAdjMat(edges, out Point3d[] vts, out int[] vts_degree);
+
+            // initiate outputs
+            debug_vts = vts.ToList();
+            debug_vts_degree = vts_degree.ToList();
+            debug_bundles = new List<List<Line>>();
+            debug_axes = new List<Line>();
 
             // align prevalent edges to form axes (d) then move relevant points to them
             // note that the vector should be replaced by prevalent ones
-            List<Line> axes_y = GetAxes(edges, new Vector3d(0, 1, 0), tol_d, tol_theta);
-            List<Line> axes_x = GetAxes(edges, new Vector3d(1, 0, 0), tol_d, tol_theta);
+            List<Line> axes_y = GetAxes(edges, new Vector3d(0, 1, 0), tol_d, tol_theta, eta, out _);
+            List<Line> axes_x = GetAxes(edges, new Vector3d(1, 0, 0), tol_d, tol_theta, eta, out debug_bundles);
+            // extend these axes to the boundary
+            for (int i = 0; i < axes_y.Count; i++)
+                axes_y[i] = ExtendLineToBoundary(polylines, axes_y[i]);
+            for (int i = 0; i < axes_x.Count; i++)
+                axes_x[i] = ExtendLineToBoundary(polylines, axes_x[i]);
+            debug_axes.AddRange(axes_y);
+            debug_axes.AddRange(axes_x);
+
             for (int i = 0; i < vts.Length; i++)
             {
                 foreach (Line axis in axes_y)
                 {
                     Point3d plummet = axis.ClosestPoint(vts[i], false);
-                    if (vts[i].DistanceTo(plummet) < tol_d)
+                    double param = axis.ClosestParameter(vts[i]);
+                    if (vts[i].DistanceTo(plummet) < tol_d && param >= 0 && param <= 1)
                         vts[i] = plummet;
                 }
                 foreach (Line axis in axes_x)
                 {
                     Point3d plummet = axis.ClosestPoint(vts[i], false);
-                    if (vts[i].DistanceTo(plummet) < tol_d)
+                    double param = axis.ClosestParameter(vts[i]);
+                    if (vts[i].DistanceTo(plummet) < tol_d && param >= 0 && param <= 1)
                         vts[i] = plummet;
                 }
             }
 
-            debug_vts = vts.ToList();
-            debug_vts_height = vts_height.ToList();
-            debug_vts_degree = vts_degree.ToList();
-
-            // remove redundant point with coline vectors stretching out
+            // remove redundant points with incident, colined edges 
             Vector3d normal = new Vector3d(0, 0, 1);
             for (int i = 0; i < vts.Length; i++)
             {
@@ -201,6 +102,7 @@ namespace Tellinclam.Algorithms
                 }
             }
 
+            /*
             // locate intersections X of axes
             // collapse nodes to X within certain range (be careful)
             // remove duplicate points with inherited adjacency information
@@ -270,10 +172,46 @@ namespace Tellinclam.Algorithms
                     // we will skip this one during regeneration
                 }
             }
+            */
 
+
+            // ------------- updated method, simple extension along edge direction ------------
+            // only edit the coordinate of endpoints, do not add new edges
+
+            for (int i = 0; i < vts.Length; i++)
+            {
+                // if endpoint, track incident edge and its possible extension
+                if (vts_degree[i] == 1)
+                {
+                    if (GetAdjacency(i, adjMat).Count == 0)
+                        continue;
+                    Point3d startPt = vts[GetAdjacency(i, adjMat)[0]];
+                    Vector3d dir = vts[i] - startPt;
+                    dir.Unitize();
+                    LineCurve ray = new LineCurve(startPt, startPt + 100000 * dir);
+                    List<double> parameters = new List<double>(); // param list for the nearest intersection
+                    foreach (Curve edge in polylines)
+                    {
+                        CurveIntersections ccx = Intersection.CurveCurve(ray as Curve, edge,
+                            RhinoDoc.ActiveDoc.ModelAbsoluteTolerance,
+                            RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
+                        foreach (IntersectionEvent evt in ccx)
+                        {
+                            if (evt.IsPoint)
+                            {
+                                parameters.Add(evt.ParameterA);
+                            }
+                        }
+                    }
+                    if (parameters.Count != 0)
+                    {
+                        parameters.Sort();
+                        vts[i] = ray.PointAt(parameters[0]);
+                    }
+                }
+            }
             // regenerate edges
             List<Line> network_rebuilt = RegenEdges(vts, adjMat);
-
             return network_rebuilt;
         }
 
@@ -289,50 +227,55 @@ namespace Tellinclam.Algorithms
         /// then we add new point to this cluster. If there is no such cluster, this point starts new cluster.
         /// </summary>
         /// <returns></returns>
-        public static List<Line> GetAxes(List<Line> edges, Vector3d direction, double tol_d, double tol_theta)
+        public static List<Line> GetAxes(List<Line> edges, Vector3d direction, double tol_d, double tol_theta, double eta, 
+            out List<List<Line>> bundles)
         {
+            bundles = new List<List<Line>>();
             List<List<Line>> edge_bundles = new List<List<Line>>() { };
             List<Line> _edges = new List<Line>() { };
-            Vector3d normal = new Vector3d(0, 0, 1);
+
+            Vector3d unitz = new Vector3d(0, 0, 1);
             foreach (Line edge in edges)
             {
-                double angle_delta = Vector3d.VectorAngle(edge.Direction, direction, normal);
+                double angle_delta = Vector3d.VectorAngle(edge.Direction, direction, unitz);
                 if (Math.Abs(angle_delta) < tol_theta || Math.Abs(angle_delta - Math.PI) < tol_theta)
                     _edges.Add(edge);
             }
 
-            // the task is to empty the _edges list
+            // the task is to move items from _edges to edge_bundles one by one
             // put an edge to a group if the maximum distance to 
-            // all edges in it is within the threshold
+            // all other edges of that group is within the threshold
             edge_bundles.Add(new List<Line>() { _edges[0] });
             _edges.RemoveAt(0);
-
             while (_edges.Count > 0)
             {
                 int inBundleCounter = 0;
                 List<double> avg_distances = new List<double>() { };
+                // if the directional distance between edge[0] and any edge within edge_bundles[i] is
+                // less than the threshold (3×d for example) then it can be allowed into this bundle
                 for (int i = 0; i < edge_bundles.Count; i++)
                 {
-                    int inRangeCounter = 0;
-                    double distance_sum = 0;
+                    // dNormal - the distance of lines perpendicular to its direction
+                    int outRangeCounter = 0;
+                    double dNormal_sum = 0;
                     for (int j = 0; j < edge_bundles[i].Count; j++)
                     {
-                        double distance = Basic.PtDistanceToRay(
+                        double dNormal = Basic.PtDistanceToRay(
                             _edges[0].PointAt(0), edge_bundles[i][j].PointAt(0), direction, 
                             out Point3d plummet, out double stretch);
                         //double distance = edge_bundles[i][j].DistanceTo(_edges[0].PointAt(0), false);
-                        distance_sum += distance;
+                        dNormal_sum += dNormal;
                         // not in range
-                        if (distance > tol_d)
-                            inRangeCounter++;
+                        if (dNormal > tol_d)
+                            outRangeCounter++;
                     }
-                    // if the edge could be included in this group
-                    if (inRangeCounter == 0)
-                    {
-                        avg_distances.Add(distance_sum / edge_bundles[i].Count);
+                    // if the normal distance between this edge and any edge in the bundle is less than the threshold
+                    // and the max directional distance between this edge and edge in the bundle is less than the threshold
+                    //  && dAlongs[0] < 3 * tol_d
+                    avg_distances.Add(dNormal_sum / edge_bundles[i].Count);
+                    if (outRangeCounter == 0)
                         inBundleCounter++;
-                    }
-                    // if could not, go to next group and check again
+                    // if not, go to the next group and check
                 }
                
                 if (inBundleCounter == 0)
@@ -349,6 +292,7 @@ namespace Tellinclam.Algorithms
             List<Line> axes = new List<Line>() { };
             foreach (List<Line> edge_bundle in edge_bundles)
             {
+                /*
                 List<double> lengths = new List<double>() { };
                 foreach (Line edge in edge_bundle)
                     lengths.Add(edge.Length);
@@ -356,6 +300,46 @@ namespace Tellinclam.Algorithms
                 // generate long enough line segment to cover all edges (as an axis)
                 Line mainTrunk = edge_bundle[lengths.IndexOf(lengths.Max())];
                 axes.Add(new Line(mainTrunk.PointAt(0), mainTrunk.PointAt(1)));
+                */
+
+                if (edge_bundle.Count == 1)
+                {
+                    axes.Add(edge_bundle[0]);
+                    continue;
+                }
+                    
+                // how about further divide edge_bundle into several clusters by fuzzy intersection?
+                List<int> cmarks = FuzzyIntersectionExpansion(edge_bundle, eta*tol_d, tol_d, 1);
+                List<List<Line>> clusters = new List<List<Line>>();
+                for (int i = 0; i < cmarks.Max(); i++)
+                    clusters.Add(new List<Line>());
+                for (int i = 0; i < cmarks.Count; i++)
+                {
+                    if (cmarks[i] == -1)
+                        clusters.Add(new List<Line>() { edge_bundle[i] });
+                    else
+                        clusters[cmarks[i] - 1].Add(edge_bundle[i]);
+                }
+
+                foreach (List<Line> cluster in clusters)
+                {
+                    bundles.Add(cluster);
+
+                    List<double> tracedAreas = new List<double>();
+                    foreach (Line edge in cluster)
+                    {
+                        tracedAreas.Add(GetProjectionTraceArea(cluster, edge));
+                    }
+                    Line baseline = cluster[tracedAreas.IndexOf(tracedAreas.Min())];
+                    List<double> parameters = new List<double>();
+                    foreach (Line edge in cluster)
+                    {
+                        parameters.Add(baseline.ClosestParameter(edge.PointAt(0)));
+                        parameters.Add(baseline.ClosestParameter(edge.PointAt(1)));
+                    }
+                    parameters.Sort();
+                    axes.Add(new Line(baseline.PointAt(parameters[0]), baseline.PointAt(parameters.Last())));
+                }
             }
 
             return axes;
@@ -393,6 +377,54 @@ namespace Tellinclam.Algorithms
                 }
             }
             return adjMat;
+        }
+
+        /// <summary>
+        /// return the index adjacent to the target node
+        /// </summary>
+        public static List<int> GetAdjacency(int id, int[,] adjMat)
+        {
+            List<int> ids = new List<int>();
+            for (int i = 0; i < adjMat.GetLength(1); i++)
+            {
+                if (adjMat[id, i] >= 0)
+                {
+                    ids.Add(i);
+                }
+            }
+            return ids;
+        }
+
+        public static double GetEdgeDistanceAtDirection(Line eA, Line eB, Vector3d dir)
+        {
+            // project the 4 endpoints onto a given direction, then take the minimum distance among them
+            Line baseline = new Line(Point3d.Origin, Point3d.Origin + dir);
+            double a = baseline.ClosestParameter(eA.PointAt(0));
+            double b = baseline.ClosestParameter(eA.PointAt(1));
+            double c = baseline.ClosestParameter(eB.PointAt(0));
+            double d = baseline.ClosestParameter(eB.PointAt(1));
+            if (a > b) Util.Swap(ref a, ref b);
+            if (c > d) Util.Swap(ref c, ref d);
+            if (b < c)
+                return baseline.PointAt(b).DistanceTo(baseline.PointAt(c));
+            else if (d < a)
+                return baseline.PointAt(d).DistanceTo(baseline.PointAt(a));
+            else
+                return 0;
+        }
+
+        public static double GetProjectionTraceArea(List<Line> edges, Line baseline)
+        {
+            double summation = 0;
+            foreach (Line edge in edges)
+            {
+                Point3d projStart = baseline.ClosestPoint(edge.PointAt(0), false);
+                Point3d projEnd = baseline.ClosestPoint(edge.PointAt(1), false);
+                double area = 0.5 * projStart.DistanceTo(projEnd) * (
+                    edge.PointAt(0).DistanceTo(projStart) + edge.PointAt(1).DistanceTo(projEnd));
+                summation += area;
+            }
+            return summation;
         }
 
         /// <summary>
@@ -452,6 +484,108 @@ namespace Tellinclam.Algorithms
                 }
             }
             return vts;
+        }
+
+        public static List<int> FuzzyIntersectionExpansion(List<Line> edges, double ext_x, double ext_y, int MinPts)
+        {
+            List<int> labels = Enumerable.Repeat(0, edges.Count).ToList();
+            int C = 0;
+            for (int P = 0; P < edges.Count; P++)
+            {
+                if (labels[P] != 0)
+                    continue;
+                List<int> neighbors = RegionQuery(edges, P, ext_x, ext_y);
+                if (neighbors.Count < MinPts)
+                    labels[P] = -1;
+                else
+                {
+                    C += 1;
+                    // grow cluster
+                    int i = 0;
+                    while (i < neighbors.Count)
+                    {
+                        int Pn = neighbors[i];
+                        if (labels[Pn] == -1)
+                            labels[Pn] = C;
+                        else if (labels[Pn] == 0)
+                        {
+                            labels[Pn] = C;
+                            List<int> neighborsPn = RegionQuery(edges, Pn, ext_x, ext_y);
+                            if (neighborsPn.Count >= MinPts)
+                            {
+                                neighbors.AddRange(neighborsPn);
+                            }
+                        }
+                        i += 1;
+                    }
+                }
+            }
+            return labels;
+        }
+
+        // search datapoint within the neighborhood by edge distance
+        // you can switch this distance function for DBSCAN iteration
+        public static List<int> RegionQuery(List<Line> edges, int P, double ext_x, double ext_y)
+        {
+            List<int> neighbors = new List<int>();
+            for (int i = 0; i < edges.Count; i++)
+            {
+                if (i == P)
+                    continue;
+                PolylineCurve boxA = GetExpansionBox(edges[P], ext_x, ext_y);
+                PolylineCurve boxB = GetExpansionBox(edges[i], ext_x, ext_y);
+                CurveIntersections ccx = Intersection.CurveCurve(boxA, boxB,
+                    RhinoDoc.ActiveDoc.ModelAbsoluteTolerance,
+                    RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
+                if (ccx.Count > 0)
+                    neighbors.Add(i);
+            }
+            return neighbors;
+        }
+
+        public static PolylineCurve GetExpansionBox(Line edge, double ext_x, double ext_y)
+        {
+            List<Point3d> vertices = new List<Point3d>() { };
+            Vector3d direction = edge.Direction / edge.Length;
+            Vector3d perpCW = new Vector3d(direction.Y, -direction.X, 0);
+            Vector3d perpCCW = new Vector3d(-direction.Y, direction.X, 0);
+            vertices.Add(edge.PointAt(0) - ext_x * direction + ext_y * perpCCW);
+            vertices.Add(edge.PointAt(1) + ext_x * direction + ext_y * perpCCW);
+            vertices.Add(edge.PointAt(1) + ext_x * direction + ext_y * perpCW);
+            vertices.Add(edge.PointAt(0) - ext_x * direction + ext_y * perpCW);
+            vertices.Add(vertices[0]);
+            return new PolylineCurve(vertices);
+        }
+
+        public static Line ExtendLineToBoundary(List<Curve> bounds, Line line)
+        {
+            Vector3d dir = line.Direction / line.Length;
+            Point3d mid = line.PointAt(0.5);
+            LineCurve ray = new LineCurve(mid - 100000 * dir, mid + 100000 * dir);
+            List<double> parameters = new List<double>();
+            foreach (Curve bound in bounds)
+            {
+                CurveIntersections ccx = Intersection.CurveCurve(ray as Curve, bound,
+                    RhinoDoc.ActiveDoc.ModelAbsoluteTolerance,
+                    RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
+                foreach (IntersectionEvent evt in ccx)
+                    if (evt.IsPoint)
+                        parameters.Add(evt.ParameterA);
+            }
+            if (parameters.Count != 0)
+            {
+                parameters.Sort();
+                int counter = 0;
+                foreach (double parameter in parameters)
+                {
+                    if (parameter > 100000)
+                        break;
+                    counter += 1;
+                }
+                return new Line(ray.PointAt(parameters[counter - 1]), ray.PointAt(parameters[counter]));
+            }
+            else
+                return line;
         }
     }
 }

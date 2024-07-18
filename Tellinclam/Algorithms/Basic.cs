@@ -818,8 +818,9 @@ namespace Tellinclam.Algorithms
 
         }
 
-        public static List<Line> RemoveDupLines(List<Line> lines, double tol = 0.001)
+        public static List<Line> RemoveDupLines(List<Line> lines, double tol, out List<int> ids)
         {
+            ids = new List<int>();
             if (lines.Count == 0)
                 return lines;
             
@@ -842,6 +843,7 @@ namespace Tellinclam.Algorithms
                         distance_2 < tol && distance_3 < tol)
                     {
                         lines_.RemoveAt(i);
+                        ids.Add(i);
                         break;
                     }
                 }

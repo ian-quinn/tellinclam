@@ -60,7 +60,7 @@ namespace Tellinclam
             DA.GetData(2, ref tol);
 
             var pts_ = Basic.RemoveDupPoints(pts, tol);
-            var lines_ = Basic.RemoveDupLines(lines, tol);
+            var lines_ = Basic.RemoveDupLines(lines, tol, out _);
 
             DA.SetDataList(0, pts_);
             DA.SetDataList(1, lines_);

@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using CGAL.Wrapper;
 using Tellinclam.Algorithms;
+using Rhino;
+using System.Linq;
 
 namespace Tellinclam
 {
@@ -29,9 +31,12 @@ namespace Tellinclam
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Polylines", "Poly", 
+            pManager.AddCurveParameter("Polygons", "Ply", 
                 "Non self-intersected or cross-intersected polylines as input", GH_ParamAccess.list);
-            pManager.AddNumberParameter("time", "time", "test input", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Wavefront time", "t", 
+                "Time value for the wavefront polygon generation", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Prune threshold", "¦Î", 
+                "Skeletons stretching out the wavefront of this time value will be removed", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -40,11 +45,11 @@ namespace Tellinclam
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddPointParameter("Vertices", "Vtx", "Vertices of the straight skeleton", GH_ParamAccess.tree);
-            pManager.AddLineParameter("Skeleton", "Skt", "Inter straight skeleton of the polygon", GH_ParamAccess.tree);
-            pManager.AddNumberParameter("Height", "hgt", "The time cost offseting this skeleton edge", GH_ParamAccess.tree);
-            pManager.AddLineParameter("Bisector", "Bis", "Trace of polygon vertice moving inward", GH_ParamAccess.tree);
-            pManager.AddLineParameter("Contour", "Ctr", "Boundary contour with certain offset", GH_ParamAccess.tree);
-            pManager.AddCurveParameter("Polys", "Ply", "Boundary contour with certain offset", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Times", "time", "The time cost offseting this skeleton edges", GH_ParamAccess.tree);
+            pManager.AddLineParameter("Skeletons", "Skt", "Inter straight skeleton of the polygon", GH_ParamAccess.tree);
+            pManager.AddLineParameter("Bisectors", "Bis", "Trace of polygon vertice moving inward", GH_ParamAccess.tree);
+            pManager.AddLineParameter("Contours", "Ctr", "Boundary contour with certain offset", GH_ParamAccess.tree);
+            pManager.AddCurveParameter("Wavefronts", "Wvf", "Boundary contour with certain offset", GH_ParamAccess.tree);
         }
 
         /// <summary>
@@ -54,16 +59,19 @@ namespace Tellinclam
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            double _tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
+
             List<Curve> crvs = new List<Curve>() { };
-            double time = 1;
-            DA.GetData(1, ref time);
+            double ti = 1;
+            double xi = 0;
+            DA.GetData(1, ref ti);
+            DA.GetData(2, ref xi);
             if (!DA.GetDataList(0, crvs))
             {
                 return;
             }
-
+            // prepare inputs
             List<Polyline> plines = new List<Polyline>() { };
-
             foreach (Curve crv in crvs)
             {
                 // curve self-intersection check
@@ -82,27 +90,17 @@ namespace Tellinclam
                     if (crv.TryGetPolyline(out Polyline pline))
                         plines.Add(pline);
             }
-
-            List<List<Point3d>> nestedVertices = new List<List<Point3d>>() { };
-            List<List<Line>> nestedSkeletons = new List<List<Line>>() { };
-            List<List<double>> nestedHeights = new List<List<double>>() { };
-            List<List<Line>> nestedBisectors = new List<List<Line>>() { };
-            List<List<Line>> nestedContours = new List<List<Line>>() { };
-
-            List<List<Polyline>> nestedPolys = new List<List<Polyline>>() { };
-
-            List<List<Polyline>> MCRs = new List<List<Polyline>>() { };
+            List<List<Polyline>> MCRs = new List<List<Polyline>>();
             foreach (Polyline pline in plines)
             {
                 if (Basic.IsClockwise(pline))
                     pline.Reverse();
                 MCRs.Add(new List<Polyline>() { pline.Duplicate() });
             }
-                
-            bool[] redundantMcr = new bool[plines.Count];
-            for (int i = plines.Count - 1; i >= 0; i--)
+            bool[] redundantMCR = new bool[plines.Count];
+            for (int i = 0; i < plines.Count; i++)
             {
-                for (int j = plines.Count - 1; j >= 0; j--)
+                for (int j = 0; j < plines.Count; j++)
                 {
                     if (i != j)
                         if (Basic.IsPolyInPoly(plines[i], plines[j]))
@@ -110,59 +108,124 @@ namespace Tellinclam
                             // the inner holes should be clockwise
                             plines[i].Reverse();
                             MCRs[j].Add(plines[i]);
-                            redundantMcr[i] = true;
+                            redundantMCR[i] = true;
                         }
                 }
             }
 
-            for (int i = 0; i < MCRs.Count; i++)
-            {
-                if (redundantMcr[i])
-                    continue;
-                var edges = StraightSkeleton.SsAsPoint3d(MCRs[i]);
-                nestedSkeletons.Add(edges.Item1);
-                List<double> heights = new List<double>() { };
-                foreach (Tuple<double, double> pair in edges.Item2)
-                {
-                    //if (pair.Item1 == pair.Item2)
-                    //    heights.Add(pair.Item1);
-                    //else
-                    heights.Add((pair.Item1 + pair.Item2) / 2);
-                }
-                nestedHeights.Add(heights);
-                nestedBisectors.Add(edges.Item3);
-                nestedContours.Add(edges.Item4);
-            }
+            // prepare outputs
+            List<List<Point3d>> nestedNodes = new List<List<Point3d>>();
+            List<List<Line>> nestedSkeletons = new List<List<Line>>();
+            List<List<double>> nestedTimes = new List<List<double>>();
+            List<List<Line>> nestedBisectors = new List<List<Line>>();
+            List<List<Line>> nestedContours = new List<List<Line>>();
+            List<List<Polyline>> nestedWavefronts = new List<List<Polyline>>();
 
             for (int i = 0; i < MCRs.Count; i++)
             {
-                if (redundantMcr[i])
+                if (redundantMCR[i])
                     continue;
-                var polys = StraightSkeleton.OffsetPolygon(MCRs[i], time);
-                List<Polyline> polylines = new List<Polyline>() { };
-                foreach (List<Point3d> poly in polys)
+                var SS = StraightSkeleton.SsAsPoint3d(MCRs[i]);
+                
+                // note that the output bisectors must be in reversed pairs
+                // because they all come from the superpositioned monotone polygons
+                List<Line> skeletons = Basic.RemoveDupLines(SS.Item1, _tol, out List<int> del_ids);
+
+                int[,] adjMat = EdgeAlign.GetAdjMat(skeletons, out Point3d[] vts, out int[] vts_degree);
+                double[] vts_time = new double[vts.Length];
+
+                for (int j = 0; j < SS.Item1.Count; j++)
                 {
-                    poly.Add(poly[0]);
-                    polylines.Add(new Polyline(poly));
+                    if (del_ids.Contains(j))
+                        continue;
+                    for (int k = 0; k < vts.Length; k++)
+                    {
+                        if (SS.Item1[j].PointAt(0).DistanceTo(vts[k]) < _tol)
+                            vts_time[k] = SS.Item2[j].Item1;
+                        if (SS.Item1[j].PointAt(1).DistanceTo(vts[k]) < _tol)
+                            vts_time[k] = SS.Item2[j].Item2;
+                    }
                 }
-                nestedPolys.Add(polylines);
+                // take average heights as the height of an edge
+                //foreach (Tuple<double, double> pair in edges.Item2)
+                //{
+                //    heights.Add((pair.Item1 + pair.Item2) / 2);
+                //}
+
+                // loop to remove all strays under certain height
+                // the height indicates the offset distance from the contour
+                // usually for indoor circulation area, this value should not 
+                // be smaller than 0.75, or else the corridor width is too narrow
+                List<int> removable_edge_idx = new List<int>() { };
+                bool flag_rerun = true;
+                int counter = 0;
+                while (flag_rerun && counter < 50)
+                {
+                    counter += 1;
+                    int trimmable_counter = 0;
+                    for (int j = 0; j < vts.Count(); j++)
+                    {
+                        if (vts_time[j] < xi && vts_degree[j] == 1)
+                        {
+                            trimmable_counter++;
+                            for (int k = 0; k < adjMat.GetLength(1); k++)
+                            {
+                                if (adjMat[j, k] >= 0)
+                                {
+                                    removable_edge_idx.Add(adjMat[j, k]);
+                                    adjMat[j, k] = -1;
+                                    adjMat[k, j] = -1;
+                                    vts_degree[j] -= 1;
+                                    vts_degree[k] -= 1;
+                                    continue;
+                                }
+                            }
+                            continue;
+                        }
+                    }
+                    if (trimmable_counter == 0)
+                        flag_rerun = false;
+                }
+                // remove edges stretching out the wavefront with time = epsilon
+                for (int j = skeletons.Count - 1; j >= 0; j--)
+                    if (removable_edge_idx.Contains(j))
+                        skeletons.RemoveAt(j);
+
+                // then 
+                nestedSkeletons.Add(skeletons);
+                nestedNodes.Add(vts.ToList());
+                nestedTimes.Add(vts_time.ToList());
+                nestedBisectors.Add(Basic.RemoveDupLines(SS.Item3, _tol, out _));
+                nestedContours.Add(Basic.RemoveDupLines(SS.Item4, _tol, out _));
             }
 
-            // p
-
-            foreach (List<Line> skeletons in nestedSkeletons)
+            // generate the wavefronts 
+            for (int i = 0; i < MCRs.Count; i++)
             {
-                List<int> degrees;
-                nestedVertices.Add(Algorithms.SkeletonPrune.GetNodes(skeletons, out degrees));
+                if (redundantMCR[i])
+                    continue;
+                // if time == 0, take the original MCR as the offset polygons
+                if (ti > 0)
+                {
+                    var polys = StraightSkeleton.OffsetPolygon(MCRs[i], ti);
+                    List<Polyline> polylines = new List<Polyline>() { };
+                    foreach (List<Point3d> poly in polys)
+                    {
+                        poly.Add(poly[0]);
+                        polylines.Add(new Polyline(poly));
+                    }
+                    nestedWavefronts.Add(polylines);
+                }
+                else
+                    nestedWavefronts.Add(MCRs[i]);
             }
 
-            DA.SetDataTree(0, Util.ListToTree(nestedVertices));
-            DA.SetDataTree(1, Util.ListToTree(nestedSkeletons));
-            DA.SetDataTree(2, Util.ListToTree(nestedHeights));
+            DA.SetDataTree(0, Util.ListToTree(nestedNodes));
+            DA.SetDataTree(1, Util.ListToTree(nestedTimes));
+            DA.SetDataTree(2, Util.ListToTree(nestedSkeletons));
             DA.SetDataTree(3, Util.ListToTree(nestedBisectors));
             DA.SetDataTree(4, Util.ListToTree(nestedContours));
-
-            DA.SetDataTree(5, Util.ListToTree(nestedPolys));
+            DA.SetDataTree(5, Util.ListToTree(nestedWavefronts));
         }
 
         /// <summary>

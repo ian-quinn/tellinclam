@@ -98,6 +98,14 @@ namespace Tellinclam
             right = temp;
         }
 
+        public static List<T> DeepCopy<T>(List<T> items)
+        {
+            List<T> _items = new List<T>() { };
+            foreach (T item in items)
+                _items.Add(item);
+            return _items;
+        }
+
         public static string IntListToString(List<int> idx)
         {
             string msg = "";

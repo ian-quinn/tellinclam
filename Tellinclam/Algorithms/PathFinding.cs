@@ -1,21 +1,11 @@
 ﻿using CGAL.Wrapper;
 using Rhino;
-using Rhino.ApplicationSettings;
 using Rhino.Geometry;
-using Rhino.Geometry.Intersect;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using CGAL.Wrapper;
-using Grasshopper.Kernel.Geometry.Delaunay;
 using Priority_Queue;
-using System.Reflection;
 
 
 using Tellinclam.Serialization;
@@ -746,7 +736,8 @@ namespace Tellinclam.Algorithms
                 return merged;
             }
 
-            List<Line> branches = Basic.RemoveDupLines(edges_rebuilt);
+            List<Line> branches = Basic.RemoveDupLines(edges_rebuilt, 
+                RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, out _);
             sum_length = 0;
             foreach (Line branch in branches)
                 sum_length += branch.Length;
