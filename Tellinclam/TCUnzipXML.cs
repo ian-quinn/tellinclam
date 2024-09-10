@@ -19,7 +19,7 @@ namespace Tellinclam
         /// </summary>
         public TCUnzipXML()
           : base("gbXML DeSerializer", "UnzipXML",
-            "A quick gbXML analyser",
+            "A quick gbXML deSerializer",
             "Clam", "IO")
         {
         }
@@ -31,8 +31,8 @@ namespace Tellinclam
         {
             pManager.AddTextParameter("XML path", "Path",
                 "The gbXML path for generated gbXML file", GH_ParamAccess.item);
-            //pManager.AddTextParameter("Label to lookup", "Label",
-            //    "Labels for retreiving polygon loops", GH_ParamAccess.list);
+            pManager.AddTextParameter("Surface id", "id",
+                "Kookup geometry item by id", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Run", "Run",
                 "Run export scripts", GH_ParamAccess.item);
         }
@@ -46,10 +46,14 @@ namespace Tellinclam
             //    "All vertices loops under the selected label", GH_ParamAccess.tree);
             pManager.AddTextParameter("Space ID", "id",
                 "List of space id", GH_ParamAccess.list);
-            pManager.AddPointParameter("Space Faces", "space",
+            pManager.AddCurveParameter("Retrieved Surface", "surface",
+                "The surface retrieved", GH_ParamAccess.item);
+            pManager.AddCurveParameter("Space Faces", "space",
                 "All vertices loops of surfaces nested in each space", GH_ParamAccess.tree);
-            pManager.AddPointParameter("Space Openings", "opening",
+            pManager.AddCurveParameter("Space Openings", "opening",
                 "All opening loops of each space", GH_ParamAccess.tree);
+            pManager.AddBrepParameter("Column", "column", "", GH_ParamAccess.list);
+            pManager.AddBrepParameter("Beam", "beam", "", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -60,12 +64,12 @@ namespace Tellinclam
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             string path = "";
-            List<string> labels = new List<string>();
+            string srfId = "";
             bool run = false;
 
-            if (!DA.GetData(0, ref path) || !DA.GetData(1, ref run))
+            if (!DA.GetData(0, ref path) || !DA.GetData(2, ref run))
                 return;
-
+            DA.GetData(1, ref srfId);
             if (!run)
                 return;
 
@@ -79,32 +83,53 @@ namespace Tellinclam
             //}
 
             List<string> idList = new List<string>();
-            DataTree<Point3d> spaceTree = new DataTree<Point3d>();
-            DataTree<Point3d> openingTree = new DataTree<Point3d>();
+            Polyline surface = new Polyline(new Point3d[0]);
+            DataTree<Polyline> spaceTree = new DataTree<Polyline>();
+            DataTree<Polyline> openingTree = new DataTree<Polyline>();
             SerializeXML.GetSpace(path, out List<string> ids,
-                out List<List<List<Point3d>>> spaces, out List<List<List<Point3d>>> openings);
+                out List<List<Polyline>> spaces, out List<List<Polyline>> openings);
+            SerializeXML.GetColBeam(path, out List<Brep> columns, out List<Brep> beams);
             //Debug.Print($"Space members: {spaces.Count}");
-            for (int i = 0; i < spaces.Count; i++)
-            {
-                idList.Add(ids[i]);
-                for (int j = 0; j < spaces[i].Count; j++)
-                    foreach (Point3d pt in spaces[i][j])
-                    {
-                        spaceTree.Add(pt, new Grasshopper.Kernel.Data.GH_Path(new int[] { 0, i, j }));
-                        //Debug.Print($"Iterate to 0_{i}_{j}");
-                    }
-                if (openings[i].Count == 0)
-                    openingTree.EnsurePath(new Grasshopper.Kernel.Data.GH_Path(new int[] { 0, i, 0 }));
-                for (int j = 0; j < openings[i].Count; j++)
-                    foreach (Point3d pt in openings[i][j])
-                    {
-                        openingTree.Add(pt, new Grasshopper.Kernel.Data.GH_Path(new int[] { 0, i, j }));
-                    }
-            }
 
+            // prepare outputs
+            // with specific surface id given, only output adjacent spaces
+            if (SerializeXML.GetSurface(path, srfId, out Polyline boundary, out Tuple<string, string> adjSpace))
+            {
+                surface = boundary;
+                for (int i = 0; i < spaces.Count; i++)
+                {
+                    if (ids[i] == adjSpace.Item1 || ids[i] == adjSpace.Item2)
+                    {
+                        idList.Add(ids[i]);
+                        for (int j = 0; j < spaces[i].Count; j++)
+                            spaceTree.Add(spaces[i][j], new Grasshopper.Kernel.Data.GH_Path(new int[] { 0, i }));
+                        if (openings[i].Count == 0)
+                            openingTree.EnsurePath(new Grasshopper.Kernel.Data.GH_Path(new int[] { 0, i }));
+                        for (int j = 0; j < openings[i].Count; j++)
+                            openingTree.Add(openings[i][j], new Grasshopper.Kernel.Data.GH_Path(new int[] { 0, i }));
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < spaces.Count; i++)
+                {
+                    idList.Add(ids[i]);
+                    for (int j = 0; j < spaces[i].Count; j++)
+                        spaceTree.Add(spaces[i][j], new Grasshopper.Kernel.Data.GH_Path(new int[] { 0, i}));
+                    if (openings[i].Count == 0)
+                        openingTree.EnsurePath(new Grasshopper.Kernel.Data.GH_Path(new int[] { 0, i}));
+                    for (int j = 0; j < openings[i].Count; j++)
+                        openingTree.Add(openings[i][j], new Grasshopper.Kernel.Data.GH_Path(new int[] { 0, i}));
+                }
+            }
+            
             DA.SetDataList(0, idList);
-            DA.SetDataTree(1, spaceTree);
-            DA.SetDataTree(2, openingTree);
+            DA.SetData(1, surface);
+            DA.SetDataTree(2, spaceTree);
+            DA.SetDataTree(3, openingTree);
+            DA.SetDataList(4, columns);
+            DA.SetDataList(5, beams);
         }
 
         /// <summary>

@@ -1,15 +1,13 @@
-﻿using Grasshopper;
-using Grasshopper.Kernel;
-using Grasshopper.Kernel.Types;
-using Rhino.Geometry;
-using System;
+﻿using System;
+using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
-using System.Linq;
-using Tellinclam.Serialization;
-using static Tellinclam.Serialization.SchemaJSON;
-using System.Text.Json;
 using System.IO;
+using System.Text.Json;
+
+using Grasshopper.Kernel;
+
+using Tellinclam.JSON;
 
 namespace Tellinclam
 {
@@ -42,15 +40,17 @@ namespace Tellinclam
             pManager.AddTextParameter("Simulation settings", "ctrl", "Simulation settings", GH_ParamAccess.item);
             // change these inputs to a nested json file
             pManager.AddTextParameter("IDF path", "idf",
-                "The path of IDF for reference", GH_ParamAccess.item);
-            pManager.AddTextParameter("EPW/MOS path", "epw",
-                "The path of EPW/MOS for EnergyPlus/Modelica simulation. The names must be the same except for the extension.", GH_ParamAccess.item);
-            pManager.AddTextParameter("MO path", "mo",
-                "The path of output Modelica scripts", GH_ParamAccess.item);
+                "The path of IDF referenced", GH_ParamAccess.item);
+            pManager.AddTextParameter("EPW path", "epw",
+                "The path of EPW for EnergyPlus/Modelica simulation.", GH_ParamAccess.item);
+            pManager.AddTextParameter("Project path", "path",
+                "The project directory for Modelica scripts and assets", GH_ParamAccess.item);
             pManager.AddTextParameter("Buildings Library path", "pkg",
-                "The path of Modelica library Buildings (LBNL)", GH_ParamAccess.item);
+                "The path of Modelica library Buildings (LBNL) referenced", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Output scripts", "write",
+                "Prepare assets for simulation (make sure the project path is clean)", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Run Simulation", "run",
-                "Run Simulation (this may take a while. be careful doing this)", GH_ParamAccess.item);
+                "Run Simulation (this may take a while. Toggle with caution)", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Tellinclam
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Modelica Scripts", ".mo","The serialized Modelica scripts", GH_ParamAccess.item);
-            pManager.AddTextParameter("Result file (.mat)", "res", "OpenModelica result file .mat", GH_ParamAccess.item);
+            pManager.AddTextParameter("Result file", ".mat", "OpenModelica result file .mat", GH_ParamAccess.item);
             pManager.AddTextParameter("Simulation Log", "log", "Command line output during simulation batch", GH_ParamAccess.item);
         }
 
@@ -74,18 +74,24 @@ namespace Tellinclam
             string jsonSet = "";
             string idfPath = "";
             string epwPath = "";
-            string moPath = "";
+            string outputPath = "";
             string pkgPath = "";
             string modelName = "unnamed";
+            bool isWrite = false;
             bool isRun = false;
 
             DA.GetData(0, ref modelName);
             DA.GetData(2, ref jsonSet);
             DA.GetData(3, ref idfPath);
             DA.GetData(4, ref epwPath);
-            DA.GetData(7, ref isRun);
-            if (!DA.GetData(1, ref jsonSys) || !DA.GetData(5, ref moPath) || !DA.GetData(6, ref pkgPath))
+            DA.GetData(7, ref isWrite);
+            DA.GetData(8, ref isRun);
+            if (!DA.GetData(1, ref jsonSys) || !DA.GetData(5, ref outputPath) || !DA.GetData(6, ref pkgPath))
                 return;
+
+            DA.SetData(0, "");
+            DA.SetData(1, "");
+            DA.SetData(2, "");
 
             // -------------------------- LEGACY VER ------------------------------------
 
@@ -104,52 +110,88 @@ namespace Tellinclam
 
             // --------------------------------------------------------------------------
 
-            // now everything is unpacked from the JSON file
-            Floorplan jsFloorplan = JsonSerializer.Deserialize<Floorplan>(jsonSys);
-            SimulationSettings jsCtrls = JsonSerializer.Deserialize<SimulationSettings>(jsonSet);
-            string script_mo = SerializeMO.RecFancoil(jsFloorplan, jsCtrls, modelName, idfPath, epwPath, false);
-
-            string dir_package = Path.Combine(moPath, modelName);
-            string dir_openstudio = Path.Combine(dir_package, "openmodelica");
-            // If directory does not exist, create it
-            if (!Directory.Exists(dir_package))
-                Directory.CreateDirectory(dir_package);
-            Util.ScriptPrint(script_mo, $"{modelName}.mo", dir_package);
-            if (!Directory.Exists(dir_openstudio))
-                Directory.CreateDirectory(dir_openstudio);
-
-            string script_py = "";
-            script_py += "import os\n";
-            script_py += "from OMPython import OMCSessionZMQ\n\n";
-            script_py += $"os.chdir(\"{dir_openstudio.Replace(@"\", "/")}\")\n";
-            script_py += "omc = OMCSessionZMQ()\n";
-            script_py += "omc.sendExpression(\"loadModel(Modelica)\")\n";
-            script_py += $"omc.sendExpression(\"loadFile(\\\"{Path.Combine(pkgPath, "package.mo").Replace(@"\", "/")}\\\")\")\n";
-            script_py += $"omc.sendExpression(\"loadFile(\\\"../{modelName}.mo\\\")\")\n";
-            script_py += $"result = omc.sendExpression(\"simulate({modelName})\")\n";
-            script_py += "print(result['resultFile'] + '@', end='')\n";
-            script_py += "print(result['messages'] + '@', end='')\n";
-            script_py += "print(result['timeTotal'], end='')\n";
-            Util.ScriptPrint(script_py, $"{modelName}.py", dir_openstudio);
-
-            //string script_bat = "";
-            //script_bat += $"@echo off\npython {modelName}.py\npause";
-            //Util.ScriptPrint(script_bat, $"{modelName}.bat", dir_openstudio);
-
+            // prepare the project folder and assets for simulation
             string log = "";
-            if (isRun)
-                log = Util.ExecuteBatch(Path.Combine(dir_openstudio, $"{modelName}.py"));
+            string dir_project = Path.Combine(outputPath, modelName);
+            string dir_openstudio = Path.Combine(dir_project, "openmodelica");
+            // create the project folder for assets
+            if (isWrite && !Directory.Exists(dir_project))
+            {
+                Directory.CreateDirectory(dir_project);
 
-            if (dir_package != "")
-                File.WriteAllText(Path.Combine(dir_package, $"{modelName}.json"), $"{jsonSys}");
+                // try to move IDF/EPW/MOS to the project folder for convenience
+                try
+                {
+                    File.Copy(epwPath, Path.Combine(dir_project, "ref.epw"));
+                    File.Copy(idfPath, Path.Combine(dir_project, "ref.idf"));
+                }
+                catch (IOException ex)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                        "Error when moving EPW/IDF file" + ex.Message);
+                }
+                // Buildings library provides a jar for EPW-MOS conversion
+                // make sure you have Java 11 or later installed in local environment
+                string pathJava = "C:\\Program Files\\Java\\jdk-22\\bin\\java.exe";
+                string cmd = $"(\"{pathJava}\" -jar " +
+                    $"\"{Path.Combine(pkgPath, "Resources\\bin\\ConvertWeatherData.jar")}\" " +
+                    $"\"{Path.Combine(dir_project, "ref.epw")}\") ";
+                if (!Directory.Exists(Path.Combine(dir_project, "ref.mos")))
+                    Util.ExecuteCmd(cmd);
 
-            DA.SetData(0, Path.Combine(dir_package, $"{modelName}.mo"));
-            DA.SetData(1, "");
-            DA.SetData(2, "");
+                Floorplan jsFloorplan = JsonSerializer.Deserialize<Floorplan>(jsonSys);
+                SimulationSettings jsCtrls = JsonSerializer.Deserialize<SimulationSettings>(jsonSet);
+
+                // 240817 replace the IDF/EPW path with predefined path relative to the project folder
+                //string script_mo = SerializeMO.RecFancoil(jsFloorplan, jsCtrls, dir_project, modelName, false);
+
+                string script_mo = "";
+                if (jsFloorplan.systems[0].type == sysTypeEnum.IDE)
+                    script_mo = SerializeMO.Framework(jsCtrls, dir_project, modelName, 
+                        SerializeMO.TemplateIdealLoad(jsFloorplan));
+                if (jsFloorplan.systems[0].type == sysTypeEnum.FCU)
+                    script_mo = SerializeMO.Framework(jsCtrls, dir_project, modelName,
+                        SerializeMO.TemplateFanCoil(jsFloorplan));
+                if (jsFloorplan.systems[0].type == sysTypeEnum.VAV)
+                    script_mo = SerializeMO.Framework(jsCtrls, dir_project, modelName,
+                        SerializeMO.TemplateVAVReheat(jsFloorplan));
+
+                Util.ScriptPrint(script_mo, $"{modelName}.mo", dir_project);
+                if (!Directory.Exists(dir_openstudio))
+                    Directory.CreateDirectory(dir_openstudio);
+
+                string script_py = "";
+                script_py += "import os\n";
+                script_py += "from OMPython import OMCSessionZMQ\n\n";
+                script_py += $"os.chdir(\"{dir_openstudio.Replace(@"\", "/")}\")\n";
+                script_py += "omc = OMCSessionZMQ()\n";
+                script_py += "omc.sendExpression(\"loadModel(Modelica)\")\n";
+                script_py += $"omc.sendExpression(\"loadFile(\\\"{Path.Combine(pkgPath, "package.mo").Replace(@"\", "/")}\\\")\")\n";
+                script_py += $"omc.sendExpression(\"loadFile(\\\"../{modelName}.mo\\\")\")\n";
+                script_py += $"result = omc.sendExpression(\"simulate({modelName})\")\n";
+                script_py += "print(result['resultFile'] + '@', end='')\n";
+                script_py += "print(result['messages'] + '@', end='')\n";
+                script_py += "print(result['timeTotal'], end='')\n";
+                Util.ScriptPrint(script_py, $"{modelName}.py", dir_openstudio);
+
+                //string script_bat = "";
+                //script_bat += $"@echo off\npython {modelName}.py\npause";
+                //Util.ScriptPrint(script_bat, $"{modelName}.bat", dir_openstudio);
+
+                File.WriteAllText(Path.Combine(dir_project, $"{modelName}.json"), $"{jsonSys}");
+
+                DA.SetData(0, Path.Combine(dir_project, $"{modelName}.mo"));
+            }
+
+            if (isWrite && isRun)
+                log += Util.ExecuteCmd("python " + Path.Combine(dir_openstudio, $"{modelName}.py"));
+
             if (log != "")
             {
                 DA.SetData(1, log.Split('@')[0]);
                 DA.SetData(2, log.Split('@')[1]);
+
+                File.WriteAllText(Path.Combine(dir_project, "log.txt"), $"{log}");
             }
         }
 

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using CGAL.Wrapper;
 using Tellinclam.Algorithms;
 using System.Diagnostics;
-using Tellinclam.Serialization;
+using Tellinclam.JSON;
 
 namespace Tellinclam
 {

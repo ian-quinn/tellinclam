@@ -1,18 +1,12 @@
-﻿using CGAL.Wrapper;
-using Rhino;
-using Rhino.Geometry;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+
+using Rhino;
+using Rhino.Geometry;
+using CGAL.Wrapper;
 using Priority_Queue;
-
-
-using Tellinclam.Serialization;
-using static Tellinclam.Serialization.SchemaJSON;
-using System.CodeDom;
-using static Tellinclam.Algorithms.PathFinding;
-using Rhino.FileIO;
 
 namespace Tellinclam.Algorithms
 {
@@ -97,16 +91,20 @@ namespace Tellinclam.Algorithms
                 return true;
             }
 
+            //public override string ToString()
+            //{
+            //    StringBuilder nodeString = new StringBuilder();
+            //    nodeString.Append($"[ ID-{Index} Value-{Value} Neighbors- ");
+            //    for (int i = 0; i < Neighbors.Count; i++)
+            //    {
+            //        nodeString.Append(Neighbors[i].Value + $"-{Weights[i]} "); // + edge.ToString()+ " ");                
+            //    }
+            //    nodeString.Append("]");
+            //    return nodeString.ToString();
+            //}
             public override string ToString()
             {
-                StringBuilder nodeString = new StringBuilder();
-                nodeString.Append($"[ ID-{Index} Value-{Value} Neighbors- ");
-                for (int i = 0; i < Neighbors.Count; i++)
-                {
-                    nodeString.Append(Neighbors[i].Value + $"-{Weights[i]} "); // + edge.ToString()+ " ");                
-                }
-                nodeString.Append("]");
-                return nodeString.ToString();
+                return $"{{{Coords.X}, {Coords.Y}, {Coords.Z}}}";
             }
         }
 
@@ -909,11 +907,16 @@ namespace Tellinclam.Algorithms
                 {
                     branches.Add(new Tuple<int, int>(edge.From.Value, edge.To.Value));
                     // 20240425 the consequnce of removing half edges from GetEdges() results
-                    branches.Add(new Tuple<int, int>(edge.To.Value, edge.From.Value));
+                    //branches.Add(new Tuple<int, int>(edge.To.Value, edge.From.Value));
                 }
                 branch_counter = branches.Count;
             }
 
+            // for graph with single loop, SPT can find a tree with all leaf points as terminals
+            // however, if a graph has n loops, the generated tree will have n-1 redudant leaf points
+            // that are not from terminals. these points are fron t-joint attached with loops
+            // so, you have to remove these edges incident to non-terminal nodes
+            // I have implemented this before  ↓ ↓ ↓ ↓ ↓ ↓ 
 
             // trim unnecessary branches. Cull edges with 1 degree vertex that is not a terminal
             // some vertices are removed, so mst_degree may have 0 degree points, idle
@@ -932,12 +935,13 @@ namespace Tellinclam.Algorithms
                     mstDegrees[branches[i].Item2]++;
                 }
 
-                // if there is not increment in vts_removed, cancel this iteration
+                // if there is no increment in vts_removed, cancel this iteration
                 flag_iteration = false;
 
                 for (int i = 0; i < vts.Length; i++)
                 {
-                    if (!terminalIdx.Contains(i) && mstDegrees[i] == 1)
+                    // remove the vertex with degree=1, not terminal, not source node
+                    if (!terminalIdx.Contains(i) && !sourceIdx .Contains(i) && mstDegrees[i] == 1)
                     {
                         vts_removed.Add(i);
                         flag_iteration = true;

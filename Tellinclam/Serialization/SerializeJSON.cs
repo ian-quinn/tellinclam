@@ -1,4 +1,5 @@
-﻿using Rhino.Geometry;
+﻿using Rhino;
+using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
@@ -8,10 +9,10 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using static Tellinclam.Algorithms.PathFinding;
-using static Tellinclam.Serialization.SchemaJSON;
+using Tellinclam.JSON;
 
 
-namespace Tellinclam.Serialization
+namespace Tellinclam
 {
     public class SerializeJSON
     {
@@ -21,12 +22,12 @@ namespace Tellinclam.Serialization
         //    return JsonSerializer.Serialize(jDoc, new JsonSerializerOptions { WriteIndented = true });
         //}
 
+        static double _tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
-        public static SchemaJSON.ConduitGraph PackSubGraph(Graph<int> graph)
+        public static ConduitGraph PackSubGraph(Graph<int> graph)
         {
-            List<SchemaJSON.ConduitNode> jsNodes = new List<SchemaJSON.ConduitNode>() { };
-            List<SchemaJSON.ConduitEdge> jsEdges = new List<SchemaJSON.ConduitEdge>() { };
-            double sum_length = 0;
+            List<ConduitNode> jsNodes = new List<ConduitNode>();
+            List<ConduitEdge> jsEdges = new List<ConduitEdge>();
             double max_res = 0;
             int max_node = -1;
             bool[] isTraversed = new bool[graph.Count];
@@ -37,7 +38,7 @@ namespace Tellinclam.Serialization
 
             // generate jsNodes with different IDs, then by the same sequence, refered by the jsEdge
             // the node index must be 0, 1, 2, 3...
-            //int max_depth = 0;
+            // ieration through all nodes
             int numJunction = 0;
             int numBend = 0;
             foreach (Node<int> node in graph.Nodes)
@@ -61,7 +62,7 @@ namespace Tellinclam.Serialization
                 }
 
                 string node_id = Guid.NewGuid().ToString("N").Substring(0, 8);
-                jsNodes.Add(new SchemaJSON.ConduitNode
+                jsNodes.Add(new ConduitNode
                 {
                     id = node_id,
                     coordU = node.Coords.X,
@@ -96,7 +97,6 @@ namespace Tellinclam.Serialization
                     }
                 }
             }
-
             // iterate once again to assign parent to each node
             // DANGEROUS!
             for (int i = 0; i < graph.Nodes.Count; i++)
@@ -107,18 +107,20 @@ namespace Tellinclam.Serialization
                 }
             }
 
+            // iterate through all edges
             foreach (Edge<int> edge in graph.GetEdges())
             {
-                jsEdges.Add(new SchemaJSON.ConduitEdge
+                jsEdges.Add(new ConduitEdge
                 {
                     startId = jsNodes[edge.From.Index].id,
                     endId = jsNodes[edge.To.Index].id,
                     length = edge.Weight, 
-                    isTrunk = false, // really?
-                    resType = resTypeEnum.duct
+                    isTrunk = false // really?
                 });
             }
-            SchemaJSON.ConduitGraph jsGraph = new SchemaJSON.ConduitGraph
+            // leave the length and material calculation to the next step?
+
+            ConduitGraph jsGraph = new ConduitGraph
             {
                 maxLength = max_res,
                 maxNode = max_node == -1? null : jsNodes[max_node].id,
@@ -137,100 +139,106 @@ namespace Tellinclam.Serialization
         /// The best time to implement such 'room' class is at the very beginning.
         /// </summary>
         // tag -> [id, name, function].Serialze();
-        public static string InitiateSystem(List<Graph<int>> trunks, List<Graph<int>> graphs,
-            List<List<int>> nestedZones, List<List<Point3d>> nested_entry_pts, List<Point3d> ahu_pts, List<double> areas, bool isReadable)
+        public static string InitiateSystem(List<Graph<int>> sysGraphs, List<Graph<int>> zoneGraphs, 
+            List<string> spaceFuncs, List<List<int>> nested_spaceIds,  List<List<Point3d>> nested_entryPts, 
+            List<Point3d> ahuPts, List<double> spaceAreas, bool isReadable)
         {
             // generate spaces and networks of all thermal zones
-            List<SchemaJSON.ControlZone> jsZones = new List<SchemaJSON.ControlZone>() { };
-            string[] space_ids = new string[nested_entry_pts.Count];
-            string[] zone_ids = new string[graphs.Count];
-            for (int i = 0; i < graphs.Count; i++)
+            List<ControlZone> jsZones = new List<ControlZone>();
+            // batch generation of space and zone GUIDs
+            string[] guids_space = new string[nested_entryPts.Count];
+            for (int i = 0; i < nested_entryPts.Count; i++)
+                guids_space[i] = $"SPACE_{i}_" + Guid.NewGuid().ToString("N").Substring(0, 8);
+            string[] guids_zone = new string[zoneGraphs.Count];
+            for (int i = 0; i < nested_spaceIds.Count; i++)
+                guids_zone[i] = $"ZONE_{i}_" + Guid.NewGuid().ToString("N").Substring(0, 8);
+
+            // initiate zone models, containing the spaces and the network within
+            for (int i = 0; i < zoneGraphs.Count; i++)
             {
-                // initiate the spaces information but leave them blank for now
-                List<SchemaJSON.FunctionSpace> jsSpaces = new List<SchemaJSON.FunctionSpace>() { };
-                foreach (int spaceId in nestedZones[i])
+                // initiate the spaces information (some fields are blank)
+                List<FunctionSpace> jsSpaces = new List<FunctionSpace>();
+                foreach (int spaceId in nested_spaceIds[i])
                 {
-                    string space_id = Guid.NewGuid().ToString("N").Substring(0, 8);
-                    space_ids[spaceId] = space_id;
-                    jsSpaces.Add(new SchemaJSON.FunctionSpace
+                    jsSpaces.Add(new FunctionSpace
                     {
-                        id = space_id, 
-                        // pending for replacement
-                        // the name should be the same as that the Honeybee generated
-                        // to be directly used in Modelica connections.
-                        name = $"SPACE_{spaceId}",
-                        function = "",
-                        area = areas[spaceId],
-                        volume = areas[spaceId] * 3.0,
-                        maxLoad = 0.0,
-                        avgLoad = 0.0
+                        id = guids_space[spaceId], 
+                        // the name should be in line with the zone name of IDF
+                        // thus Modelica can be linked to EnergyPlus for co-simulation
+                        // name = ?
+                        function = spaceFuncs[spaceId],
+                        area = spaceAreas[spaceId],
+                        volume = spaceAreas[spaceId] * 4.5, // default floor height
+                        // heatLoad = ?
+                        // coolLoad = ?
                     });
                 }
-
-                ConduitGraph network_zone = PackSubGraph(graphs[i]);
-                foreach (ConduitNode node in network_zone.nodes)
+                // has some issues... the space pairing should be done when creating the graph
+                ConduitGraph jsZoneNetwork = PackSubGraph(zoneGraphs[i]);
+                foreach (ConduitNode node in jsZoneNetwork.nodes)
                 {
-                    foreach (List<Point3d> entry_pts in nested_entry_pts)
+                    // the pairing process should be here, when deciding the node type
+                    // like, when you know its a terminal, you should assign the space timely
+                    if (node.type == nodeTypeEnum.terminal)
                     {
-                        foreach (Point3d entry_pt in entry_pts)
+                        // j stands for the index of space
+                        for (int j = 0; j < nested_entryPts.Count; j++)
                         {
-                            if (Math.Abs(node.coordU - entry_pt.X) < 0.0001 &&
-                                Math.Abs(node.coordV - entry_pt.Y) < 0.0001)
+                            foreach (Point3d pt in nested_entryPts[j])
                             {
-                                node.linkedTerminalId = space_ids[nested_entry_pts.IndexOf(entry_pts)];
-                                // 
+                                if (Math.Abs(node.coordU - pt.X) < _tol &&
+                                Math.Abs(node.coordV - pt.Y) < _tol)
+                                    node.linkedTerminalId = guids_space[j];
                             }
                         }
                     }
                 }
 
-                string zone_id = Guid.NewGuid().ToString("N").Substring(0, 8);
-                zone_ids[i] = zone_id;
-                SchemaJSON.ControlZone jsZone = new SchemaJSON.ControlZone
+                ControlZone jsZone = new ControlZone
                 {
-                    id = zone_id, // leave blank before you figure out how to use it
-                    name = $"ZONE_{i}",
+                    id = guids_zone[i], // leave blank before you figure out how to use it
                     rooms = jsSpaces,
-                    thermostat = "", // will be added in Templating component
-                    network = network_zone
+                    network = jsZoneNetwork
                 };
                 jsZones.Add(jsZone);
             }
 
-            List<SchemaJSON.SystemZone> jsSystems = new List<SchemaJSON.SystemZone>() { };
+            List<SystemZone> jsSystems = new List<SystemZone>();
             // select specific zones then add them to the system zone
-            for (int i = 0; i < trunks.Count; i++)
+            for (int i = 0; i < sysGraphs.Count; i++)
             {
-                ConduitGraph network_system = PackSubGraph(trunks[i]);
-                List<SchemaJSON.ControlZone> sub_jsZones = new List<SchemaJSON.ControlZone>() { };
-                foreach (ConduitNode node in network_system.nodes)
+                ConduitGraph jsSysNetwork = PackSubGraph(sysGraphs[i]);
+                List<ControlZone> jsZones_insys = new List<ControlZone>();
+                foreach (ConduitNode node in jsSysNetwork.nodes)
                 {
-                    foreach (Point3d ahu_pt in ahu_pts)
+                    foreach (Point3d ahu in ahuPts)
                     {
-                        if (Math.Abs(node.coordU - ahu_pt.X) < 0.0001 &&
-                            Math.Abs(node.coordV - ahu_pt.Y) < 0.0001)
+                        if (Math.Abs(node.coordU - ahu.X) < _tol &&
+                            Math.Abs(node.coordV - ahu.Y) < _tol)
                         {
-                            node.linkedTerminalId = zone_ids[ahu_pts.IndexOf(ahu_pt)];
-                            sub_jsZones.Add(jsZones[ahu_pts.IndexOf(ahu_pt)]);
+                            node.linkedTerminalId = guids_zone[ahuPts.IndexOf(ahu)];
+                            jsZones_insys.Add(jsZones[ahuPts.IndexOf(ahu)]);
                         }
                     }
                 }
+                // note here all zones are ordered by the network-A connection,
+                // may not be the same order as nested_entryPts, now sort it
+                // PENDING this can be resolved by matching zone spaces and network at the generation
+                jsZones_insys = jsZones_insys.OrderBy(zone => Int32.Parse(zone.id.Split('_')[1])).ToList();
 
-                SchemaJSON.SystemZone jsSystem = new SchemaJSON.SystemZone
+                SystemZone jsSystem = new SystemZone
                 {
-                    id = i.ToString(), // leave blank before you figure out how to use it
-                    name = $"SYS_{i}",
-                    type = "",
-                    zones = sub_jsZones,
-                    network = network_system
+                    id = $"SYSTEM_{i}_" + Guid.NewGuid().ToString("N").Substring(0, 8),
+                    // leave name blank before you figure out how to use it
+                    zones = jsZones_insys,
+                    network = jsSysNetwork
                 };
                 jsSystems.Add(jsSystem);
             }
-            
 
             // we don't want more layers for now
             // just assume that we have one single system per floorplan
-            SchemaJSON.Floorplan jsFloorplan = new SchemaJSON.Floorplan
+            Floorplan jsFloorplan = new Floorplan
             {
                 id = "",
                 systems = jsSystems,

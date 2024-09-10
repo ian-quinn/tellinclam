@@ -1,19 +1,10 @@
-﻿using Grasshopper;
-using Grasshopper.Kernel;
-using Grasshopper.Kernel.Types;
-using Rhino.Geometry;
-using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using Grasshopper.Kernel.Parameters;
 using System.Text.Json;
-using static Tellinclam.Serialization.SchemaJSON;
-using PsychroLib;
-using System.Text.Json.Nodes;
-using Rhino.DocObjects;
-using Grasshopper.Kernel.Data;
-using System.IO;
+
+using Grasshopper.Kernel;
+
+using Tellinclam.JSON;
 
 namespace Tellinclam
 {

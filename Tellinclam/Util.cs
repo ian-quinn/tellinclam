@@ -18,7 +18,7 @@ namespace Tellinclam
 {
     class Util
     {
-        static public string ExecuteBatch(string path)
+        static public string ExecuteCmd(string cmd)
         {
             //int exitCode;
             //ProcessStartInfo processInfo;
@@ -41,11 +41,14 @@ namespace Tellinclam
             //string error = process.StandardError.ReadToEnd();
 
             //exitCode = process.ExitCode;
-
+            
+            // turn on the prompt window use these lines:
+            //p.StartInfo.Arguments = $"/C {cmd} & pause";
+            //p.StartInfo.CreateNoWindow = false;
             Process p = new Process();
-            p.StartInfo.FileName = "cmd.exe";
             //p.StartInfo.WorkingDirectory = workingDir;
-            p.StartInfo.Arguments = $"/C python {path}";
+            p.StartInfo.FileName = "cmd.exe";
+            p.StartInfo.Arguments = $"/C {cmd}";
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.CreateNoWindow = true;
@@ -56,7 +59,7 @@ namespace Tellinclam
             Console.WriteLine("output>>" + (string.IsNullOrEmpty(output) ? "(none)" : output));
             //Console.WriteLine("error>>" + (String.IsNullOrEmpty(error) ? "(none)" : error));
             //Console.WriteLine("ExitCode: " + exitCode.ToString(), "ExecuteCommand");
-            p.Close();
+            //p.Close();
 
             return output;
         }
@@ -73,7 +76,7 @@ namespace Tellinclam
         public static void LogPrint(string msg)
         {
             string thisAssemblyFolderPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            string logPath = thisAssemblyFolderPath + "/log.txt";
+            string logPath = Path.Combine(thisAssemblyFolderPath, "tellinclam_debug.txt");
             using (var sw = File.AppendText(logPath))
             {
                 sw.WriteLine($"[{DateTime.Now.ToLongTimeString()}] {msg}");
