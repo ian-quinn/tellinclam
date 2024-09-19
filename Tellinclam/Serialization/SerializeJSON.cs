@@ -88,6 +88,11 @@ namespace Tellinclam
                 // find the furthest path. Normally the one with max pressure drop
                 if (node.isRoot)
                 {
+                    if (graph.Nodes.Count == 2)
+                    {
+                        max_res = graph.GetEdges()[0].Weight;
+                        max_node = graph.Nodes[1 - graph.Nodes.IndexOf(node)].Index;
+                    }
                     List<Edge<int>> path = graph.GetFurthestPathDijkstra(node, out int remoteIdx);
                     for (int i = 0; i < path.Count; i++)
                     {

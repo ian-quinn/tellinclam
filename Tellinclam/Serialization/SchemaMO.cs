@@ -304,7 +304,7 @@ namespace Tellinclam.MO
         public string Serialize()
         {
             string scripts = "";
-            scripts += $"{Path} {Name}(dp_nominal = {dp_nominal:0.000}, m_flow_nominal = {m_flow_nominal:0.000}, \n  " +
+            scripts += $"{Path} {Name}(dp_nominal = {dp_nominal:0.000}, m_flow_nominal = {m_flow_nominal:0.00000000}, \n  " +
                 $"redeclare package Medium={ medium }, " +
                 $"allowFlowReversal = {allowFlowReversal.ToString().ToLower()}, " +
                 $"linearized = {linearized.ToString().ToLower()}, " +
@@ -414,12 +414,11 @@ namespace Tellinclam.MO
         public double m_flow_nominal { get; set; }
         public double dpDamper_nominal { get; set; }
         public bool from_dp { get; set; }
-        public double riseTime { get; set; }
         public Port port_a { get; set; }
         public Port port_b { get; set; }
         public Port y { get; set; }
         public Damper(string name, string medium, double m_flow_nominal,
-            double dpFixed_nominal, double dpDamper_nominal, double riseTime)
+            double dpFixed_nominal, double dpDamper_nominal)
         {
             Name = name;
             Path = "Buildings.Fluid.Actuators.Dampers.Exponential";
@@ -427,7 +426,6 @@ namespace Tellinclam.MO
             this.dpFixed_nominal = dpFixed_nominal;
             this.m_flow_nominal = m_flow_nominal;
             this.dpDamper_nominal = dpDamper_nominal;
-            this.riseTime = riseTime;
             port_a = new Port("port_a", name); // typically inlet
             port_b = new Port("port_b", name); // typically outlet
             y = new Port("y", name);
@@ -437,7 +435,7 @@ namespace Tellinclam.MO
             string scripts = "";
             scripts += $"{Path} {Name}(m_flow_nominal={m_flow_nominal:0.000000}, " +
                 $"dpFixed_nominal={dpFixed_nominal}, dpDamper_nominal={dpDamper_nominal}, \n  " +
-                $"redeclare package Medium={medium}, riseTime={riseTime});\n";
+                $"redeclare package Medium={medium});\n";
             return scripts;
         }
     }
@@ -699,8 +697,9 @@ namespace Tellinclam.MO
 
             public CoilEffectivenessNTU(int type, string name, string medium1, string medium2, 
                 double m1_flow_nominal, double m2_flow_nominal, double dp1_nominal, double dp2_nominal,
-                double Q_flow_nominal, double T_a1_nominal, double T_a2_nominal, double w_a2_nominal=0, bool rev1=true, bool rev2=true)
+                double Q_flow_nominal, double T_a1_nominal, double T_a2_nominal, double w_a2_nominal=0.017, bool rev1=true, bool rev2=true)
             {
+                this.type = type;
                 Name = name;
                 if (type == 0)
                     Path = "Buildings.Fluid.HeatExchangers.DryCoilEffectivenessNTU";
@@ -728,7 +727,7 @@ namespace Tellinclam.MO
                     $"m1_flow_nominal={m1_flow_nominal:0.000000}, m2_flow_nominal={m2_flow_nominal:0.000000}, dp1_nominal={dp1_nominal:0}, dp2_nominal={dp2_nominal:0}, \n  " +
                     $"Q_flow_nominal={Q_flow_nominal:0.000000}, T_a1_nominal={T_a1_nominal:0.0}, T_a2_nominal={T_a2_nominal:0.0},\n  " +
                     $"redeclare package Medium1={medium1}, redeclare package Medium2={medium2}";
-                if (type == 1)
+                if (type == 1) // define wet air property additionally
                     scripts += $", w_a2_nominal={w_a2_nominal}";
                 scripts += ");\n";
                 return scripts;

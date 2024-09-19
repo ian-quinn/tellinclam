@@ -1,0 +1,5679 @@
+{
+  "id": "",
+  "level": 0,
+  "systems": [
+    {
+      "id": "SYSTEM_0_e5920dbe",
+      "name": null,
+      "type": "VAV",
+      "schedule": [
+        7,
+        20
+      ],
+      "heatLoad": 119474.51869999997,
+      "coolLoad": 139115.59487500001,
+      "heatSet": 20,
+      "heatSupply": 35,
+      "coolSet": 26,
+      "coolSupply": 14,
+      "chwTempSupply": 7,
+      "chwTempDelta": 5,
+      "hwTempSupply": 50,
+      "hwTempDelta": 5,
+      "chwFlow": 6.6467078296703299,
+      "hwFlow": 5.7082904300047765,
+      "airHeaFlow": 7.9174631345261757,
+      "airCooFlow": 11.523823299784622,
+      "airOutFlow": 0.77860709230422775,
+      "zones": [
+        {
+          "id": "ZONE_0_b7d09bfc",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 4463.7842499999997,
+          "coolLoad": 5460.9256249999999,
+          "airHeaFlow": 0.29581075215374419,
+          "airCooFlow": 0.45236295767064283,
+          "airOutFlow": 0.010974197658817682,
+          "wFlow": 0.26091379001433351,
+          "id_root": null,
+          "equipCoilPDrop": 1913,
+          "equipFanPRise": -37,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 3396,
+          "rooms": [
+            {
+              "id": "SPACE_4_87099e73",
+              "name": "2f_4_bc8505ba",
+              "function": "oz:Office",
+              "area": 12.928012280770417,
+              "volume": 58.176055263466878,
+              "heatLoad": 2216.8026249999998,
+              "coolLoad": 2730.6015000000002,
+              "airLeakage": 1.7189202593252747E-06,
+              "airHeaFlow": 0.14690540921139827,
+              "airCooFlow": 0.22619296719681911,
+              "airOutFlow": 0.0054944052193274268
+            },
+            {
+              "id": "SPACE_5_b124ff03",
+              "name": "2f_5_4cd6e9a8",
+              "function": "oz:Office",
+              "area": 12.893629269388839,
+              "volume": 58.021331712249776,
+              "heatLoad": 2246.9816249999999,
+              "coolLoad": 2730.3241250000001,
+              "airLeakage": 1.7235040466830145E-06,
+              "airHeaFlow": 0.14890534294234592,
+              "airCooFlow": 0.22616999047382375,
+              "airOutFlow": 0.0054797924394902565
+            }
+          ],
+          "network": {
+            "maxLength": 2.0950797870101887,
+            "maxNode": "554ffbd8",
+            "sumLength": 3.6901595740203774,
+            "sumMaterial": 1.153323781624124,
+            "numJunction": 1,
+            "numBend": 2,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "b2782727",
+                "parent": "3bf80cf5",
+                "coordU": 79.023048135064812,
+                "coordV": 48.602317029979098,
+                "type": "relay",
+                "degree": 1,
+                "depth": 2,
+                "linkedTerminalId": null,
+                "massFlow": 0.22619296719681911
+              },
+              {
+                "id": "3d883237",
+                "parent": "3bf80cf5",
+                "coordU": 79.023048135064812,
+                "coordV": 47.202317029979099,
+                "type": "relay",
+                "degree": 1,
+                "depth": 2,
+                "linkedTerminalId": null,
+                "massFlow": 0.22616999047382375
+              },
+              {
+                "id": "554ffbd8",
+                "parent": "b2782727",
+                "coordU": 79.918127922075001,
+                "coordV": 48.602317029979098,
+                "type": "terminal",
+                "degree": 0,
+                "depth": 3,
+                "linkedTerminalId": "SPACE_4_87099e73",
+                "massFlow": 0.22619296719681911
+              },
+              {
+                "id": "4a967958",
+                "parent": "3d883237",
+                "coordU": 79.918127922075001,
+                "coordV": 47.202317029979099,
+                "type": "terminal",
+                "degree": 0,
+                "depth": 3,
+                "linkedTerminalId": "SPACE_5_b124ff03",
+                "massFlow": 0.22616999047382375
+              },
+              {
+                "id": "3bf80cf5",
+                "parent": "c18aa71c",
+                "coordU": 79.023048135064812,
+                "coordV": 47.902317029979102,
+                "type": "tjoint",
+                "degree": 2,
+                "depth": 1,
+                "linkedTerminalId": null,
+                "massFlow": 0.45236295767064283
+              },
+              {
+                "id": "c18aa71c",
+                "parent": null,
+                "coordU": 79.523048135064812,
+                "coordV": 47.902317029979102,
+                "type": "source",
+                "degree": 1,
+                "depth": 0,
+                "linkedTerminalId": null,
+                "massFlow": 0.45236295767064283
+              }
+            ],
+            "edges": [
+              {
+                "startId": "b2782727",
+                "endId": "554ffbd8",
+                "length": 0.89507978701018942,
+                "isTrunk": false,
+                "massFlow": 0.22619296719681911,
+                "diameter": 300,
+                "velocity": 3.1999758952885951,
+                "deltaPDrop": 0,
+                "friction": 0.41475988222346966
+              },
+              {
+                "startId": "3d883237",
+                "endId": "4a967958",
+                "length": 0.89507978701018942,
+                "isTrunk": false,
+                "massFlow": 0.22616999047382375,
+                "diameter": 300,
+                "velocity": 3.1996508411516382,
+                "deltaPDrop": 0,
+                "friction": 0.41481987795796155
+              },
+              {
+                "startId": "3bf80cf5",
+                "endId": "3d883237",
+                "length": 0.69999999999999929,
+                "isTrunk": false,
+                "massFlow": 0.22616999047382375,
+                "diameter": 300,
+                "velocity": 3.1996508411516382,
+                "deltaPDrop": 0,
+                "friction": 0.32430429197466998
+              },
+              {
+                "startId": "3bf80cf5",
+                "endId": "b2782727",
+                "length": 0.69999999999999929,
+                "isTrunk": false,
+                "massFlow": 0.22619296719681911,
+                "diameter": 300,
+                "velocity": 3.1999758952885951,
+                "deltaPDrop": 0,
+                "friction": 0.32436428770916192
+              },
+              {
+                "startId": "c18aa71c",
+                "endId": "3bf80cf5",
+                "length": 0.5,
+                "isTrunk": false,
+                "massFlow": 0.45236295767064283,
+                "diameter": 400,
+                "velocity": 3.5997900392476301,
+                "deltaPDrop": 0,
+                "friction": 0.20044391869182279
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_1_a8ba4938",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 4473.4952499999999,
+          "coolLoad": 3775.6185,
+          "airHeaFlow": 0.29645429092113984,
+          "airCooFlow": 0.3127583250497018,
+          "airOutFlow": 0.010253436524057951,
+          "wFlow": 0.21373603678929765,
+          "id_root": null,
+          "equipCoilPDrop": 1913,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 3047,
+          "rooms": [
+            {
+              "id": "SPACE_9_f400305e",
+              "name": "2f_9_5bfcc8ad",
+              "function": "oz:Office",
+              "area": 12.03441634205501,
+              "volume": 54.154873539247546,
+              "heatLoad": 2216.3705,
+              "coolLoad": 1912.93325,
+              "airLeakage": 1.8465558769614191E-06,
+              "airHeaFlow": 0.14687677269715044,
+              "airCooFlow": 0.15846034211398277,
+              "airOutFlow": 0.0051146269453733791
+            },
+            {
+              "id": "SPACE_10_22ce116a",
+              "name": "2f_10_0ef4f600",
+              "function": "oz:Office",
+              "area": 12.091316655728406,
+              "volume": 54.410924950777826,
+              "heatLoad": 2257.1247499999999,
+              "coolLoad": 1862.68525,
+              "airLeakage": 1.8378662022464013E-06,
+              "airHeaFlow": 0.1495775182239894,
+              "airCooFlow": 0.15429798293571903,
+              "airOutFlow": 0.0051388095786845719
+            }
+          ],
+          "network": {
+            "maxLength": 4.3626551407032998,
+            "maxNode": "ad4bbcf7",
+            "sumLength": 8.2253102814065997,
+            "sumMaterial": 1.6582327960845826,
+            "numJunction": 1,
+            "numBend": 2,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "77a6d412",
+                "parent": "d40f7e9c",
+                "coordU": 75.691288383951999,
+                "coordV": 40.246288663097907,
+                "type": "relay",
+                "degree": 1,
+                "depth": 2,
+                "linkedTerminalId": null,
+                "massFlow": 0.15846034211398277
+              },
+              {
+                "id": "605cf39c",
+                "parent": "d40f7e9c",
+                "coordU": 69.930650087870006,
+                "coordV": 40.2462886630979,
+                "type": "relay",
+                "degree": 1,
+                "depth": 2,
+                "linkedTerminalId": null,
+                "massFlow": 0.15429798293571903
+              },
+              {
+                "id": "ad4bbcf7",
+                "parent": "77a6d412",
+                "coordU": 75.691288383951999,
+                "coordV": 39.2639526704356,
+                "type": "terminal",
+                "degree": 0,
+                "depth": 3,
+                "linkedTerminalId": "SPACE_9_f400305e",
+                "massFlow": 0.15846034211398277
+              },
+              {
+                "id": "813dd2a6",
+                "parent": "605cf39c",
+                "coordU": 69.930650087870006,
+                "coordV": 39.2639526704356,
+                "type": "terminal",
+                "degree": 0,
+                "depth": 3,
+                "linkedTerminalId": "SPACE_10_22ce116a",
+                "massFlow": 0.15429798293571903
+              },
+              {
+                "id": "d40f7e9c",
+                "parent": "5824436e",
+                "coordU": 72.810969235911003,
+                "coordV": 40.2462886630979,
+                "type": "tjoint",
+                "degree": 2,
+                "depth": 1,
+                "linkedTerminalId": null,
+                "massFlow": 0.3127583250497018
+              },
+              {
+                "id": "5824436e",
+                "parent": null,
+                "coordU": 72.810969235911003,
+                "coordV": 39.7462886630979,
+                "type": "source",
+                "degree": 1,
+                "depth": 0,
+                "linkedTerminalId": null,
+                "massFlow": 0.3127583250497018
+              }
+            ],
+            "edges": [
+              {
+                "startId": "77a6d412",
+                "endId": "ad4bbcf7",
+                "length": 0.98233599266230698,
+                "isTrunk": false,
+                "massFlow": 0.15846034211398277,
+                "diameter": 250,
+                "velocity": 3.2281275816285691,
+                "deltaPDrop": 0,
+                "friction": 0.58089722726284598
+              },
+              {
+                "startId": "605cf39c",
+                "endId": "813dd2a6",
+                "length": 0.98233599266229987,
+                "isTrunk": false,
+                "massFlow": 0.15429798293571903,
+                "diameter": 250,
+                "velocity": 3.1433326967460609,
+                "deltaPDrop": 0,
+                "friction": 0.661477134745728
+              },
+              {
+                "startId": "d40f7e9c",
+                "endId": "605cf39c",
+                "length": 2.880319148041,
+                "isTrunk": false,
+                "massFlow": 0.15429798293571903,
+                "diameter": 250,
+                "velocity": 3.1433326967460609,
+                "deltaPDrop": 0,
+                "friction": 1.622675820930882
+              },
+              {
+                "startId": "d40f7e9c",
+                "endId": "77a6d412",
+                "length": 2.8803191480409929,
+                "isTrunk": false,
+                "massFlow": 0.15846034211398277,
+                "diameter": 250,
+                "velocity": 3.2281275816285691,
+                "deltaPDrop": 0,
+                "friction": 1.7032557284137639
+              },
+              {
+                "startId": "5824436e",
+                "endId": "d40f7e9c",
+                "length": 0.5,
+                "isTrunk": false,
+                "massFlow": 0.3127583250497018,
+                "diameter": 300,
+                "velocity": 4.4246251933157152,
+                "deltaPDrop": 0,
+                "friction": 0.41915669124770183
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_2_149d6f69",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 2724.564875,
+          "coolLoad": 3783.0200000000004,
+          "airHeaFlow": 0.18055433233929757,
+          "airCooFlow": 0.31337143803843609,
+          "airOutFlow": 0.010293410935460042,
+          "wFlow": 0.18074629718107979,
+          "id_root": null,
+          "equipCoilPDrop": 1913,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 3047,
+          "rooms": [
+            {
+              "id": "SPACE_16_5f71378d",
+              "name": "2f_16_c54495eb",
+              "function": "oz:Office",
+              "area": 11.992323419954118,
+              "volume": 53.965455389793533,
+              "heatLoad": 1352.7106249999999,
+              "coolLoad": 1881.4408750000002,
+              "airLeakage": 1.8530372675945763E-06,
+              "airHeaFlow": 0.089642851225977468,
+              "airCooFlow": 0.15585162980450631,
+              "airOutFlow": 0.0050967374534805002
+            },
+            {
+              "id": "SPACE_18_9d42e249",
+              "name": "2f_18_7109ec33",
+              "function": "oz:Office",
+              "area": 12.227467016422452,
+              "volume": 55.023601573901033,
+              "heatLoad": 1371.8542500000001,
+              "coolLoad": 1901.5791250000002,
+              "airLeakage": 1.8174019355256512E-06,
+              "airHeaFlow": 0.090911481113320092,
+              "airCooFlow": 0.15751980823392978,
+              "airOutFlow": 0.005196673481979542
+            }
+          ],
+          "network": {
+            "maxLength": 10.734828011103534,
+            "maxNode": "7647fd42",
+            "sumLength": 20.969656022207069,
+            "sumMaterial": 4.1605792307162783,
+            "numJunction": 1,
+            "numBend": 4,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "46605f73",
+                "parent": "47f8b0bd",
+                "coordU": 79.023048135064812,
+                "coordV": 46.379555505536466,
+                "type": "relay",
+                "degree": 1,
+                "depth": 2,
+                "linkedTerminalId": null,
+                "massFlow": 0.15751980823392978
+              },
+              {
+                "id": "72e31c62",
+                "parent": "46605f73",
+                "coordU": 79.023048135064826,
+                "coordV": 43.316624655760208,
+                "type": "relay",
+                "degree": 1,
+                "depth": 3,
+                "linkedTerminalId": null,
+                "massFlow": 0.15751980823392978
+              },
+              {
+                "id": "d8892cf2",
+                "parent": "47f8b0bd",
+                "coordU": 66.55666959208267,
+                "coordV": 46.379555505536409,
+                "type": "relay",
+                "degree": 1,
+                "depth": 2,
+                "linkedTerminalId": null,
+                "massFlow": 0.15585162980450631
+              },
+              {
+                "id": "7647fd42",
+                "parent": "72e31c62",
+                "coordU": 78.127968348054694,
+                "coordV": 43.316624655760201,
+                "type": "terminal",
+                "degree": 0,
+                "depth": 4,
+                "linkedTerminalId": "SPACE_18_9d42e249",
+                "massFlow": 0.15751980823392978
+              },
+              {
+                "id": "3ee3ed54",
+                "parent": "d8892cf2",
+                "coordU": 66.55666959208267,
+                "coordV": 43.316624655760201,
+                "type": "relay",
+                "degree": 1,
+                "depth": 3,
+                "linkedTerminalId": null,
+                "massFlow": 0.15585162980450631
+              },
+              {
+                "id": "eb0ef585",
+                "parent": "3ee3ed54",
+                "coordU": 67.539005584744999,
+                "coordV": 43.316624655760201,
+                "type": "terminal",
+                "degree": 0,
+                "depth": 4,
+                "linkedTerminalId": "SPACE_16_5f71378d",
+                "massFlow": 0.15585162980450631
+              },
+              {
+                "id": "47f8b0bd",
+                "parent": "550cd663",
+                "coordU": 72.746230760747665,
+                "coordV": 46.379555505536437,
+                "type": "tjoint",
+                "degree": 2,
+                "depth": 1,
+                "linkedTerminalId": null,
+                "massFlow": 0.31337143803843609
+              },
+              {
+                "id": "550cd663",
+                "parent": null,
+                "coordU": 72.746230760747665,
+                "coordV": 45.879555505536437,
+                "type": "source",
+                "degree": 1,
+                "depth": 0,
+                "linkedTerminalId": null,
+                "massFlow": 0.31337143803843609
+              }
+            ],
+            "edges": [
+              {
+                "startId": "46605f73",
+                "endId": "72e31c62",
+                "length": 3.062930849776258,
+                "isTrunk": false,
+                "massFlow": 0.15751980823392978,
+                "diameter": 250,
+                "velocity": 3.2089671827606221,
+                "deltaPDrop": 0,
+                "friction": 1.7917102459277428
+              },
+              {
+                "startId": "72e31c62",
+                "endId": "7647fd42",
+                "length": 0.89507978701013258,
+                "isTrunk": false,
+                "massFlow": 0.15751980823392978,
+                "diameter": 250,
+                "velocity": 3.2089671827606221,
+                "deltaPDrop": 0,
+                "friction": 0.52359119548063771
+              },
+              {
+                "startId": "d8892cf2",
+                "endId": "3ee3ed54",
+                "length": 3.0629308497762082,
+                "isTrunk": false,
+                "massFlow": 0.15585162980450631,
+                "diameter": 250,
+                "velocity": 3.1749833308563638,
+                "deltaPDrop": 0,
+                "friction": 1.7573110097636992
+              },
+              {
+                "startId": "3ee3ed54",
+                "endId": "eb0ef585",
+                "length": 0.98233599266232829,
+                "isTrunk": false,
+                "massFlow": 0.15585162980450631,
+                "diameter": 250,
+                "velocity": 3.1749833308563638,
+                "deltaPDrop": 0,
+                "friction": 0.67854621046914554
+              },
+              {
+                "startId": "47f8b0bd",
+                "endId": "d8892cf2",
+                "length": 6.1895611686649978,
+                "isTrunk": false,
+                "massFlow": 0.15585162980450631,
+                "diameter": 250,
+                "velocity": 3.1749833308563638,
+                "deltaPDrop": 0,
+                "friction": 3.5511686423138125
+              },
+              {
+                "startId": "47f8b0bd",
+                "endId": "46605f73",
+                "length": 6.2768173743171438,
+                "isTrunk": false,
+                "massFlow": 0.15751980823392978,
+                "diameter": 250,
+                "velocity": 3.2089671827606221,
+                "deltaPDrop": 0,
+                "friction": 3.671724421138276
+              },
+              {
+                "startId": "550cd663",
+                "endId": "47f8b0bd",
+                "length": 0.5,
+                "isTrunk": false,
+                "massFlow": 0.31337143803843609,
+                "diameter": 300,
+                "velocity": 4.4332989677895736,
+                "deltaPDrop": 0,
+                "friction": 0.42066864553678995
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_3_d131ba19",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 1641.1255000000001,
+          "coolLoad": 2061.2623750000002,
+          "airHeaFlow": 0.10875583167660703,
+          "airCooFlow": 0.1707473803015242,
+          "airOutFlow": 0.0028488162226920394,
+          "wFlow": 0.098483629956999538,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_61_8a8a3d47",
+              "name": "2f_61_c6d9b8e1",
+              "function": "oz:Reception",
+              "area": 9.4960540756401315,
+              "volume": 42.732243340380592,
+              "heatLoad": 1641.1255000000001,
+              "coolLoad": 2061.2623750000002,
+              "airLeakage": 2.3401532936957519E-06,
+              "airHeaFlow": 0.10875583167660703,
+              "airCooFlow": 0.1707473803015242,
+              "airOutFlow": 0.0028488162226920394
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "2e8e58e1",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "9ed44873",
+                "parent": null,
+                "coordU": 46.867529304451693,
+                "coordV": 48.667144157196624,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.1707473803015242
+              },
+              {
+                "id": "2e8e58e1",
+                "parent": "9ed44873",
+                "coordU": 46.867529304451693,
+                "coordV": 48.667144157196624,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_61_8a8a3d47",
+                "massFlow": 0.1707473803015242
+              }
+            ],
+            "edges": [
+              {
+                "startId": "9ed44873",
+                "endId": "2e8e58e1",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.1707473803015242,
+                "diameter": 225,
+                "velocity": 4.2943667508115428,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_4_51f9ca12",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 2084.1714999999999,
+          "coolLoad": 3442.1640000000002,
+          "airHeaFlow": 0.13811607024519548,
+          "airCooFlow": 0.28513618290258452,
+          "airOutFlow": 0.0077940306051225428,
+          "wFlow": 0.1644607740086001,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2654,
+          "rooms": [
+            {
+              "id": "SPACE_41_f627008a",
+              "name": "2f_41_8b3202d1",
+              "function": "oz:OfficeKitchen",
+              "area": 18.338895541464808,
+              "volume": 82.525029936591636,
+              "heatLoad": 2084.1714999999999,
+              "coolLoad": 3442.1640000000002,
+              "airLeakage": 1.2117535743620489E-06,
+              "airHeaFlow": 0.13811607024519548,
+              "airCooFlow": 0.28513618290258452,
+              "airOutFlow": 0.0077940306051225428
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "cd94cf4b",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "52c6f536",
+                "parent": null,
+                "coordU": 44.827059668437002,
+                "coordV": 52.968806390413597,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.28513618290258452
+              },
+              {
+                "id": "cd94cf4b",
+                "parent": "52c6f536",
+                "coordU": 44.827059668437002,
+                "coordV": 52.968806390413597,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_41_f627008a",
+                "massFlow": 0.28513618290258452
+              }
+            ],
+            "edges": [
+              {
+                "startId": "52c6f536",
+                "endId": "cd94cf4b",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.28513618290258452,
+                "diameter": 250,
+                "velocity": 5.808746619302541,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_5_34429691",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 3356.1263749999998,
+          "coolLoad": 3152.0678750000002,
+          "airHeaFlow": 0.2224073144466534,
+          "airCooFlow": 0.2611056887839629,
+          "airOutFlow": 0.037057850623709691,
+          "wFlow": 0.16035004180602008,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2654,
+          "rooms": [
+            {
+              "id": "SPACE_52_ab10f86a",
+              "name": "2f_52_e576812c",
+              "function": "oz:Conference",
+              "area": 23.908290724973995,
+              "volume": 107.58730826238298,
+              "heatLoad": 3356.1263749999998,
+              "coolLoad": 3152.0678750000002,
+              "airLeakage": 9.29477664373951E-07,
+              "airHeaFlow": 0.2224073144466534,
+              "airCooFlow": 0.2611056887839629,
+              "airOutFlow": 0.037057850623709691
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "beced9c5",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "36c5897e",
+                "parent": null,
+                "coordU": 71.492742817798401,
+                "coordV": 56.324812595071002,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.2611056887839629
+              },
+              {
+                "id": "beced9c5",
+                "parent": "36c5897e",
+                "coordU": 71.492742817798401,
+                "coordV": 56.324812595071002,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_52_ab10f86a",
+                "massFlow": 0.2611056887839629
+              }
+            ],
+            "edges": [
+              {
+                "startId": "36c5897e",
+                "endId": "beced9c5",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.2611056887839629,
+                "diameter": 250,
+                "velocity": 5.3192014130408642,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_6_8718d90b",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 889.88825000000008,
+          "coolLoad": 1449.3520000000001,
+          "airHeaFlow": 0.058972051027170319,
+          "airCooFlow": 0.12005897945659377,
+          "airOutFlow": 0.0025491717817705648,
+          "wFlow": 0.069247587195413282,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -10,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 1623,
+          "rooms": [
+            {
+              "id": "SPACE_38_c0b27afa",
+              "name": "2f_38_08bb657b",
+              "function": "oz:Restroom",
+              "area": 8.4972392725685495,
+              "volume": 38.237576726558473,
+              "heatLoad": 889.88825000000008,
+              "coolLoad": 1449.3520000000001,
+              "airLeakage": 2.6152284888530481E-06,
+              "airHeaFlow": 0.058972051027170319,
+              "airCooFlow": 0.12005897945659377,
+              "airOutFlow": 0.0025491717817705648
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "29f009e9",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "06cc0920",
+                "parent": null,
+                "coordU": 47.258110199919898,
+                "coordV": 61.311625537263602,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.12005897945659377
+              },
+              {
+                "id": "29f009e9",
+                "parent": "06cc0920",
+                "coordU": 47.258110199919898,
+                "coordV": 61.311625537263602,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_38_c0b27afa",
+                "massFlow": 0.12005897945659377
+              }
+            ],
+            "edges": [
+              {
+                "startId": "06cc0920",
+                "endId": "29f009e9",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.12005897945659377,
+                "diameter": 200,
+                "velocity": 3.8215960086170417,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_7_84506758",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 5568.8116249999994,
+          "coolLoad": 12579.856250000001,
+          "airHeaFlow": 0.36903986911862158,
+          "airCooFlow": 1.0420689405235255,
+          "airOutFlow": 0.071251114690348144,
+          "wFlow": 0.60104425465838507,
+          "id_root": null,
+          "equipCoilPDrop": 508,
+          "equipFanPRise": -62,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 4428,
+          "rooms": [
+            {
+              "id": "SPACE_39_5343b23a",
+              "name": "2f_39_52f08f3c",
+              "function": "oz:Laboratory, oz:DistributionSpace",
+              "area": 73.078066349075016,
+              "volume": 328.85129857083757,
+              "heatLoad": 5568.8116249999994,
+              "coolLoad": 12579.856250000001,
+              "airLeakage": 3.0408880984989966E-07,
+              "airHeaFlow": 0.36903986911862158,
+              "airCooFlow": 1.0420689405235255,
+              "airOutFlow": 0.071251114690348144
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "ad8179a7",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "ad318af5",
+                "parent": null,
+                "coordU": 43.867241406265464,
+                "coordV": 57.140215963838642,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 1.0420689405235255
+              },
+              {
+                "id": "ad8179a7",
+                "parent": "ad318af5",
+                "coordU": 43.867241406265464,
+                "coordV": 57.140215963838642,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_39_5343b23a",
+                "massFlow": 1.0420689405235255
+              }
+            ],
+            "edges": [
+              {
+                "startId": "ad318af5",
+                "endId": "ad8179a7",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 1.0420689405235255,
+                "diameter": 550,
+                "velocity": 4.3861268873217414,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_8_2210ad1b",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 1296.1295,
+          "coolLoad": 1717.41075,
+          "airHeaFlow": 0.085893273691186212,
+          "airCooFlow": 0.14226397862823062,
+          "airOutFlow": 0.0049352039596387834,
+          "wFlow": 0.082054980888676535,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_22_1750d1e8",
+              "name": "2f_22_3e38e8a4",
+              "function": "oz:Office",
+              "area": 11.612244610914786,
+              "volume": 52.255100749116536,
+              "heatLoad": 1296.1295,
+              "coolLoad": 1717.41075,
+              "airLeakage": 1.9136887799740905E-06,
+              "airHeaFlow": 0.085893273691186212,
+              "airCooFlow": 0.14226397862823062,
+              "airOutFlow": 0.0049352039596387834
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "04fed940",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "2fb1f108",
+                "parent": null,
+                "coordU": 78.127968348054694,
+                "coordV": 52.7276051491638,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.14226397862823062
+              },
+              {
+                "id": "04fed940",
+                "parent": "2fb1f108",
+                "coordU": 78.127968348054694,
+                "coordV": 52.7276051491638,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_22_1750d1e8",
+                "massFlow": 0.14226397862823062
+              }
+            ],
+            "edges": [
+              {
+                "startId": "2fb1f108",
+                "endId": "04fed940",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.14226397862823062,
+                "diameter": 200,
+                "velocity": 4.528403084520531,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_9_8cd09247",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 3138.3019999999997,
+          "coolLoad": 3117.3516250000002,
+          "airHeaFlow": 0.20797229953611662,
+          "airCooFlow": 0.25822992254804511,
+          "airOutFlow": 0.0050302705666002111,
+          "wFlow": 0.14994276158623984,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2654,
+          "rooms": [
+            {
+              "id": "SPACE_42_acb2c3c0",
+              "name": "2f_42_110c0170",
+              "function": "oz:Storage",
+              "area": 16.767568555334037,
+              "volume": 75.454058499003168,
+              "heatLoad": 3138.3019999999997,
+              "coolLoad": 3117.3516250000002,
+              "airLeakage": 1.3253097578750005E-06,
+              "airHeaFlow": 0.20797229953611662,
+              "airCooFlow": 0.25822992254804511,
+              "airOutFlow": 0.0050302705666002111
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "1c6c00ca",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "78114767",
+                "parent": null,
+                "coordU": 44.493515785541803,
+                "coordV": 47.017631746686099,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.25822992254804511
+              },
+              {
+                "id": "1c6c00ca",
+                "parent": "78114767",
+                "coordU": 44.493515785541803,
+                "coordV": 47.017631746686099,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_42_acb2c3c0",
+                "massFlow": 0.25822992254804511
+              }
+            ],
+            "edges": [
+              {
+                "startId": "78114767",
+                "endId": "1c6c00ca",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.25822992254804511,
+                "diameter": 250,
+                "velocity": 5.2606167843531084,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_10_3e779e0c",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 3387.4811249999998,
+          "coolLoad": 2336.4497499999998,
+          "airHeaFlow": 0.22448516401590457,
+          "airCooFlow": 0.1935428885023194,
+          "airOutFlow": 0.0076071345440756428,
+          "wFlow": 0.16184811872909699,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_44_1bef9fa9",
+              "name": "2f_44_df30b987",
+              "function": "oz:Office",
+              "area": 17.899140103707396,
+              "volume": 80.54613046668328,
+              "heatLoad": 3387.4811249999998,
+              "coolLoad": 2336.4497499999998,
+              "airLeakage": 1.2415245700892301E-06,
+              "airHeaFlow": 0.22448516401590457,
+              "airCooFlow": 0.1935428885023194,
+              "airOutFlow": 0.0076071345440756428
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "cc810a20",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "2f213777",
+                "parent": null,
+                "coordU": 45.314709269379051,
+                "coordV": 42.320734584564732,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.22448516401590457
+              },
+              {
+                "id": "cc810a20",
+                "parent": "2f213777",
+                "coordU": 45.314709269379051,
+                "coordV": 42.320734584564732,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_44_1bef9fa9",
+                "massFlow": 0.22448516401590457
+              }
+            ],
+            "edges": [
+              {
+                "startId": "2f213777",
+                "endId": "cc810a20",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.22448516401590457,
+                "diameter": 250,
+                "velocity": 4.5731742085025386,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_11_6f1d3400",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 1375.1306249999998,
+          "coolLoad": 1690.3402500000002,
+          "airHeaFlow": 0.091128603379721659,
+          "airCooFlow": 0.14002155815109346,
+          "airOutFlow": 0.0049677949291828099,
+          "wFlow": 0.080761598184424271,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_23_352a9c82",
+              "name": "2f_23_38d9b98e",
+              "function": "oz:Office",
+              "area": 11.688929245136023,
+              "volume": 52.600181603112105,
+              "heatLoad": 1375.1306249999998,
+              "coolLoad": 1690.3402500000002,
+              "airLeakage": 1.9011341206868281E-06,
+              "airHeaFlow": 0.091128603379721659,
+              "airCooFlow": 0.14002155815109346,
+              "airOutFlow": 0.0049677949291828099
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "62f88fd1",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "5ea68372",
+                "parent": null,
+                "coordU": 78.127968348054694,
+                "coordV": 54.127605149163699,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.14002155815109346
+              },
+              {
+                "id": "62f88fd1",
+                "parent": "5ea68372",
+                "coordU": 78.127968348054694,
+                "coordV": 54.127605149163699,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_23_352a9c82",
+                "massFlow": 0.14002155815109346
+              }
+            ],
+            "edges": [
+              {
+                "startId": "5ea68372",
+                "endId": "62f88fd1",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.14002155815109346,
+                "diameter": 200,
+                "velocity": 4.4570246238351583,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_12_54c87518",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 2152.4254999999998,
+          "coolLoad": 1787.6790000000001,
+          "airHeaFlow": 0.14263919814446652,
+          "airCooFlow": 0.14808474155069584,
+          "airOutFlow": 0.0048668277658443001,
+          "wFlow": 0.10283924988055422,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_45_f9fee367",
+              "name": "2f_45_961ef727",
+              "function": "oz:Office",
+              "area": 11.451359449045412,
+              "volume": 51.531117520704356,
+              "heatLoad": 2152.4254999999998,
+              "coolLoad": 1787.6790000000001,
+              "airLeakage": 1.9405750313841272E-06,
+              "airHeaFlow": 0.14263919814446652,
+              "airCooFlow": 0.14808474155069584,
+              "airOutFlow": 0.0048668277658443001
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "7829d074",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "3812638b",
+                "parent": null,
+                "coordU": 47.688722788288963,
+                "coordV": 44.164373768501093,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.14808474155069584
+              },
+              {
+                "id": "7829d074",
+                "parent": "3812638b",
+                "coordU": 47.688722788288963,
+                "coordV": 44.164373768501093,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_45_f9fee367",
+                "massFlow": 0.14808474155069584
+              }
+            ],
+            "edges": [
+              {
+                "startId": "3812638b",
+                "endId": "7829d074",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.14808474155069584,
+                "diameter": 225,
+                "velocity": 3.7243920773181669,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_13_e37188be",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 10508.83,
+          "coolLoad": 15861.643750000001,
+          "airHeaFlow": 0.69641020543406229,
+          "airCooFlow": 1.3139201250828365,
+          "airOutFlow": 0.15515799762344515,
+          "wFlow": 0.75784251075011944,
+          "id_root": null,
+          "equipCoilPDrop": 239,
+          "equipFanPRise": -57,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 4820,
+          "rooms": [
+            {
+              "id": "SPACE_31_10a89c47",
+              "name": "2f_31_b2872b83",
+              "function": "oz:Laboratory",
+              "area": 159.13640781891809,
+              "volume": 716.11383518513139,
+              "heatLoad": 10508.83,
+              "coolLoad": 15861.643750000001,
+              "airLeakage": 1.3964260301457208E-07,
+              "airHeaFlow": 0.69641020543406229,
+              "airCooFlow": 1.3139201250828365,
+              "airOutFlow": 0.15515799762344515
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "4032f51e",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "f49c33cd",
+                "parent": null,
+                "coordU": 75.161257355889063,
+                "coordV": 71.849923406969396,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 1.3139201250828365
+              },
+              {
+                "id": "4032f51e",
+                "parent": "f49c33cd",
+                "coordU": 75.161257355889063,
+                "coordV": 71.849923406969396,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_31_10a89c47",
+                "massFlow": 1.3139201250828365
+              }
+            ],
+            "edges": [
+              {
+                "startId": "f49c33cd",
+                "endId": "4032f51e",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 1.3139201250828365,
+                "diameter": 600,
+                "velocity": 4.6470418385523304,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_14_be329679",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 2149.7446249999998,
+          "coolLoad": 2761.2243749999998,
+          "airHeaFlow": 0.14246153909874087,
+          "airCooFlow": 0.22872965333001985,
+          "airOutFlow": 0.0055029253781218356,
+          "wFlow": 0.13192663043478262,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2654,
+          "rooms": [
+            {
+              "id": "SPACE_2_a811ce76",
+              "name": "2f_2_cbb179aa",
+              "function": "oz:Office",
+              "area": 12.948059713227849,
+              "volume": 58.26626870952532,
+              "heatLoad": 2149.7446249999998,
+              "coolLoad": 2761.2243749999998,
+              "airLeakage": 1.7162588615126488E-06,
+              "airHeaFlow": 0.14246153909874087,
+              "airCooFlow": 0.22872965333001985,
+              "airOutFlow": 0.0055029253781218356
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "099c9b8a",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "88cd6f11",
+                "parent": null,
+                "coordU": 79.918127922075001,
+                "coordV": 54.943872879456002,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.22872965333001985
+              },
+              {
+                "id": "099c9b8a",
+                "parent": "88cd6f11",
+                "coordU": 79.918127922075001,
+                "coordV": 54.943872879456002,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_2_a811ce76",
+                "massFlow": 0.22872965333001985
+              }
+            ],
+            "edges": [
+              {
+                "startId": "88cd6f11",
+                "endId": "099c9b8a",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.22872965333001985,
+                "diameter": 250,
+                "velocity": 4.6596422347735373,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_15_2409d300",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 1998.2203749999999,
+          "coolLoad": 1611.0345000000002,
+          "airHeaFlow": 0.13242017064280981,
+          "airCooFlow": 0.13345216202783303,
+          "airOutFlow": 0.0053408306352917632,
+          "wFlow": 0.095471589823220251,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_14_67bc64ae",
+              "name": "2f_14_c6e5ddd7",
+              "function": "oz:Office",
+              "area": 12.566660318333561,
+              "volume": 56.549971432501025,
+              "heatLoad": 1998.2203749999999,
+              "coolLoad": 1611.0345000000002,
+              "airLeakage": 1.7683474892531405E-06,
+              "airHeaFlow": 0.13242017064280981,
+              "airCooFlow": 0.13345216202783303,
+              "airOutFlow": 0.0053408306352917632
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "093ddf0c",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "8e584147",
+                "parent": null,
+                "coordU": 65.574333599420399,
+                "coordV": 46.9152159662193,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.13345216202783303
+              },
+              {
+                "id": "093ddf0c",
+                "parent": "8e584147",
+                "coordU": 65.574333599420399,
+                "coordV": 46.9152159662193,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_14_67bc64ae",
+                "massFlow": 0.13345216202783303
+              }
+            ],
+            "edges": [
+              {
+                "startId": "8e584147",
+                "endId": "093ddf0c",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.13345216202783303,
+                "diameter": 200,
+                "velocity": 4.2479142506060317,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_16_e7267045",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 3802.0879999999997,
+          "coolLoad": 2674.3377500000001,
+          "airHeaFlow": 0.25196076872100726,
+          "airCooFlow": 0.22153228545394302,
+          "airOutFlow": 0.037782150537067627,
+          "wFlow": 0.18165733397037745,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2654,
+          "rooms": [
+            {
+              "id": "SPACE_29_760d87d4",
+              "name": "2f_29_68b826e1",
+              "function": "oz:Conference",
+              "area": 24.375580991656534,
+              "volume": 109.6901144624544,
+              "heatLoad": 3802.0879999999997,
+              "coolLoad": 2674.3377500000001,
+              "airLeakage": 9.116591817782157E-07,
+              "airHeaFlow": 0.25196076872100726,
+              "airCooFlow": 0.22153228545394302,
+              "airOutFlow": 0.037782150537067627
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "61e26a6e",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "b5083ba4",
+                "parent": null,
+                "coordU": 76.970255582562203,
+                "coordV": 70.867587414307096,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.25196076872100726
+              },
+              {
+                "id": "61e26a6e",
+                "parent": "b5083ba4",
+                "coordU": 76.970255582562203,
+                "coordV": 70.867587414307096,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_29_760d87d4",
+                "massFlow": 0.25196076872100726
+              }
+            ],
+            "edges": [
+              {
+                "startId": "b5083ba4",
+                "endId": "61e26a6e",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.25196076872100726,
+                "diameter": 250,
+                "velocity": 5.1329026313193102,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_17_d92e3009",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 5217.5649999999996,
+          "coolLoad": 3182.7530000000002,
+          "airHeaFlow": 0.34576308813783962,
+          "airCooFlow": 0.2636475314777999,
+          "airOutFlow": 0.043951787739275459,
+          "wFlow": 0.24928643096034397,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2654,
+          "rooms": [
+            {
+              "id": "SPACE_30_2d6c49e4",
+              "name": "2f_30_eb580204",
+              "function": "oz:Conference",
+              "area": 28.355992089855135,
+              "volume": 127.60196440434811,
+              "heatLoad": 5217.5649999999996,
+              "coolLoad": 3182.7530000000002,
+              "airLeakage": 7.8368699468542388E-07,
+              "airHeaFlow": 0.34576308813783962,
+              "airCooFlow": 0.2636475314777999,
+              "airOutFlow": 0.043951787739275459
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "8710d16e",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "b917d37b",
+                "parent": null,
+                "coordU": 81.349417922074977,
+                "coordV": 77.549723937459589,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.34576308813783962
+              },
+              {
+                "id": "8710d16e",
+                "parent": "b917d37b",
+                "coordU": 81.349417922074977,
+                "coordV": 77.549723937459589,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_30_2d6c49e4",
+                "massFlow": 0.34576308813783962
+              }
+            ],
+            "edges": [
+              {
+                "startId": "b917d37b",
+                "endId": "8710d16e",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.34576308813783962,
+                "diameter": 300,
+                "velocity": 4.8915470769649652,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_18_75e3a71f",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 2654.8775000000001,
+          "coolLoad": 3076.7141249999995,
+          "airHeaFlow": 0.17593621603711068,
+          "airCooFlow": 0.25486366177932401,
+          "airOutFlow": 0.0065757509273870708,
+          "wFlow": 0.14700019708552317,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2654,
+          "rooms": [
+            {
+              "id": "SPACE_6_c01bddf4",
+              "name": "2f_6_c34798c5",
+              "function": "oz:Office",
+              "area": 15.472355123263696,
+              "volume": 69.625598054686634,
+              "heatLoad": 2654.8775000000001,
+              "coolLoad": 3076.7141249999995,
+              "airLeakage": 1.4362533722361155E-06,
+              "airHeaFlow": 0.17593621603711068,
+              "airCooFlow": 0.25486366177932401,
+              "airOutFlow": 0.0065757509273870708
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "71ea9c7a",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "e9072173",
+                "parent": null,
+                "coordU": 79.918127922075001,
+                "coordV": 44.035761179705801,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.25486366177932401
+              },
+              {
+                "id": "71ea9c7a",
+                "parent": "e9072173",
+                "coordU": 79.918127922075001,
+                "coordV": 44.035761179705801,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_6_c01bddf4",
+                "massFlow": 0.25486366177932401
+              }
+            ],
+            "edges": [
+              {
+                "startId": "e9072173",
+                "endId": "71ea9c7a",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.25486366177932401,
+                "diameter": 250,
+                "velocity": 5.192039883095088,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_19_91b07e1d",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 1288.44325,
+          "coolLoad": 1855.7493750000001,
+          "airHeaFlow": 0.085383913187541419,
+          "airCooFlow": 0.15372344060636184,
+          "airOutFlow": 0.0051121263657384584,
+          "wFlow": 0.088664566411849027,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_21_a99e3fb5",
+              "name": "2f_21_ea466488",
+              "function": "oz:Office",
+              "area": 12.028532625266962,
+              "volume": 54.128396813701329,
+              "heatLoad": 1288.44325,
+              "coolLoad": 1855.7493750000001,
+              "airLeakage": 1.8474591136364001E-06,
+              "airHeaFlow": 0.085383913187541419,
+              "airCooFlow": 0.15372344060636184,
+              "airOutFlow": 0.0051121263657384584
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "83b7c35d",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "6ae3eb21",
+                "parent": null,
+                "coordU": 76.181955582583598,
+                "coordV": 47.353447349264101,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.15372344060636184
+              },
+              {
+                "id": "83b7c35d",
+                "parent": "6ae3eb21",
+                "coordU": 76.181955582583598,
+                "coordV": 47.353447349264101,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_21_a99e3fb5",
+                "massFlow": 0.15372344060636184
+              }
+            ],
+            "edges": [
+              {
+                "startId": "6ae3eb21",
+                "endId": "83b7c35d",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.15372344060636184,
+                "diameter": 225,
+                "velocity": 3.8662076747213225,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_20_a34b6ee5",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 2326.6221249999999,
+          "coolLoad": 1838.4256250000001,
+          "airHeaFlow": 0.15418304340622929,
+          "airCooFlow": 0.1522884049867462,
+          "airOutFlow": 0.0052355401119335964,
+          "wFlow": 0.11116206999522216,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_11_564007e2",
+              "name": "2f_11_82d27b2d",
+              "function": "oz:Office",
+              "area": 12.318917910431992,
+              "volume": 55.435130596943964,
+              "heatLoad": 2326.6221249999999,
+              "coolLoad": 1838.4256250000001,
+              "airLeakage": 1.8039102446980222E-06,
+              "airHeaFlow": 0.15418304340622929,
+              "airCooFlow": 0.1522884049867462,
+              "airOutFlow": 0.0052355401119335964
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "9225e595",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "57084430",
+                "parent": null,
+                "coordU": 68.530650087870001,
+                "coordV": 39.2639526704356,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.15418304340622929
+              },
+              {
+                "id": "9225e595",
+                "parent": "57084430",
+                "coordU": 68.530650087870001,
+                "coordV": 39.2639526704356,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_11_564007e2",
+                "massFlow": 0.15418304340622929
+              }
+            ],
+            "edges": [
+              {
+                "startId": "57084430",
+                "endId": "9225e595",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.15418304340622929,
+                "diameter": 225,
+                "velocity": 3.8777668739245272,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_21_34c20373",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 2458.2305000000001,
+          "coolLoad": 2679.3787500000003,
+          "airHeaFlow": 0.1629046056991385,
+          "airCooFlow": 0.22194986332007954,
+          "airOutFlow": 0.0067409327870118878,
+          "wFlow": 0.12801618490205446,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2654,
+          "rooms": [
+            {
+              "id": "SPACE_0_3df1aaa0",
+              "name": "2f_0_2c44ec6e",
+              "function": "oz:Office",
+              "area": 15.861018322380914,
+              "volume": 71.374582450714115,
+              "heatLoad": 2458.2305000000001,
+              "coolLoad": 2679.3787500000003,
+              "airLeakage": 1.4010589843947939E-06,
+              "airHeaFlow": 0.1629046056991385,
+              "airCooFlow": 0.22194986332007954,
+              "airOutFlow": 0.0067409327870118878
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "63bf5f73",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "ce07d4ff",
+                "parent": null,
+                "coordU": 79.918127922075001,
+                "coordV": 61.282862287640299,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.22194986332007954
+              },
+              {
+                "id": "63bf5f73",
+                "parent": "ce07d4ff",
+                "coordU": 79.918127922075001,
+                "coordV": 61.282862287640299,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_0_3df1aaa0",
+                "massFlow": 0.22194986332007954
+              }
+            ],
+            "edges": [
+              {
+                "startId": "ce07d4ff",
+                "endId": "63bf5f73",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.22194986332007954,
+                "diameter": 250,
+                "velocity": 4.5215254868430348,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_22_3bfe5066",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 6846.1512500000008,
+          "coolLoad": 7433.8125,
+          "airHeaFlow": 0.45368795559973496,
+          "airCooFlow": 0.61578963717693835,
+          "airOutFlow": 0.060263853161728595,
+          "wFlow": 0.35517498805542286,
+          "id_root": null,
+          "equipCoilPDrop": 389,
+          "equipFanPRise": -62,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 3693,
+          "rooms": [
+            {
+              "id": "SPACE_43_7c7abaf3",
+              "name": "2f_43_38ea1ab1",
+              "function": "oz:Conference",
+              "area": 38.879905265631351,
+              "volume": 174.95957369534108,
+              "heatLoad": 6846.1512500000008,
+              "coolLoad": 7433.8125,
+              "airLeakage": 5.7156060618969641E-07,
+              "airHeaFlow": 0.45368795559973496,
+              "airCooFlow": 0.61578963717693835,
+              "airOutFlow": 0.060263853161728595
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "5fabad55",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "a31c11cb",
+                "parent": null,
+                "coordU": 44.493515785541803,
+                "coordV": 44.817631746686097,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.61578963717693835
+              },
+              {
+                "id": "5fabad55",
+                "parent": "a31c11cb",
+                "coordU": 44.493515785541803,
+                "coordV": 44.817631746686097,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_43_7c7abaf3",
+                "massFlow": 0.61578963717693835
+              }
+            ],
+            "edges": [
+              {
+                "startId": "a31c11cb",
+                "endId": "5fabad55",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.61578963717693835,
+                "diameter": 450,
+                "velocity": 3.8718405792187456,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_23_85c5edad",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 1946.6108750000001,
+          "coolLoad": 1786.0896249999998,
+          "airHeaFlow": 0.1290000579854208,
+          "airCooFlow": 0.14795308358184225,
+          "airOutFlow": 0.0053133005804733551,
+          "wFlow": 0.093005775203057819,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_15_e62a4972",
+              "name": "2f_15_ec85444e",
+              "function": "oz:Office",
+              "area": 12.501883718760837,
+              "volume": 56.258476734423766,
+              "heatLoad": 1946.6108750000001,
+              "coolLoad": 1786.0896249999998,
+              "airLeakage": 1.777509911476352E-06,
+              "airHeaFlow": 0.1290000579854208,
+              "airCooFlow": 0.14795308358184225,
+              "airOutFlow": 0.0053133005804733551
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "df19c8a5",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "bd933f5e",
+                "parent": null,
+                "coordU": 65.574333599420399,
+                "coordV": 48.315215966219299,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.14795308358184225
+              },
+              {
+                "id": "df19c8a5",
+                "parent": "bd933f5e",
+                "coordU": 65.574333599420399,
+                "coordV": 48.315215966219299,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_15_e62a4972",
+                "massFlow": 0.14795308358184225
+              }
+            ],
+            "edges": [
+              {
+                "startId": "bd933f5e",
+                "endId": "df19c8a5",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.14795308358184225,
+                "diameter": 225,
+                "velocity": 3.7210808253216454,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_24_660f085c",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 2191.9454999999998,
+          "coolLoad": 2719.6255000000001,
+          "airHeaFlow": 0.14525815109343934,
+          "airCooFlow": 0.2252837557985421,
+          "airOutFlow": 0.0054797924394863907,
+          "wFlow": 0.12993910654562829,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2654,
+          "rooms": [
+            {
+              "id": "SPACE_3_123f282c",
+              "name": "2f_3_d0e357ac",
+              "function": "oz:Office",
+              "area": 12.893629269379744,
+              "volume": 58.021331712208848,
+              "heatLoad": 2191.9454999999998,
+              "coolLoad": 2719.6255000000001,
+              "airLeakage": 1.7235040466842302E-06,
+              "airHeaFlow": 0.14525815109343934,
+              "airCooFlow": 0.2252837557985421,
+              "airOutFlow": 0.0054797924394863907
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "f500ca6e",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "04d8cbac",
+                "parent": null,
+                "coordU": 79.918127922075001,
+                "coordV": 53.543872879456103,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.2252837557985421
+              },
+              {
+                "id": "f500ca6e",
+                "parent": "04d8cbac",
+                "coordU": 79.918127922075001,
+                "coordV": 53.543872879456103,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_3_123f282c",
+                "massFlow": 0.2252837557985421
+              }
+            ],
+            "edges": [
+              {
+                "startId": "04d8cbac",
+                "endId": "f500ca6e",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.2252837557985421,
+                "diameter": 250,
+                "velocity": 4.5894429867066133,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_25_aa9b9825",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 887.74649999999997,
+          "coolLoad": 1671.2616249999999,
+          "airHeaFlow": 0.058830119284294234,
+          "airCooFlow": 0.13844115515241881,
+          "airOutFlow": 0.0028236245883348598,
+          "wFlow": 0.079850053750597227,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_37_9b53428e",
+              "name": "2f_37_1a50165a",
+              "function": "oz:Restroom",
+              "area": 9.4120819611162005,
+              "volume": 42.354368825022902,
+              "heatLoad": 887.74649999999997,
+              "coolLoad": 1671.2616249999999,
+              "airLeakage": 2.3610315245902129E-06,
+              "airHeaFlow": 0.058830119284294234,
+              "airCooFlow": 0.13844115515241881,
+              "airOutFlow": 0.0028236245883348598
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "5f620e94",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "4e809ab0",
+                "parent": null,
+                "coordU": 44.2857697751312,
+                "coordV": 61.311625537263602,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.13844115515241881
+              },
+              {
+                "id": "5f620e94",
+                "parent": "4e809ab0",
+                "coordU": 44.2857697751312,
+                "coordV": 61.311625537263602,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_37_9b53428e",
+                "massFlow": 0.13844115515241881
+              }
+            ],
+            "edges": [
+              {
+                "startId": "4e809ab0",
+                "endId": "5f620e94",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.13844115515241881,
+                "diameter": 200,
+                "velocity": 4.406718833971893,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_26_b45e0a0c",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 2147.8125,
+          "coolLoad": 1457.3858749999999,
+          "airHeaFlow": 0.1423334990059642,
+          "airCooFlow": 0.12072447606030483,
+          "airOutFlow": 0.0053958907449355364,
+          "wFlow": 0.10261884854276158,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -10,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 1623,
+          "rooms": [
+            {
+              "id": "SPACE_13_04983d65",
+              "name": "2f_13_bd9d9055",
+              "function": "oz:Office",
+              "area": 12.69621351749538,
+              "volume": 57.13296082872921,
+              "heatLoad": 2147.8125,
+              "coolLoad": 1457.3858749999999,
+              "airLeakage": 1.7503031271173886E-06,
+              "airHeaFlow": 0.1423334990059642,
+              "airCooFlow": 0.12072447606030483,
+              "airOutFlow": 0.0053958907449355364
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "81e89e99",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "b724a0c1",
+                "parent": null,
+                "coordU": 65.574333599420399,
+                "coordV": 41.7287797976538,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.1423334990059642
+              },
+              {
+                "id": "81e89e99",
+                "parent": "b724a0c1",
+                "coordU": 65.574333599420399,
+                "coordV": 41.7287797976538,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_13_04983d65",
+                "massFlow": 0.1423334990059642
+              }
+            ],
+            "edges": [
+              {
+                "startId": "b724a0c1",
+                "endId": "81e89e99",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.1423334990059642,
+                "diameter": 200,
+                "velocity": 4.5306159868729141,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_27_3a0410f1",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 1812.7358749999999,
+          "coolLoad": 2614.7525000000001,
+          "airHeaFlow": 0.12012828860172299,
+          "airCooFlow": 0.21659646288933068,
+          "airOutFlow": 0.008504556025315059,
+          "wFlow": 0.12492845198279982,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2654,
+          "rooms": [
+            {
+              "id": "SPACE_17_07a3203d",
+              "name": "2f_17_764e5933",
+              "function": "oz:Office",
+              "area": 20.010720059564846,
+              "volume": 90.048240268041809,
+              "heatLoad": 1812.7358749999999,
+              "coolLoad": 2614.7525000000001,
+              "airLeakage": 1.1105158712967108E-06,
+              "airHeaFlow": 0.12012828860172299,
+              "airCooFlow": 0.21659646288933068,
+              "airOutFlow": 0.008504556025315059
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "1724e7ed",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "41b5f608",
+                "parent": null,
+                "coordU": 71.110016222325399,
+                "coordV": 45.405663661808703,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.21659646288933068
+              },
+              {
+                "id": "1724e7ed",
+                "parent": "41b5f608",
+                "coordU": 71.110016222325399,
+                "coordV": 45.405663661808703,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_17_07a3203d",
+                "massFlow": 0.21659646288933068
+              }
+            ],
+            "edges": [
+              {
+                "startId": "41b5f608",
+                "endId": "1724e7ed",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.21659646288933068,
+                "diameter": 250,
+                "velocity": 4.4124669088073274,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_28_c834449b",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 2035.1575,
+          "coolLoad": 2391.9276249999998,
+          "airHeaFlow": 0.13486795891318754,
+          "airCooFlow": 0.19813847125579853,
+          "airOutFlow": 0.0055153374219126363,
+          "wFlow": 0.11428225633062589,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_36_66dace71",
+              "name": "2f_36_aae496fe",
+              "function": "oz:Office",
+              "area": 12.977264522147379,
+              "volume": 58.397690349663208,
+              "heatLoad": 2035.1575,
+              "coolLoad": 2391.9276249999998,
+              "airLeakage": 1.7123964903618269E-06,
+              "airHeaFlow": 0.13486795891318754,
+              "airCooFlow": 0.19813847125579853,
+              "airOutFlow": 0.0055153374219126363
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "da41db2e",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "3ad8496e",
+                "parent": null,
+                "coordU": 42.885769775131202,
+                "coordV": 61.311625537263602,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.19813847125579853
+              },
+              {
+                "id": "da41db2e",
+                "parent": "3ad8496e",
+                "coordU": 42.885769775131202,
+                "coordV": 61.311625537263602,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_36_66dace71",
+                "massFlow": 0.19813847125579853
+              }
+            ],
+            "edges": [
+              {
+                "startId": "3ad8496e",
+                "endId": "da41db2e",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.19813847125579853,
+                "diameter": 250,
+                "velocity": 4.0364437909800648,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_29_f2da7d09",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 1142.2643250000001,
+          "coolLoad": 1642.51475,
+          "airHeaFlow": 0.075696774353876742,
+          "airCooFlow": 0.13605986994698477,
+          "airOutFlow": 0.0027011249155375477,
+          "wFlow": 0.078476576684185381,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_19_2155fcac",
+              "name": "2f_19_8ede51c0",
+              "function": "oz:Reception",
+              "area": 9.0037497184584936,
+              "volume": 40.516873733063221,
+              "heatLoad": 1142.2643250000001,
+              "coolLoad": 1642.51475,
+              "airLeakage": 2.4681075015517896E-06,
+              "airHeaFlow": 0.075696774353876742,
+              "airCooFlow": 0.13605986994698477,
+              "airOutFlow": 0.0027011249155375477
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "9b2a89b6",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "628f47ef",
+                "parent": null,
+                "coordU": 69.258797250981672,
+                "coordV": 48.662290434043271,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.13605986994698477
+              },
+              {
+                "id": "9b2a89b6",
+                "parent": "628f47ef",
+                "coordU": 69.258797250981672,
+                "coordV": 48.662290434043271,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_19_2155fcac",
+                "massFlow": 0.13605986994698477
+              }
+            ],
+            "edges": [
+              {
+                "startId": "628f47ef",
+                "endId": "9b2a89b6",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.13605986994698477,
+                "diameter": 200,
+                "velocity": 4.3309201717006074,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_30_27b91501",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 2115.205125,
+          "coolLoad": 2770.79225,
+          "airHeaFlow": 0.14017263916500994,
+          "airCooFlow": 0.22952222084161697,
+          "airOutFlow": 0.0054668309992930517,
+          "wFlow": 0.13238376731963689,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2654,
+          "rooms": [
+            {
+              "id": "SPACE_1_27d3900a",
+              "name": "2f_1_e9a2ea0e",
+              "function": "oz:Office",
+              "area": 12.863131763042475,
+              "volume": 57.884092933691136,
+              "heatLoad": 2115.205125,
+              "coolLoad": 2770.79225,
+              "airLeakage": 1.7275903435949934E-06,
+              "airHeaFlow": 0.14017263916500994,
+              "airCooFlow": 0.22952222084161697,
+              "airOutFlow": 0.0054668309992930517
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "3be574d4",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "61bb399b",
+                "parent": null,
+                "coordU": 79.918127922075001,
+                "coordV": 59.8828622876403,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.22952222084161697
+              },
+              {
+                "id": "3be574d4",
+                "parent": "61bb399b",
+                "coordU": 79.918127922075001,
+                "coordV": 59.8828622876403,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_1_27d3900a",
+                "massFlow": 0.22952222084161697
+              }
+            ],
+            "edges": [
+              {
+                "startId": "61bb399b",
+                "endId": "3be574d4",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.22952222084161697,
+                "diameter": 250,
+                "velocity": 4.6757882875357417,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_31_fae1ac8f",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 1487.1722500000001,
+          "coolLoad": 1792.1312499999999,
+          "airHeaFlow": 0.098553495692511608,
+          "airCooFlow": 0.14845354953611661,
+          "airOutFlow": 0.0051121263657392321,
+          "wFlow": 0.085624999999999993,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_25_aa7c28d6",
+              "name": "2f_25_76c58724",
+              "function": "oz:Office",
+              "area": 12.028532625268781,
+              "volume": 54.128396813709514,
+              "heatLoad": 1487.1722500000001,
+              "coolLoad": 1792.1312499999999,
+              "airLeakage": 1.8474591136361208E-06,
+              "airHeaFlow": 0.098553495692511608,
+              "airCooFlow": 0.14845354953611661,
+              "airOutFlow": 0.0051121263657392321
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "baf63b20",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "1680038b",
+                "parent": null,
+                "coordU": 78.127968348054694,
+                "coordV": 60.128580324968297,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.14845354953611661
+              },
+              {
+                "id": "baf63b20",
+                "parent": "1680038b",
+                "coordU": 78.127968348054694,
+                "coordV": 60.128580324968297,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_25_aa7c28d6",
+                "massFlow": 0.14845354953611661
+              }
+            ],
+            "edges": [
+              {
+                "startId": "1680038b",
+                "endId": "baf63b20",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.14845354953611661,
+                "diameter": 225,
+                "velocity": 3.7336677496431414,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_32_3b5dbe62",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 3545.21,
+          "coolLoad": 3378.9987500000002,
+          "airHeaFlow": 0.23493770709078859,
+          "airCooFlow": 0.27990380632869449,
+          "airOutFlow": 0.028568844159817128,
+          "wFlow": 0.1693841376015289,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2654,
+          "rooms": [
+            {
+              "id": "SPACE_28_daa98b6c",
+              "name": "2f_28_55b68641",
+              "function": "oz:Lounge, oz:DistributionSpace",
+              "area": 27.208423009349644,
+              "volume": 122.4379035420734,
+              "heatLoad": 3545.21,
+              "coolLoad": 3378.9987500000002,
+              "airLeakage": 8.16740544447798E-07,
+              "airHeaFlow": 0.23493770709078859,
+              "airCooFlow": 0.27990380632869449,
+              "airOutFlow": 0.028568844159817128
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "411500f4",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "08f679ee",
+                "parent": null,
+                "coordU": 81.954035368374463,
+                "coordV": 74.208655675883335,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.27990380632869449
+              },
+              {
+                "id": "411500f4",
+                "parent": "08f679ee",
+                "coordU": 81.954035368374463,
+                "coordV": 74.208655675883335,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_28_daa98b6c",
+                "massFlow": 0.27990380632869449
+              }
+            ],
+            "edges": [
+              {
+                "startId": "08f679ee",
+                "endId": "411500f4",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.27990380632869449,
+                "diameter": 250,
+                "velocity": 5.7021535190333781,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_33_4ebbe87a",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 2279.0817499999998,
+          "coolLoad": 1886.4358749999999,
+          "airHeaFlow": 0.15103258780649437,
+          "airCooFlow": 0.15626539720013252,
+          "airOutFlow": 0.0050501399232064613,
+          "wFlow": 0.1088906712852365,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_8_5a122b74",
+              "name": "2f_8_3c4547ba",
+              "function": "oz:Office",
+              "area": 11.882682172250497,
+              "volume": 53.472069775127238,
+              "heatLoad": 2279.0817499999998,
+              "coolLoad": 1886.4358749999999,
+              "airLeakage": 1.8701352018080182E-06,
+              "airHeaFlow": 0.15103258780649437,
+              "airCooFlow": 0.15626539720013252,
+              "airOutFlow": 0.0050501399232064613
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "6bb11ce5",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "d4043a35",
+                "parent": null,
+                "coordU": 77.091288383952005,
+                "coordV": 39.2639526704356,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.15626539720013252
+              },
+              {
+                "id": "6bb11ce5",
+                "parent": "d4043a35",
+                "coordU": 77.091288383952005,
+                "coordV": 39.2639526704356,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_8_5a122b74",
+                "massFlow": 0.15626539720013252
+              }
+            ],
+            "edges": [
+              {
+                "startId": "d4043a35",
+                "endId": "6bb11ce5",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.15626539720013252,
+                "diameter": 225,
+                "velocity": 3.9301389271892564,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_34_dd786c9b",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 3594.3737499999997,
+          "coolLoad": 3305.3485000000001,
+          "airHeaFlow": 0.23819574221338632,
+          "airCooFlow": 0.2738028909874089,
+          "airOutFlow": 0.0087238295636653217,
+          "wFlow": 0.1717330984233158,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -45,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2654,
+          "rooms": [
+            {
+              "id": "SPACE_7_cee8668c",
+              "name": "2f_7_9a6064fb",
+              "function": "oz:Office",
+              "area": 20.526657796859581,
+              "volume": 92.369960085868115,
+              "heatLoad": 3594.3737499999997,
+              "coolLoad": 3305.3485000000001,
+              "airLeakage": 1.0826030443992715E-06,
+              "airHeaFlow": 0.23819574221338632,
+              "airCooFlow": 0.2738028909874089,
+              "airOutFlow": 0.0087238295636653217
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "2fe5df61",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "4fefdf9f",
+                "parent": null,
+                "coordU": 79.918127922075001,
+                "coordV": 40.235894159378802,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.2738028909874089
+              },
+              {
+                "id": "2fe5df61",
+                "parent": "4fefdf9f",
+                "coordU": 79.918127922075001,
+                "coordV": 40.235894159378802,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_7_cee8668c",
+                "massFlow": 0.2738028909874089
+              }
+            ],
+            "edges": [
+              {
+                "startId": "4fefdf9f",
+                "endId": "2fe5df61",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.2738028909874089,
+                "diameter": 250,
+                "velocity": 5.5778666922876781,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_35_5fbf7e7d",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 1425.2786249999999,
+          "coolLoad": 1695.5612500000002,
+          "airHeaFlow": 0.094451863817097415,
+          "airCooFlow": 0.14045404655400928,
+          "airOutFlow": 0.0049584832235990226,
+          "wFlow": 0.081011048733874824,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_24_b5024429",
+              "name": "2f_24_8b0e4823",
+              "function": "oz:Office",
+              "area": 11.667019349644761,
+              "volume": 52.501587073401424,
+              "heatLoad": 1425.2786249999999,
+              "coolLoad": 1695.5612500000002,
+              "airLeakage": 1.9047043256081382E-06,
+              "airHeaFlow": 0.094451863817097415,
+              "airCooFlow": 0.14045404655400928,
+              "airOutFlow": 0.0049584832235990226
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "d40a2fdb",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "61ce5eb2",
+                "parent": null,
+                "coordU": 78.127968348054694,
+                "coordV": 58.728580324968398,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.14045404655400928
+              },
+              {
+                "id": "d40a2fdb",
+                "parent": "61ce5eb2",
+                "coordU": 78.127968348054694,
+                "coordV": 58.728580324968398,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_24_b5024429",
+                "massFlow": 0.14045404655400928
+              }
+            ],
+            "edges": [
+              {
+                "startId": "61ce5eb2",
+                "endId": "d40a2fdb",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.14045404655400928,
+                "diameter": 200,
+                "velocity": 4.4707911572659524,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_36_ad44e324",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 3411.32125,
+          "coolLoad": 1964.9841249999999,
+          "airHeaFlow": 0.22606502650762095,
+          "airCooFlow": 0.16277204481444665,
+          "airOutFlow": 0.0083691366656138601,
+          "wFlow": 0.16298715957955087,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_12_cd7468e7",
+              "name": "2f_12_e7d03aae",
+              "function": "oz:Office",
+              "area": 19.692086272032611,
+              "volume": 88.614388224146751,
+              "heatLoad": 3411.32125,
+              "coolLoad": 1964.9841249999999,
+              "airLeakage": 1.1284849109046917E-06,
+              "airHeaFlow": 0.22606502650762095,
+              "airCooFlow": 0.16277204481444665,
+              "airOutFlow": 0.0083691366656138601
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "10304c80",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "06395fa2",
+                "parent": null,
+                "coordU": 65.574333599420399,
+                "coordV": 40.328779797653802,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.22606502650762095
+              },
+              {
+                "id": "10304c80",
+                "parent": "06395fa2",
+                "coordU": 65.574333599420399,
+                "coordV": 40.328779797653802,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_12_cd7468e7",
+                "massFlow": 0.22606502650762095
+              }
+            ],
+            "edges": [
+              {
+                "startId": "06395fa2",
+                "endId": "10304c80",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.22606502650762095,
+                "diameter": 250,
+                "velocity": 4.6053589028976925,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_37_a613a5da",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 1312.347,
+          "coolLoad": 1843.2548750000001,
+          "airHeaFlow": 0.086967992047713716,
+          "airCooFlow": 0.15268844226308814,
+          "airOutFlow": 0.00487467667454066,
+          "wFlow": 0.088067600334448159,
+          "id_root": null,
+          "equipCoilPDrop": 1405,
+          "equipFanPRise": -25,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 2196,
+          "rooms": [
+            {
+              "id": "SPACE_20_1895a239",
+              "name": "2f_20_81351814",
+              "function": "oz:Office",
+              "area": 11.469827469507436,
+              "volume": 51.614223612783462,
+              "heatLoad": 1312.347,
+              "coolLoad": 1843.2548750000001,
+              "airLeakage": 1.9374504351787379E-06,
+              "airHeaFlow": 0.086967992047713716,
+              "airCooFlow": 0.15268844226308814,
+              "airOutFlow": 0.00487467667454066
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "59046675",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "08885d11",
+                "parent": null,
+                "coordU": 73.535942817112598,
+                "coordV": 47.353447349264101,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 0.15268844226308814
+              },
+              {
+                "id": "59046675",
+                "parent": "08885d11",
+                "coordU": 73.535942817112598,
+                "coordV": 47.353447349264101,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_20_1895a239",
+                "massFlow": 0.15268844226308814
+              }
+            ],
+            "edges": [
+              {
+                "startId": "08885d11",
+                "endId": "59046675",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 0.15268844226308814,
+                "diameter": 225,
+                "velocity": 3.8401770412518617,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "ZONE_38_98b4c14a",
+          "name": null,
+          "sensor": "TempAverage",
+          "heatLoad": 12338.046875,
+          "coolLoad": 16865.958749999998,
+          "airHeaFlow": 0.81763067428760772,
+          "airCooFlow": 1.397113879224652,
+          "airOutFlow": 0.15965624193843586,
+          "wFlow": 0.8058269827998088,
+          "id_root": null,
+          "equipCoilPDrop": 239,
+          "equipFanPRise": -57,
+          "equipCoolLoad": 0,
+          "equipHeatLoad": 0,
+          "equipWFlow": 0,
+          "equipAFlow": 0,
+          "equipPrice": 4820,
+          "rooms": [
+            {
+              "id": "SPACE_33_165853a7",
+              "name": "2f_33_7725473d",
+              "function": "oz:Laboratory",
+              "area": 163.7499917317291,
+              "volume": 736.87496279278093,
+              "heatLoad": 12338.046875,
+              "coolLoad": 16865.958749999998,
+              "airLeakage": 1.3570823416363156E-07,
+              "airHeaFlow": 0.81763067428760772,
+              "airCooFlow": 1.397113879224652,
+              "airOutFlow": 0.15965624193843586
+            }
+          ],
+          "network": {
+            "maxLength": 0,
+            "maxNode": "b7f92231",
+            "sumLength": 0,
+            "sumMaterial": 0,
+            "numJunction": 0,
+            "numBend": 0,
+            "type": "duct",
+            "nodes": [
+              {
+                "id": "54625ce9",
+                "parent": null,
+                "coordU": 41.89834734647421,
+                "coordV": 71.849923406969367,
+                "type": "source",
+                "degree": 1,
+                "depth": -1,
+                "linkedTerminalId": null,
+                "massFlow": 1.397113879224652
+              },
+              {
+                "id": "b7f92231",
+                "parent": "54625ce9",
+                "coordU": 41.89834734647421,
+                "coordV": 71.849923406969367,
+                "type": "terminal",
+                "degree": 0,
+                "depth": -1,
+                "linkedTerminalId": "SPACE_33_165853a7",
+                "massFlow": 1.397113879224652
+              }
+            ],
+            "edges": [
+              {
+                "startId": "54625ce9",
+                "endId": "b7f92231",
+                "length": 0,
+                "isTrunk": false,
+                "massFlow": 1.397113879224652,
+                "diameter": 600,
+                "velocity": 4.9412795542421479,
+                "deltaPDrop": 0,
+                "friction": 0
+              }
+            ]
+          }
+        }
+      ],
+      "network": {
+        "maxLength": 49.306112753629698,
+        "maxNode": "aa0b86a5",
+        "sumLength": 228.40373709668901,
+        "sumMaterial": 413.23636571206447,
+        "numJunction": 38,
+        "numBend": 21,
+        "type": "duct",
+        "nodes": [
+          {
+            "id": "f59d62d8",
+            "parent": null,
+            "coordU": 71.492742817798401,
+            "coordV": 60.928824118919998,
+            "type": "source",
+            "degree": 1,
+            "depth": 0,
+            "linkedTerminalId": null,
+            "massFlow": 11.754106258283631
+          },
+          {
+            "id": "d07306eb",
+            "parent": "f59d62d8",
+            "coordU": 72.864342817455523,
+            "coordV": 60.928824118919998,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 1,
+            "linkedTerminalId": null,
+            "massFlow": 11.754106258283631
+          },
+          {
+            "id": "aad5faa8",
+            "parent": "d07306eb",
+            "coordU": 72.864342817455508,
+            "coordV": 56.324812595070995,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 2,
+            "linkedTerminalId": null,
+            "massFlow": 5.981539345178926
+          },
+          {
+            "id": "00a0e36e",
+            "parent": "d07306eb",
+            "coordU": 72.864342817455523,
+            "coordV": 63.498660111185075,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 2,
+            "linkedTerminalId": null,
+            "massFlow": 5.7725669131047059
+          },
+          {
+            "id": "335077ea",
+            "parent": "aad5faa8",
+            "coordU": 72.864342817455508,
+            "coordV": 52.305933943413045,
+            "type": "relay",
+            "degree": 1,
+            "depth": 3,
+            "linkedTerminalId": null,
+            "massFlow": 5.7204336563949632
+          },
+          {
+            "id": "3fdfdab5",
+            "parent": "335077ea",
+            "coordU": 69.547298917218399,
+            "coordV": 52.305933943413045,
+            "type": "relay",
+            "degree": 1,
+            "depth": 4,
+            "linkedTerminalId": null,
+            "massFlow": 5.7204336563949632
+          },
+          {
+            "id": "927f37d4",
+            "parent": "3fdfdab5",
+            "coordU": 67.00562359942036,
+            "coordV": 52.305933943413045,
+            "type": "relay",
+            "degree": 1,
+            "depth": 5,
+            "linkedTerminalId": null,
+            "massFlow": 5.7204336563949632
+          },
+          {
+            "id": "8d9068a8",
+            "parent": "927f37d4",
+            "coordU": 66.556669592082685,
+            "coordV": 52.305933943413045,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 6,
+            "linkedTerminalId": null,
+            "massFlow": 5.7204336563949632
+          },
+          {
+            "id": "e65dd794",
+            "parent": "00a0e36e",
+            "coordU": 72.864342817455523,
+            "coordV": 69.494005854367003,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 3,
+            "linkedTerminalId": null,
+            "massFlow": 3.58866166749503
+          },
+          {
+            "id": "05ec73f5",
+            "parent": "8d9068a8",
+            "coordU": 50.61314282301867,
+            "coordV": 52.305933943413081,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 7,
+            "linkedTerminalId": null,
+            "massFlow": 3.2011805748840292
+          },
+          {
+            "id": "745edd12",
+            "parent": "8d9068a8",
+            "coordU": 66.55666959208267,
+            "coordV": 48.315215966219299,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 7,
+            "linkedTerminalId": null,
+            "massFlow": 2.519253081510934
+          },
+          {
+            "id": "1f3a340a",
+            "parent": "745edd12",
+            "coordU": 66.55666959208267,
+            "coordV": 46.915215966219293,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 8,
+            "linkedTerminalId": null,
+            "massFlow": 2.3712999979290919
+          },
+          {
+            "id": "55c319c5",
+            "parent": "00a0e36e",
+            "coordU": 79.023048135064826,
+            "coordV": 63.498660111185089,
+            "type": "relay",
+            "degree": 1,
+            "depth": 3,
+            "linkedTerminalId": null,
+            "massFlow": 2.1839052456096755
+          },
+          {
+            "id": "8fdc47a2",
+            "parent": "55c319c5",
+            "coordU": 79.023048135064826,
+            "coordV": 61.282862287640299,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 4,
+            "linkedTerminalId": null,
+            "massFlow": 2.1839052456096755
+          },
+          {
+            "id": "4ce5a331",
+            "parent": "1f3a340a",
+            "coordU": 66.55666959208267,
+            "coordV": 46.837578554817071,
+            "type": "relay",
+            "degree": 1,
+            "depth": 9,
+            "linkedTerminalId": null,
+            "massFlow": 2.2378478359012588
+          },
+          {
+            "id": "f9492d20",
+            "parent": "4ce5a331",
+            "coordU": 66.55666959208267,
+            "coordV": 46.379555505536409,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 10,
+            "linkedTerminalId": null,
+            "massFlow": 2.2378478359012588
+          },
+          {
+            "id": "eb091198",
+            "parent": "e65dd794",
+            "coordU": 75.161257355889106,
+            "coordV": 69.494005854367003,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 4,
+            "linkedTerminalId": null,
+            "massFlow": 2.1915477882703778
+          },
+          {
+            "id": "781be614",
+            "parent": "8fdc47a2",
+            "coordU": 79.023048135064826,
+            "coordV": 60.128580324968297,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 5,
+            "linkedTerminalId": null,
+            "massFlow": 1.9619553822895959
+          },
+          {
+            "id": "b0ac8b2d",
+            "parent": "781be614",
+            "coordU": 79.023048135064826,
+            "coordV": 59.882862287640307,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 6,
+            "linkedTerminalId": null,
+            "massFlow": 1.8135018327534793
+          },
+          {
+            "id": "b42f27ef",
+            "parent": "05ec73f5",
+            "coordU": 50.613142823018677,
+            "coordV": 54.400096390413616,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 8,
+            "linkedTerminalId": null,
+            "massFlow": 1.7838437292909211
+          },
+          {
+            "id": "a23b2f95",
+            "parent": "b0ac8b2d",
+            "coordU": 79.023048135064826,
+            "coordV": 58.728580324968391,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 7,
+            "linkedTerminalId": null,
+            "massFlow": 1.5839796119118623
+          },
+          {
+            "id": "c3a78cd6",
+            "parent": "b42f27ef",
+            "coordU": 50.613142823018677,
+            "coordV": 59.880335537263647,
+            "type": "relay",
+            "degree": 1,
+            "depth": 9,
+            "linkedTerminalId": null,
+            "massFlow": 1.4987075463883366
+          },
+          {
+            "id": "c69acbc9",
+            "parent": "c3a78cd6",
+            "coordU": 47.258110199919898,
+            "coordV": 59.880335537263647,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 10,
+            "linkedTerminalId": null,
+            "massFlow": 1.4987075463883366
+          },
+          {
+            "id": "064da337",
+            "parent": "a23b2f95",
+            "coordU": 79.023048135064812,
+            "coordV": 54.943872879456002,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 8,
+            "linkedTerminalId": null,
+            "massFlow": 1.4435255653578529
+          },
+          {
+            "id": "b99a36b8",
+            "parent": "e65dd794",
+            "coordU": 61.552103990496988,
+            "coordV": 69.494005854367003,
+            "type": "relay",
+            "degree": 1,
+            "depth": 4,
+            "linkedTerminalId": null,
+            "massFlow": 1.397113879224652
+          },
+          {
+            "id": "d8af21af",
+            "parent": "b99a36b8",
+            "coordU": 54.668715251083498,
+            "coordV": 69.494005854367003,
+            "type": "relay",
+            "degree": 1,
+            "depth": 5,
+            "linkedTerminalId": null,
+            "massFlow": 1.397113879224652
+          },
+          {
+            "id": "28b9758b",
+            "parent": "d8af21af",
+            "coordU": 50.613142823018727,
+            "coordV": 69.494005854367003,
+            "type": "relay",
+            "degree": 1,
+            "depth": 6,
+            "linkedTerminalId": null,
+            "massFlow": 1.397113879224652
+          },
+          {
+            "id": "10c08be8",
+            "parent": "28b9758b",
+            "coordU": 41.89834734647394,
+            "coordV": 69.494005854367003,
+            "type": "relay",
+            "degree": 1,
+            "depth": 7,
+            "linkedTerminalId": null,
+            "massFlow": 1.397113879224652
+          },
+          {
+            "id": "33a7a4d6",
+            "parent": "10c08be8",
+            "coordU": 41.898347346474218,
+            "coordV": 71.849923406969367,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 8,
+            "linkedTerminalId": "ZONE_38_98b4c14a",
+            "massFlow": 1.397113879224652
+          },
+          {
+            "id": "feb32e58",
+            "parent": "05ec73f5",
+            "coordU": 50.613142823018649,
+            "coordV": 46.83757855481705,
+            "type": "relay",
+            "degree": 1,
+            "depth": 8,
+            "linkedTerminalId": null,
+            "massFlow": 1.4173368455931081
+          },
+          {
+            "id": "39d188d1",
+            "parent": "feb32e58",
+            "coordU": 46.867529304451701,
+            "coordV": 46.837578554817043,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 9,
+            "linkedTerminalId": null,
+            "massFlow": 1.4173368455931081
+          },
+          {
+            "id": "50c27e91",
+            "parent": "c69acbc9",
+            "coordU": 44.2857697751312,
+            "coordV": 59.880335537263647,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 11,
+            "linkedTerminalId": null,
+            "massFlow": 1.3786485669317428
+          },
+          {
+            "id": "ac77ef94",
+            "parent": "eb091198",
+            "coordU": 75.161257355889063,
+            "coordV": 71.849923406969396,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 5,
+            "linkedTerminalId": "ZONE_13_e37188be",
+            "massFlow": 1.3139201250828365
+          },
+          {
+            "id": "72e6a80b",
+            "parent": "50c27e91",
+            "coordU": 43.867241406265464,
+            "coordV": 59.880335537263647,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 12,
+            "linkedTerminalId": null,
+            "massFlow": 1.240207411779324
+          },
+          {
+            "id": "1ea7f4f3",
+            "parent": "39d188d1",
+            "coordU": 45.314709269379058,
+            "coordV": 46.837578554817036,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 10,
+            "linkedTerminalId": null,
+            "massFlow": 1.2465894652915839
+          },
+          {
+            "id": "96af8d05",
+            "parent": "064da337",
+            "coordU": 79.023048135064812,
+            "coordV": 54.127605149163699,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 9,
+            "linkedTerminalId": null,
+            "massFlow": 1.2147959120278331
+          },
+          {
+            "id": "8c9b2125",
+            "parent": "f9492d20",
+            "coordU": 66.55666959208267,
+            "coordV": 41.7287797976538,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 11,
+            "linkedTerminalId": null,
+            "massFlow": 1.2654081821570575
+          },
+          {
+            "id": "ef2ccb31",
+            "parent": "96af8d05",
+            "coordU": 79.023048135064812,
+            "coordV": 53.543872879456103,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 10,
+            "linkedTerminalId": null,
+            "massFlow": 1.0747743538767396
+          },
+          {
+            "id": "0fdd9f4a",
+            "parent": "8c9b2125",
+            "coordU": 66.55666959208267,
+            "coordV": 40.328779797653802,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 12,
+            "linkedTerminalId": null,
+            "massFlow": 1.1230746831510934
+          },
+          {
+            "id": "aa0b86a5",
+            "parent": "72e6a80b",
+            "coordU": 43.867241406265464,
+            "coordV": 57.140215963838642,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 13,
+            "linkedTerminalId": "ZONE_7_84506758",
+            "massFlow": 1.0420689405235255
+          },
+          {
+            "id": "09e16e10",
+            "parent": "f9492d20",
+            "coordU": 69.258797250981686,
+            "coordV": 46.379555505536423,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 11,
+            "linkedTerminalId": null,
+            "massFlow": 0.97243965374420149
+          },
+          {
+            "id": "8b873b36",
+            "parent": "1ea7f4f3",
+            "coordU": 45.314709269379058,
+            "coordV": 44.817631746686097,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 11,
+            "linkedTerminalId": null,
+            "massFlow": 0.98835954274353877
+          },
+          {
+            "id": "906eaaf7",
+            "parent": "0fdd9f4a",
+            "coordU": 66.55666959208267,
+            "coordV": 40.246288663097893,
+            "type": "relay",
+            "degree": 1,
+            "depth": 13,
+            "linkedTerminalId": null,
+            "massFlow": 0.89700965664347243
+          },
+          {
+            "id": "9ff42075",
+            "parent": "906eaaf7",
+            "coordU": 68.530650087870001,
+            "coordV": 40.246288663097893,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 14,
+            "linkedTerminalId": null,
+            "massFlow": 0.89700965664347243
+          },
+          {
+            "id": "4df620a0",
+            "parent": "ef2ccb31",
+            "coordU": 79.023048135064812,
+            "coordV": 52.7276051491638,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 11,
+            "linkedTerminalId": null,
+            "massFlow": 0.84949059807819738
+          },
+          {
+            "id": "59a9c021",
+            "parent": "09e16e10",
+            "coordU": 71.110016222325385,
+            "coordV": 46.37955550553643,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 12,
+            "linkedTerminalId": null,
+            "massFlow": 0.83637978379721667
+          },
+          {
+            "id": "0e053e5e",
+            "parent": "eb091198",
+            "coordU": 76.970255582562203,
+            "coordV": 69.494005854367003,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 5,
+            "linkedTerminalId": null,
+            "massFlow": 0.87762766318754137
+          },
+          {
+            "id": "7d288341",
+            "parent": "9ff42075",
+            "coordU": 72.810969235911003,
+            "coordV": 40.246288663097907,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 15,
+            "linkedTerminalId": null,
+            "massFlow": 0.74282661323724319
+          },
+          {
+            "id": "970ad72c",
+            "parent": "4df620a0",
+            "coordU": 79.023048135064812,
+            "coordV": 47.902317029979102,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 12,
+            "linkedTerminalId": null,
+            "massFlow": 0.70722661944996679
+          },
+          {
+            "id": "52fe2d31",
+            "parent": "59a9c021",
+            "coordU": 72.746230760747665,
+            "coordV": 46.379555505536437,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 13,
+            "linkedTerminalId": null,
+            "massFlow": 0.61978332090788602
+          },
+          {
+            "id": "507d285c",
+            "parent": "8b873b36",
+            "coordU": 44.493515785541803,
+            "coordV": 44.817631746686097,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 12,
+            "linkedTerminalId": "ZONE_22_3bfe5066",
+            "massFlow": 0.61578963717693835
+          },
+          {
+            "id": "4153ceb8",
+            "parent": "0e053e5e",
+            "coordU": 81.349417922074949,
+            "coordV": 69.494005854367003,
+            "type": "relay",
+            "degree": 1,
+            "depth": 6,
+            "linkedTerminalId": null,
+            "massFlow": 0.62566689446653412
+          },
+          {
+            "id": "20e32a45",
+            "parent": "4153ceb8",
+            "coordU": 81.349417922074977,
+            "coordV": 72.298877414307086,
+            "type": "relay",
+            "degree": 1,
+            "depth": 7,
+            "linkedTerminalId": null,
+            "massFlow": 0.62566689446653412
+          },
+          {
+            "id": "3546dbc6",
+            "parent": "20e32a45",
+            "coordU": 81.349417922074977,
+            "coordV": 74.208655675883335,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 8,
+            "linkedTerminalId": null,
+            "massFlow": 0.62566689446653412
+          },
+          {
+            "id": "a8125a47",
+            "parent": "970ad72c",
+            "coordU": 79.523048135064812,
+            "coordV": 47.902317029979102,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 13,
+            "linkedTerminalId": "ZONE_0_b7d09bfc",
+            "massFlow": 0.45236295767064283
+          },
+          {
+            "id": "1362204e",
+            "parent": "7d288341",
+            "coordU": 77.091288383952005,
+            "coordV": 40.246288663097914,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 16,
+            "linkedTerminalId": null,
+            "massFlow": 0.43006828818754139
+          },
+          {
+            "id": "9a1af65f",
+            "parent": "8b873b36",
+            "coordU": 45.314709269379051,
+            "coordV": 44.164373768501093,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 12,
+            "linkedTerminalId": null,
+            "massFlow": 0.37256990556660041
+          },
+          {
+            "id": "a99fdc5a",
+            "parent": "52fe2d31",
+            "coordU": 72.746230760747665,
+            "coordV": 45.879555505536437,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 14,
+            "linkedTerminalId": "ZONE_2_149d6f69",
+            "massFlow": 0.31337143803843609
+          },
+          {
+            "id": "5f02007f",
+            "parent": "7d288341",
+            "coordU": 72.810969235911003,
+            "coordV": 39.7462886630979,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 16,
+            "linkedTerminalId": "ZONE_1_a8ba4938",
+            "massFlow": 0.3127583250497018
+          },
+          {
+            "id": "f59ece0c",
+            "parent": "52fe2d31",
+            "coordU": 73.535942817112613,
+            "coordV": 46.379555505536437,
+            "type": "tjoint",
+            "degree": 2,
+            "depth": 14,
+            "linkedTerminalId": null,
+            "massFlow": 0.30641188286944998
+          },
+          {
+            "id": "ee15123e",
+            "parent": "b42f27ef",
+            "coordU": 44.827059668437002,
+            "coordV": 54.40009639041363,
+            "type": "relay",
+            "degree": 1,
+            "depth": 9,
+            "linkedTerminalId": null,
+            "massFlow": 0.28513618290258452
+          },
+          {
+            "id": "790df7ce",
+            "parent": "ee15123e",
+            "coordU": 44.827059668437002,
+            "coordV": 52.968806390413597,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 10,
+            "linkedTerminalId": "ZONE_4_51f9ca12",
+            "massFlow": 0.28513618290258452
+          },
+          {
+            "id": "f5ba220d",
+            "parent": "3546dbc6",
+            "coordU": 81.954035368374463,
+            "coordV": 74.208655675883335,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 9,
+            "linkedTerminalId": "ZONE_32_3b5dbe62",
+            "massFlow": 0.27990380632869449
+          },
+          {
+            "id": "b2508dd1",
+            "parent": "1362204e",
+            "coordU": 79.02304813506484,
+            "coordV": 40.246288663097914,
+            "type": "relay",
+            "degree": 1,
+            "depth": 17,
+            "linkedTerminalId": null,
+            "massFlow": 0.2738028909874089
+          },
+          {
+            "id": "70a865a7",
+            "parent": "b2508dd1",
+            "coordU": 79.918127922075001,
+            "coordV": 40.235894159378802,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 18,
+            "linkedTerminalId": "ZONE_34_dd786c9b",
+            "massFlow": 0.2738028909874089
+          },
+          {
+            "id": "dea3e238",
+            "parent": "3546dbc6",
+            "coordU": 81.349417922074977,
+            "coordV": 77.549723937459589,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 9,
+            "linkedTerminalId": "ZONE_17_d92e3009",
+            "massFlow": 0.34576308813783962
+          },
+          {
+            "id": "50c8b74a",
+            "parent": "aad5faa8",
+            "coordU": 71.492742817798401,
+            "coordV": 56.324812595071002,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 3,
+            "linkedTerminalId": "ZONE_5_34429691",
+            "massFlow": 0.2611056887839629
+          },
+          {
+            "id": "bce98958",
+            "parent": "1ea7f4f3",
+            "coordU": 44.493515785541803,
+            "coordV": 47.017631746686099,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 11,
+            "linkedTerminalId": "ZONE_9_8cd09247",
+            "massFlow": 0.25822992254804511
+          },
+          {
+            "id": "ef09004a",
+            "parent": "970ad72c",
+            "coordU": 79.023048135064812,
+            "coordV": 46.837578554817128,
+            "type": "relay",
+            "degree": 1,
+            "depth": 13,
+            "linkedTerminalId": null,
+            "massFlow": 0.25486366177932401
+          },
+          {
+            "id": "2fdeef10",
+            "parent": "ef09004a",
+            "coordU": 79.023048135064812,
+            "coordV": 46.379555505536466,
+            "type": "relay",
+            "degree": 1,
+            "depth": 14,
+            "linkedTerminalId": null,
+            "massFlow": 0.25486366177932401
+          },
+          {
+            "id": "d6e087a9",
+            "parent": "2fdeef10",
+            "coordU": 79.023048135064826,
+            "coordV": 44.035761179705801,
+            "type": "relay",
+            "degree": 1,
+            "depth": 15,
+            "linkedTerminalId": null,
+            "massFlow": 0.25486366177932401
+          },
+          {
+            "id": "6f14c287",
+            "parent": "d6e087a9",
+            "coordU": 79.918127922075001,
+            "coordV": 44.035761179705801,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 16,
+            "linkedTerminalId": "ZONE_18_75e3a71f",
+            "massFlow": 0.25486366177932401
+          },
+          {
+            "id": "01c6a807",
+            "parent": "b0ac8b2d",
+            "coordU": 79.918127922075001,
+            "coordV": 59.8828622876403,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 7,
+            "linkedTerminalId": "ZONE_30_27b91501",
+            "massFlow": 0.22952222084161697
+          },
+          {
+            "id": "e2bebf75",
+            "parent": "064da337",
+            "coordU": 79.918127922075001,
+            "coordV": 54.943872879456002,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 9,
+            "linkedTerminalId": "ZONE_14_be329679",
+            "massFlow": 0.22872965333001985
+          },
+          {
+            "id": "b2822844",
+            "parent": "ef2ccb31",
+            "coordU": 79.918127922075001,
+            "coordV": 53.543872879456103,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 11,
+            "linkedTerminalId": "ZONE_24_660f085c",
+            "massFlow": 0.2252837557985421
+          },
+          {
+            "id": "012e8b42",
+            "parent": "8fdc47a2",
+            "coordU": 79.918127922075001,
+            "coordV": 61.282862287640299,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 5,
+            "linkedTerminalId": "ZONE_21_34c20373",
+            "massFlow": 0.22194986332007954
+          },
+          {
+            "id": "085a456f",
+            "parent": "0e053e5e",
+            "coordU": 76.970255582562203,
+            "coordV": 70.867587414307096,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 6,
+            "linkedTerminalId": "ZONE_16_e7267045",
+            "massFlow": 0.25196076872100726
+          },
+          {
+            "id": "3d5ea91f",
+            "parent": "59a9c021",
+            "coordU": 71.110016222325399,
+            "coordV": 45.405663661808703,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 13,
+            "linkedTerminalId": "ZONE_27_3a0410f1",
+            "massFlow": 0.21659646288933068
+          },
+          {
+            "id": "7f9d0662",
+            "parent": "72e6a80b",
+            "coordU": 42.885769775131202,
+            "coordV": 59.880335537263647,
+            "type": "relay",
+            "degree": 1,
+            "depth": 13,
+            "linkedTerminalId": null,
+            "massFlow": 0.19813847125579853
+          },
+          {
+            "id": "a1a1be04",
+            "parent": "7f9d0662",
+            "coordU": 42.885769775131202,
+            "coordV": 61.311625537263602,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 14,
+            "linkedTerminalId": "ZONE_28_c834449b",
+            "massFlow": 0.19813847125579853
+          },
+          {
+            "id": "72da0a0c",
+            "parent": "9a1af65f",
+            "coordU": 45.314709269379051,
+            "coordV": 42.320734584564718,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 13,
+            "linkedTerminalId": "ZONE_10_3e779e0c",
+            "massFlow": 0.22448516401590457
+          },
+          {
+            "id": "38313f24",
+            "parent": "39d188d1",
+            "coordU": 46.867529304451693,
+            "coordV": 48.667144157196624,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 10,
+            "linkedTerminalId": "ZONE_3_d131ba19",
+            "massFlow": 0.1707473803015242
+          },
+          {
+            "id": "8644fd9b",
+            "parent": "0fdd9f4a",
+            "coordU": 65.574333599420399,
+            "coordV": 40.328779797653802,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 13,
+            "linkedTerminalId": "ZONE_36_ad44e324",
+            "massFlow": 0.22606502650762095
+          },
+          {
+            "id": "740a00c2",
+            "parent": "1362204e",
+            "coordU": 77.091288383952005,
+            "coordV": 39.2639526704356,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 17,
+            "linkedTerminalId": "ZONE_33_4ebbe87a",
+            "massFlow": 0.15626539720013252
+          },
+          {
+            "id": "b936b8ff",
+            "parent": "f59ece0c",
+            "coordU": 76.181955582583612,
+            "coordV": 46.379555505536452,
+            "type": "relay",
+            "degree": 1,
+            "depth": 15,
+            "linkedTerminalId": null,
+            "massFlow": 0.15372344060636184
+          },
+          {
+            "id": "bdeeeba9",
+            "parent": "b936b8ff",
+            "coordU": 76.181955582583598,
+            "coordV": 47.353447349264101,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 16,
+            "linkedTerminalId": "ZONE_19_91b07e1d",
+            "massFlow": 0.15372344060636184
+          },
+          {
+            "id": "4998bde1",
+            "parent": "f59ece0c",
+            "coordU": 73.535942817112598,
+            "coordV": 47.353447349264101,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 15,
+            "linkedTerminalId": "ZONE_37_a613a5da",
+            "massFlow": 0.15268844226308814
+          },
+          {
+            "id": "278affd1",
+            "parent": "9ff42075",
+            "coordU": 68.530650087870001,
+            "coordV": 39.2639526704356,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 15,
+            "linkedTerminalId": "ZONE_20_a34b6ee5",
+            "massFlow": 0.15418304340622929
+          },
+          {
+            "id": "2ce76367",
+            "parent": "781be614",
+            "coordU": 78.127968348054694,
+            "coordV": 60.128580324968297,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 6,
+            "linkedTerminalId": "ZONE_31_fae1ac8f",
+            "massFlow": 0.14845354953611661
+          },
+          {
+            "id": "b1c2e688",
+            "parent": "9a1af65f",
+            "coordU": 47.688722788288963,
+            "coordV": 44.164373768501093,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 13,
+            "linkedTerminalId": "ZONE_12_54c87518",
+            "massFlow": 0.14808474155069584
+          },
+          {
+            "id": "98ac61c0",
+            "parent": "745edd12",
+            "coordU": 65.574333599420399,
+            "coordV": 48.315215966219299,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 8,
+            "linkedTerminalId": "ZONE_23_85c5edad",
+            "massFlow": 0.14795308358184225
+          },
+          {
+            "id": "56a26946",
+            "parent": "4df620a0",
+            "coordU": 78.127968348054694,
+            "coordV": 52.7276051491638,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 12,
+            "linkedTerminalId": "ZONE_8_2210ad1b",
+            "massFlow": 0.14226397862823062
+          },
+          {
+            "id": "a9da0054",
+            "parent": "a23b2f95",
+            "coordU": 78.127968348054694,
+            "coordV": 58.728580324968398,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 8,
+            "linkedTerminalId": "ZONE_35_5fbf7e7d",
+            "massFlow": 0.14045404655400928
+          },
+          {
+            "id": "f5abcd90",
+            "parent": "96af8d05",
+            "coordU": 78.127968348054694,
+            "coordV": 54.127605149163699,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 10,
+            "linkedTerminalId": "ZONE_11_6f1d3400",
+            "massFlow": 0.14002155815109346
+          },
+          {
+            "id": "e892e6d2",
+            "parent": "50c27e91",
+            "coordU": 44.2857697751312,
+            "coordV": 61.311625537263602,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 12,
+            "linkedTerminalId": "ZONE_25_aa9b9825",
+            "massFlow": 0.13844115515241881
+          },
+          {
+            "id": "9978e0f7",
+            "parent": "09e16e10",
+            "coordU": 69.258797250981672,
+            "coordV": 48.662290434043271,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 12,
+            "linkedTerminalId": "ZONE_29_f2da7d09",
+            "massFlow": 0.13605986994698477
+          },
+          {
+            "id": "e28a5104",
+            "parent": "1f3a340a",
+            "coordU": 65.574333599420399,
+            "coordV": 46.9152159662193,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 9,
+            "linkedTerminalId": "ZONE_15_2409d300",
+            "massFlow": 0.13345216202783303
+          },
+          {
+            "id": "bec148c4",
+            "parent": "8c9b2125",
+            "coordU": 65.574333599420399,
+            "coordV": 41.7287797976538,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 12,
+            "linkedTerminalId": "ZONE_26_b45e0a0c",
+            "massFlow": 0.1423334990059642
+          },
+          {
+            "id": "e63c8879",
+            "parent": "c69acbc9",
+            "coordU": 47.258110199919898,
+            "coordV": 61.311625537263602,
+            "type": "terminal",
+            "degree": 0,
+            "depth": 11,
+            "linkedTerminalId": "ZONE_6_8718d90b",
+            "massFlow": 0.12005897945659377
+          }
+        ],
+        "edges": [
+          {
+            "startId": "f59d62d8",
+            "endId": "d07306eb",
+            "length": 1.3715999996571213,
+            "isTrunk": false,
+            "massFlow": 11.754106258283631,
+            "diameter": 1700,
+            "velocity": 5.1784750522718959,
+            "deltaPDrop": 0,
+            "friction": 0.18573851021466714
+          },
+          {
+            "startId": "d07306eb",
+            "endId": "aad5faa8",
+            "length": 4.6040115238490031,
+            "isTrunk": false,
+            "massFlow": 5.981539345178926,
+            "diameter": 1300,
+            "velocity": 4.5064688950716443,
+            "deltaPDrop": 0,
+            "friction": 0.66354585333181682
+          },
+          {
+            "startId": "d07306eb",
+            "endId": "00a0e36e",
+            "length": 2.5698359922650766,
+            "isTrunk": false,
+            "massFlow": 5.7725669131047059,
+            "diameter": 1300,
+            "velocity": 4.3490298629554429,
+            "deltaPDrop": 0,
+            "friction": 0.34657146636915048
+          },
+          {
+            "startId": "aad5faa8",
+            "endId": "335077ea",
+            "length": 4.0188786516579498,
+            "isTrunk": false,
+            "massFlow": 5.7204336563949632,
+            "diameter": 1300,
+            "velocity": 4.3097528664828548,
+            "deltaPDrop": 0,
+            "friction": 0.53288972062504791
+          },
+          {
+            "startId": "aad5faa8",
+            "endId": "50c8b74a",
+            "length": 1.3715999996571071,
+            "isTrunk": false,
+            "massFlow": 0.2611056887839629,
+            "diameter": 400,
+            "velocity": 2.0778130519690872,
+            "deltaPDrop": 0,
+            "friction": 6.7438461758480575
+          },
+          {
+            "startId": "00a0e36e",
+            "endId": "e65dd794",
+            "length": 5.9953457431819288,
+            "isTrunk": false,
+            "massFlow": 3.58866166749503,
+            "diameter": 1100,
+            "velocity": 3.776219791512315,
+            "deltaPDrop": 0,
+            "friction": 0.76019806686255353
+          },
+          {
+            "startId": "00a0e36e",
+            "endId": "55c319c5",
+            "length": 6.1587053176093036,
+            "isTrunk": false,
+            "massFlow": 2.1839052456096755,
+            "diameter": 900,
+            "velocity": 3.4328821242775271,
+            "deltaPDrop": 0,
+            "friction": 0.83380500102217281
+          },
+          {
+            "startId": "335077ea",
+            "endId": "3fdfdab5",
+            "length": 3.3170439002371097,
+            "isTrunk": false,
+            "massFlow": 5.7204336563949632,
+            "diameter": 1300,
+            "velocity": 4.3097528664828548,
+            "deltaPDrop": 0,
+            "friction": 0.43982880562197585
+          },
+          {
+            "startId": "3fdfdab5",
+            "endId": "927f37d4",
+            "length": 2.5416753177980382,
+            "isTrunk": false,
+            "massFlow": 5.7204336563949632,
+            "diameter": 1300,
+            "velocity": 4.3097528664828548,
+            "deltaPDrop": 0,
+            "friction": 0.33701755325760296
+          },
+          {
+            "startId": "927f37d4",
+            "endId": "8d9068a8",
+            "length": 0.44895400733767588,
+            "isTrunk": false,
+            "massFlow": 5.7204336563949632,
+            "diameter": 1300,
+            "velocity": 4.3097528664828548,
+            "deltaPDrop": 0,
+            "friction": 0.059529783375014925
+          },
+          {
+            "startId": "8d9068a8",
+            "endId": "05ec73f5",
+            "length": 15.943526769064015,
+            "isTrunk": false,
+            "massFlow": 3.2011805748840292,
+            "diameter": 1000,
+            "velocity": 4.0758696977803881,
+            "deltaPDrop": 0,
+            "friction": 2.6143795117513204
+          },
+          {
+            "startId": "8d9068a8",
+            "endId": "745edd12",
+            "length": 3.9907179771937464,
+            "isTrunk": false,
+            "massFlow": 2.519253081510934,
+            "diameter": 950,
+            "velocity": 3.5541414366489055,
+            "deltaPDrop": 0,
+            "friction": 0.53974429215974529
+          },
+          {
+            "startId": "e65dd794",
+            "endId": "eb091198",
+            "length": 2.2969145384335832,
+            "isTrunk": false,
+            "massFlow": 2.1915477882703778,
+            "diameter": 900,
+            "velocity": 3.4448954422255906,
+            "deltaPDrop": 0,
+            "friction": 0.31299070003539192
+          },
+          {
+            "startId": "e65dd794",
+            "endId": "b99a36b8",
+            "length": 11.312238826958534,
+            "isTrunk": false,
+            "massFlow": 1.397113879224652,
+            "diameter": 750,
+            "velocity": 3.1624189147149746,
+            "deltaPDrop": 0,
+            "friction": 1.6320126902404162
+          },
+          {
+            "startId": "05ec73f5",
+            "endId": "b42f27ef",
+            "length": 2.0941624470005351,
+            "isTrunk": false,
+            "massFlow": 1.7838437292909211,
+            "diameter": 800,
+            "velocity": 3.5488443402516356,
+            "deltaPDrop": 0,
+            "friction": 0.34770543498040574
+          },
+          {
+            "startId": "05ec73f5",
+            "endId": "feb32e58",
+            "length": 5.4683553885960308,
+            "isTrunk": false,
+            "massFlow": 1.4173368455931081,
+            "diameter": 750,
+            "velocity": 3.2081943467010503,
+            "deltaPDrop": 0,
+            "friction": 0.81443186493331576
+          },
+          {
+            "startId": "745edd12",
+            "endId": "1f3a340a",
+            "length": 1.4000000000000057,
+            "isTrunk": false,
+            "massFlow": 2.3712999979290919,
+            "diameter": 900,
+            "velocity": 3.7274480614737397,
+            "deltaPDrop": 0,
+            "friction": 0.22081407697446606
+          },
+          {
+            "startId": "745edd12",
+            "endId": "98ac61c0",
+            "length": 0.98233599266227145,
+            "isTrunk": false,
+            "massFlow": 0.14795308358184225,
+            "diameter": 300,
+            "velocity": 2.0931079642434258,
+            "deltaPDrop": 0,
+            "friction": 4.8348360208086705
+          },
+          {
+            "startId": "1f3a340a",
+            "endId": "4ce5a331",
+            "length": 0.077637411402221801,
+            "isTrunk": false,
+            "massFlow": 2.2378478359012588,
+            "diameter": 900,
+            "velocity": 3.5176745182339353,
+            "deltaPDrop": 0,
+            "friction": 0.010997372218070321
+          },
+          {
+            "startId": "1f3a340a",
+            "endId": "e28a5104",
+            "length": 0.98233599266227145,
+            "isTrunk": false,
+            "massFlow": 0.13345216202783303,
+            "diameter": 300,
+            "velocity": 1.8879618891582366,
+            "deltaPDrop": 0,
+            "friction": 4.6140219438342047
+          },
+          {
+            "startId": "55c319c5",
+            "endId": "8fdc47a2",
+            "length": 2.2157978235447899,
+            "isTrunk": false,
+            "massFlow": 2.1839052456096755,
+            "diameter": 900,
+            "velocity": 3.4328821242775271,
+            "deltaPDrop": 0,
+            "friction": 0.29998891183234505
+          },
+          {
+            "startId": "8fdc47a2",
+            "endId": "781be614",
+            "length": 1.1542819626720018,
+            "isTrunk": false,
+            "massFlow": 1.9619553822895959,
+            "diameter": 850,
+            "velocity": 3.4574936716084532,
+            "deltaPDrop": 0,
+            "friction": 0.16969254595964287
+          },
+          {
+            "startId": "8fdc47a2",
+            "endId": "012e8b42",
+            "length": 0.89507978701017521,
+            "isTrunk": false,
+            "massFlow": 0.22194986332007954,
+            "diameter": 350,
+            "velocity": 2.3069007585933856,
+            "deltaPDrop": 0,
+            "friction": 5.9270266499562068
+          },
+          {
+            "startId": "4ce5a331",
+            "endId": "f9492d20",
+            "length": 0.45802304928066206,
+            "isTrunk": false,
+            "massFlow": 2.2378478359012588,
+            "diameter": 900,
+            "velocity": 3.5176745182339353,
+            "deltaPDrop": 0,
+            "friction": 0.064879158983021656
+          },
+          {
+            "startId": "f9492d20",
+            "endId": "8c9b2125",
+            "length": 4.6507757078826089,
+            "isTrunk": false,
+            "massFlow": 1.2654081821570575,
+            "diameter": 700,
+            "velocity": 3.2880974239873511,
+            "deltaPDrop": 0,
+            "friction": 0.78520136811993613
+          },
+          {
+            "startId": "f9492d20",
+            "endId": "09e16e10",
+            "length": 2.7021276588990162,
+            "isTrunk": false,
+            "massFlow": 0.97243965374420149,
+            "diameter": 650,
+            "velocity": 2.9305292828773637,
+            "deltaPDrop": 0,
+            "friction": 0.40590434133664105
+          },
+          {
+            "startId": "eb091198",
+            "endId": "ac77ef94",
+            "length": 2.3559175526023921,
+            "isTrunk": false,
+            "massFlow": 1.3139201250828365,
+            "diameter": 700,
+            "velocity": 3.4141531875078348,
+            "deltaPDrop": 0,
+            "friction": 5.9876317959127787
+          },
+          {
+            "startId": "eb091198",
+            "endId": "0e053e5e",
+            "length": 1.8089982266730971,
+            "isTrunk": false,
+            "massFlow": 0.87762766318754137,
+            "diameter": 600,
+            "velocity": 3.1039729064552497,
+            "deltaPDrop": 0,
+            "friction": 0.33343173162908935
+          },
+          {
+            "startId": "781be614",
+            "endId": "b0ac8b2d",
+            "length": 0.24571803732798969,
+            "isTrunk": false,
+            "massFlow": 1.8135018327534793,
+            "diameter": 800,
+            "velocity": 3.6078472623615978,
+            "deltaPDrop": 0,
+            "friction": 0.042064697525798972
+          },
+          {
+            "startId": "781be614",
+            "endId": "2ce76367",
+            "length": 0.89507978701013258,
+            "isTrunk": false,
+            "massFlow": 0.14845354953611661,
+            "diameter": 300,
+            "velocity": 2.1001881091742671,
+            "deltaPDrop": 0,
+            "friction": 5.7573341039965644
+          },
+          {
+            "startId": "b0ac8b2d",
+            "endId": "a23b2f95",
+            "length": 1.1542819626719165,
+            "isTrunk": false,
+            "massFlow": 1.5839796119118623,
+            "diameter": 750,
+            "velocity": 3.5853964087830033,
+            "deltaPDrop": 0,
+            "friction": 0.2111982879466138
+          },
+          {
+            "startId": "b0ac8b2d",
+            "endId": "01c6a807",
+            "length": 0.89507978701017521,
+            "isTrunk": false,
+            "massFlow": 0.22952222084161697,
+            "diameter": 350,
+            "velocity": 2.3856062691508888,
+            "deltaPDrop": 0,
+            "friction": 5.7152694064707648
+          },
+          {
+            "startId": "b42f27ef",
+            "endId": "c3a78cd6",
+            "length": 5.4802391468500318,
+            "isTrunk": false,
+            "massFlow": 1.4987075463883366,
+            "diameter": 750,
+            "velocity": 3.392379936097135,
+            "deltaPDrop": 0,
+            "friction": 0.90500502675331851
+          },
+          {
+            "startId": "b42f27ef",
+            "endId": "ee15123e",
+            "length": 5.7860831545816751,
+            "isTrunk": false,
+            "massFlow": 0.28513618290258452,
+            "diameter": 400,
+            "velocity": 2.2690416481650546,
+            "deltaPDrop": 0,
+            "friction": 1.0034793730851204
+          },
+          {
+            "startId": "a23b2f95",
+            "endId": "064da337",
+            "length": 3.7847074455123888,
+            "isTrunk": false,
+            "massFlow": 1.4435255653578529,
+            "diameter": 750,
+            "velocity": 3.2674734820440907,
+            "deltaPDrop": 0,
+            "friction": 0.58308803033395629
+          },
+          {
+            "startId": "a23b2f95",
+            "endId": "a9da0054",
+            "length": 0.89507978701013258,
+            "isTrunk": false,
+            "massFlow": 0.14045404655400928,
+            "diameter": 300,
+            "velocity": 1.9870182921182016,
+            "deltaPDrop": 0,
+            "friction": 5.5040711185241502
+          },
+          {
+            "startId": "c3a78cd6",
+            "endId": "c69acbc9",
+            "length": 3.3550326230987793,
+            "isTrunk": false,
+            "massFlow": 1.4987075463883366,
+            "diameter": 750,
+            "velocity": 3.392379936097135,
+            "deltaPDrop": 0,
+            "friction": 0.55404906747016758
+          },
+          {
+            "startId": "c69acbc9",
+            "endId": "50c27e91",
+            "length": 2.9723404247886975,
+            "isTrunk": false,
+            "massFlow": 1.3786485669317428,
+            "diameter": 750,
+            "velocity": 3.1206219977065897,
+            "deltaPDrop": 0,
+            "friction": 0.4185593615519646
+          },
+          {
+            "startId": "c69acbc9",
+            "endId": "e63c8879",
+            "length": 1.4312899999999544,
+            "isTrunk": false,
+            "massFlow": 0.12005897945659377,
+            "diameter": 300,
+            "velocity": 1.6984871149409078,
+            "deltaPDrop": 0,
+            "friction": 0.95344127201320394
+          },
+          {
+            "startId": "064da337",
+            "endId": "96af8d05",
+            "length": 0.81626773029230293,
+            "isTrunk": false,
+            "massFlow": 1.2147959120278331,
+            "diameter": 700,
+            "velocity": 3.1565840693397043,
+            "deltaPDrop": 0,
+            "friction": 0.12793862279931237
+          },
+          {
+            "startId": "064da337",
+            "endId": "e2bebf75",
+            "length": 0.89507978701018942,
+            "isTrunk": false,
+            "massFlow": 0.22872965333001985,
+            "diameter": 350,
+            "velocity": 2.3773684871293561,
+            "deltaPDrop": 0,
+            "friction": 4.9209830881901944
+          },
+          {
+            "startId": "b99a36b8",
+            "endId": "d8af21af",
+            "length": 6.8833887394134905,
+            "isTrunk": false,
+            "massFlow": 1.397113879224652,
+            "diameter": 750,
+            "velocity": 3.1624189147149746,
+            "deltaPDrop": 0,
+            "friction": 0.99306405623343508
+          },
+          {
+            "startId": "d8af21af",
+            "endId": "28b9758b",
+            "length": 4.0555724280647709,
+            "isTrunk": false,
+            "massFlow": 1.397113879224652,
+            "diameter": 750,
+            "velocity": 3.1624189147149746,
+            "deltaPDrop": 0,
+            "friction": 0.5850959982401992
+          },
+          {
+            "startId": "28b9758b",
+            "endId": "10c08be8",
+            "length": 8.7147954765447864,
+            "isTrunk": false,
+            "massFlow": 1.397113879224652,
+            "diameter": 750,
+            "velocity": 3.1624189147149746,
+            "deltaPDrop": 0,
+            "friction": 1.2572804577531043
+          },
+          {
+            "startId": "10c08be8",
+            "endId": "33a7a4d6",
+            "length": 2.3559175526023637,
+            "isTrunk": false,
+            "massFlow": 1.397113879224652,
+            "diameter": 750,
+            "velocity": 3.1624189147149746,
+            "deltaPDrop": 0,
+            "friction": 1.8331692934810166
+          },
+          {
+            "startId": "feb32e58",
+            "endId": "39d188d1",
+            "length": 3.7456135185669481,
+            "isTrunk": false,
+            "massFlow": 1.4173368455931081,
+            "diameter": 750,
+            "velocity": 3.2081943467010503,
+            "deltaPDrop": 0,
+            "friction": 0.55785456256330279
+          },
+          {
+            "startId": "39d188d1",
+            "endId": "1ea7f4f3",
+            "length": 1.5528200350726422,
+            "isTrunk": false,
+            "massFlow": 1.2465894652915839,
+            "diameter": 700,
+            "velocity": 3.2391979658357273,
+            "deltaPDrop": 0,
+            "friction": 0.25510619767185289
+          },
+          {
+            "startId": "39d188d1",
+            "endId": "38313f24",
+            "length": 1.8295656023795814,
+            "isTrunk": false,
+            "massFlow": 0.1707473803015242,
+            "diameter": 300,
+            "velocity": 2.4155812973314932,
+            "deltaPDrop": 0,
+            "friction": 1.3879143737204771
+          },
+          {
+            "startId": "50c27e91",
+            "endId": "72e6a80b",
+            "length": 0.41852836886573641,
+            "isTrunk": false,
+            "massFlow": 1.240207411779324,
+            "diameter": 700,
+            "velocity": 3.2226145313287371,
+            "deltaPDrop": 0,
+            "friction": 0.068118420289535145
+          },
+          {
+            "startId": "50c27e91",
+            "endId": "e892e6d2",
+            "length": 1.4312899999999544,
+            "isTrunk": false,
+            "massFlow": 0.13844115515241881,
+            "diameter": 300,
+            "velocity": 1.9585417039875086,
+            "deltaPDrop": 0,
+            "friction": 0.53488191046123956
+          },
+          {
+            "startId": "72e6a80b",
+            "endId": "aa0b86a5",
+            "length": 2.7401195734250052,
+            "isTrunk": false,
+            "massFlow": 1.0420689405235255,
+            "diameter": 650,
+            "velocity": 3.1403630376682292,
+            "deltaPDrop": 0,
+            "friction": 0.46676349017170438
+          },
+          {
+            "startId": "72e6a80b",
+            "endId": "7f9d0662",
+            "length": 0.98147163113426217,
+            "isTrunk": false,
+            "massFlow": 0.19813847125579853,
+            "diameter": 350,
+            "velocity": 2.0594100974388088,
+            "deltaPDrop": 0,
+            "friction": 0.16888629472754429
+          },
+          {
+            "startId": "1ea7f4f3",
+            "endId": "8b873b36",
+            "length": 2.0199468081309391,
+            "isTrunk": false,
+            "massFlow": 0.98835954274353877,
+            "diameter": 650,
+            "velocity": 2.9785052171300275,
+            "deltaPDrop": 0,
+            "friction": 0.31251546619916448
+          },
+          {
+            "startId": "1ea7f4f3",
+            "endId": "bce98958",
+            "length": 0.84070083251951566,
+            "isTrunk": false,
+            "massFlow": 0.25822992254804511,
+            "diameter": 350,
+            "velocity": 2.6839881552821985,
+            "deltaPDrop": 0,
+            "friction": 1.1328081760486239
+          },
+          {
+            "startId": "96af8d05",
+            "endId": "ef2ccb31",
+            "length": 0.58373226970759617,
+            "isTrunk": false,
+            "massFlow": 1.0747743538767396,
+            "diameter": 650,
+            "velocity": 3.2389235716521858,
+            "deltaPDrop": 0,
+            "friction": 0.10519071900117606
+          },
+          {
+            "startId": "96af8d05",
+            "endId": "f5abcd90",
+            "length": 0.89507978701011837,
+            "isTrunk": false,
+            "massFlow": 0.14002155815109346,
+            "diameter": 300,
+            "velocity": 1.9808998328156262,
+            "deltaPDrop": 0,
+            "friction": 4.7930444653908815
+          },
+          {
+            "startId": "8c9b2125",
+            "endId": "0fdd9f4a",
+            "length": 1.3999999999999986,
+            "isTrunk": false,
+            "massFlow": 1.1230746831510934,
+            "diameter": 650,
+            "velocity": 3.3844807059855269,
+            "deltaPDrop": 0,
+            "friction": 0.2733313173277726
+          },
+          {
+            "startId": "8c9b2125",
+            "endId": "bec148c4",
+            "length": 0.98233599266227145,
+            "isTrunk": false,
+            "massFlow": 0.1423334990059642,
+            "diameter": 300,
+            "velocity": 2.0136071052768512,
+            "deltaPDrop": 0,
+            "friction": 3.7529440445131765
+          },
+          {
+            "startId": "ef2ccb31",
+            "endId": "4df620a0",
+            "length": 0.81626773029230293,
+            "isTrunk": false,
+            "massFlow": 0.84949059807819738,
+            "diameter": 600,
+            "velocity": 3.0044583954274588,
+            "deltaPDrop": 0,
+            "friction": 0.14179638071197279
+          },
+          {
+            "startId": "ef2ccb31",
+            "endId": "b2822844",
+            "length": 0.89507978701018942,
+            "isTrunk": false,
+            "massFlow": 0.2252837557985421,
+            "diameter": 350,
+            "velocity": 2.3415525442380685,
+            "deltaPDrop": 0,
+            "friction": 4.6878537463897052
+          },
+          {
+            "startId": "0fdd9f4a",
+            "endId": "906eaaf7",
+            "length": 0.082491134555908729,
+            "isTrunk": false,
+            "massFlow": 0.89700965664347243,
+            "diameter": 600,
+            "velocity": 3.1725226856882767,
+            "deltaPDrop": 0,
+            "friction": 0.015821281814185909
+          },
+          {
+            "startId": "0fdd9f4a",
+            "endId": "8644fd9b",
+            "length": 0.98233599266227145,
+            "isTrunk": false,
+            "massFlow": 0.22606502650762095,
+            "diameter": 350,
+            "velocity": 2.3496729096416802,
+            "deltaPDrop": 0,
+            "friction": 3.4796127271854034
+          },
+          {
+            "startId": "09e16e10",
+            "endId": "59a9c021",
+            "length": 1.8512189713436982,
+            "isTrunk": false,
+            "massFlow": 0.83637978379721667,
+            "diameter": 600,
+            "velocity": 2.9580883754101723,
+            "deltaPDrop": 0,
+            "friction": 0.31261777001146662
+          },
+          {
+            "startId": "09e16e10",
+            "endId": "9978e0f7",
+            "length": 2.2827349285068479,
+            "isTrunk": false,
+            "massFlow": 0.13605986994698477,
+            "diameter": 300,
+            "velocity": 1.924853409644715,
+            "deltaPDrop": 0,
+            "friction": 4.1322410712964714
+          },
+          {
+            "startId": "8b873b36",
+            "endId": "507d285c",
+            "length": 0.82119348383725566,
+            "isTrunk": false,
+            "massFlow": 0.61578963717693835,
+            "diameter": 550,
+            "velocity": 2.5918932803034576,
+            "deltaPDrop": 0,
+            "friction": 0.82029270984945946
+          },
+          {
+            "startId": "8b873b36",
+            "endId": "9a1af65f",
+            "length": 0.6532579781850032,
+            "isTrunk": false,
+            "massFlow": 0.37256990556660041,
+            "diameter": 450,
+            "velocity": 2.3425715404723002,
+            "deltaPDrop": 0,
+            "friction": 0.10357978744251366
+          },
+          {
+            "startId": "906eaaf7",
+            "endId": "9ff42075",
+            "length": 1.9739804957873304,
+            "isTrunk": false,
+            "massFlow": 0.89700965664347243,
+            "diameter": 600,
+            "velocity": 3.1725226856882767,
+            "deltaPDrop": 0,
+            "friction": 0.37859706849335301
+          },
+          {
+            "startId": "9ff42075",
+            "endId": "7d288341",
+            "length": 4.2803191480410021,
+            "isTrunk": false,
+            "massFlow": 0.74282661323724319,
+            "diameter": 550,
+            "velocity": 3.1265990705961992,
+            "deltaPDrop": 0,
+            "friction": 0.89129223980226036
+          },
+          {
+            "startId": "9ff42075",
+            "endId": "278affd1",
+            "length": 0.98233599266229277,
+            "isTrunk": false,
+            "massFlow": 0.15418304340622929,
+            "diameter": 300,
+            "velocity": 2.1812438665825469,
+            "deltaPDrop": 0,
+            "friction": 3.0851943768778645
+          },
+          {
+            "startId": "4df620a0",
+            "endId": "970ad72c",
+            "length": 4.8252881191846981,
+            "isTrunk": false,
+            "massFlow": 0.70722661944996679,
+            "diameter": 550,
+            "velocity": 2.9767566908200456,
+            "deltaPDrop": 0,
+            "friction": 0.91892421273458125
+          },
+          {
+            "startId": "4df620a0",
+            "endId": "56a26946",
+            "length": 0.89507978701011837,
+            "isTrunk": false,
+            "massFlow": 0.14226397862823062,
+            "diameter": 300,
+            "velocity": 2.0126235931202365,
+            "deltaPDrop": 0,
+            "friction": 4.5460573656777328
+          },
+          {
+            "startId": "59a9c021",
+            "endId": "52fe2d31",
+            "length": 1.6362145384222799,
+            "isTrunk": false,
+            "massFlow": 0.61978332090788602,
+            "diameter": 550,
+            "velocity": 2.6087029201560461,
+            "deltaPDrop": 0,
+            "friction": 0.24525165209280658
+          },
+          {
+            "startId": "59a9c021",
+            "endId": "3d5ea91f",
+            "length": 0.97389184372772775,
+            "isTrunk": false,
+            "massFlow": 0.21659646288933068,
+            "diameter": 350,
+            "velocity": 2.2512586269425143,
+            "deltaPDrop": 0,
+            "friction": 3.8196233012850045
+          },
+          {
+            "startId": "0e053e5e",
+            "endId": "4153ceb8",
+            "length": 4.3791623395127459,
+            "isTrunk": false,
+            "massFlow": 0.62566689446653412,
+            "diameter": 550,
+            "velocity": 2.6334672127815963,
+            "deltaPDrop": 0,
+            "friction": 0.66772071571219183
+          },
+          {
+            "startId": "0e053e5e",
+            "endId": "085a456f",
+            "length": 1.3735815599400922,
+            "isTrunk": false,
+            "massFlow": 0.25196076872100726,
+            "diameter": 350,
+            "velocity": 2.6188278731220973,
+            "deltaPDrop": 0,
+            "friction": 5.6542000642836898
+          },
+          {
+            "startId": "7d288341",
+            "endId": "1362204e",
+            "length": 4.2803191480410021,
+            "isTrunk": false,
+            "massFlow": 0.43006828818754139,
+            "diameter": 450,
+            "velocity": 2.7040985257132637,
+            "deltaPDrop": 0,
+            "friction": 0.87992757474332839
+          },
+          {
+            "startId": "7d288341",
+            "endId": "5f02007f",
+            "length": 0.50000000000000711,
+            "isTrunk": false,
+            "massFlow": 0.3127583250497018,
+            "diameter": 400,
+            "velocity": 2.4888516712400892,
+            "deltaPDrop": 0,
+            "friction": 2.1939021370756038
+          },
+          {
+            "startId": "970ad72c",
+            "endId": "a8125a47",
+            "length": 0.5,
+            "isTrunk": false,
+            "massFlow": 0.45236295767064283,
+            "diameter": 450,
+            "velocity": 2.8442785495289922,
+            "deltaPDrop": 0,
+            "friction": 3.6271331529431516
+          },
+          {
+            "startId": "970ad72c",
+            "endId": "ef09004a",
+            "length": 1.064738475161974,
+            "isTrunk": false,
+            "massFlow": 0.25486366177932401,
+            "diameter": 350,
+            "velocity": 2.6489999403546372,
+            "deltaPDrop": 0,
+            "friction": 0.28869680221903249
+          },
+          {
+            "startId": "52fe2d31",
+            "endId": "a99fdc5a",
+            "length": 0.5,
+            "isTrunk": false,
+            "massFlow": 0.31337143803843609,
+            "diameter": 400,
+            "velocity": 2.4937306693816348,
+            "deltaPDrop": 0,
+            "friction": 3.574371649192198
+          },
+          {
+            "startId": "52fe2d31",
+            "endId": "f59ece0c",
+            "length": 0.78971205636494801,
+            "isTrunk": false,
+            "massFlow": 0.30641188286944998,
+            "diameter": 400,
+            "velocity": 2.4383482890383901,
+            "deltaPDrop": 0,
+            "friction": 0.15597258964446534
+          },
+          {
+            "startId": "4153ceb8",
+            "endId": "20e32a45",
+            "length": 2.8048715599400822,
+            "isTrunk": false,
+            "massFlow": 0.62566689446653412,
+            "diameter": 550,
+            "velocity": 2.6334672127815963,
+            "deltaPDrop": 0,
+            "friction": 0.42767787542042834
+          },
+          {
+            "startId": "20e32a45",
+            "endId": "3546dbc6",
+            "length": 1.9097782615762497,
+            "isTrunk": false,
+            "massFlow": 0.62566689446653412,
+            "diameter": 550,
+            "velocity": 2.6334672127815963,
+            "deltaPDrop": 0,
+            "friction": 0.29119690223979361
+          },
+          {
+            "startId": "3546dbc6",
+            "endId": "f5ba220d",
+            "length": 0.60461744629948555,
+            "isTrunk": false,
+            "massFlow": 0.27990380632869449,
+            "diameter": 400,
+            "velocity": 2.2274037183724129,
+            "deltaPDrop": 0,
+            "friction": 4.267604570911276
+          },
+          {
+            "startId": "3546dbc6",
+            "endId": "dea3e238",
+            "length": 3.3410682615762539,
+            "isTrunk": false,
+            "massFlow": 0.34576308813783962,
+            "diameter": 400,
+            "velocity": 2.7514952307927922,
+            "deltaPDrop": 0,
+            "friction": 4.2676045709112751
+          },
+          {
+            "startId": "1362204e",
+            "endId": "b2508dd1",
+            "length": 1.9317597511128355,
+            "isTrunk": false,
+            "massFlow": 0.2738028909874089,
+            "diameter": 400,
+            "velocity": 2.1788541766748737,
+            "deltaPDrop": 0,
+            "friction": 0.3113875078178176
+          },
+          {
+            "startId": "1362204e",
+            "endId": "740a00c2",
+            "length": 0.98233599266231408,
+            "isTrunk": false,
+            "massFlow": 0.15626539720013252,
+            "diameter": 300,
+            "velocity": 2.2107031465439571,
+            "deltaPDrop": 0,
+            "friction": 1.3139745623322752
+          },
+          {
+            "startId": "9a1af65f",
+            "endId": "72da0a0c",
+            "length": 1.843639183936375,
+            "isTrunk": false,
+            "massFlow": 0.22448516401590457,
+            "diameter": 350,
+            "velocity": 2.3332521471951733,
+            "deltaPDrop": 0,
+            "friction": 0.71671292240694529
+          },
+          {
+            "startId": "9a1af65f",
+            "endId": "b1c2e688",
+            "length": 2.3740135189099121,
+            "isTrunk": false,
+            "massFlow": 0.14808474155069584,
+            "diameter": 300,
+            "velocity": 2.0949705434914692,
+            "deltaPDrop": 0,
+            "friction": 0.71671292240694584
+          },
+          {
+            "startId": "f59ece0c",
+            "endId": "b936b8ff",
+            "length": 2.6460127654709993,
+            "isTrunk": false,
+            "massFlow": 0.15372344060636184,
+            "diameter": 300,
+            "velocity": 2.174741817030744,
+            "deltaPDrop": 0,
+            "friction": 0.60902353446889634
+          },
+          {
+            "startId": "f59ece0c",
+            "endId": "4998bde1",
+            "length": 0.9738918437276638,
+            "isTrunk": false,
+            "massFlow": 0.15268844226308814,
+            "diameter": 300,
+            "velocity": 2.1600995857041725,
+            "deltaPDrop": 0,
+            "friction": 3.4183990595477334
+          },
+          {
+            "startId": "ee15123e",
+            "endId": "790df7ce",
+            "length": 1.4312900000000326,
+            "isTrunk": false,
+            "massFlow": 0.28513618290258452,
+            "diameter": 400,
+            "velocity": 2.2690416481650546,
+            "deltaPDrop": 0,
+            "friction": 1.4090159931515696
+          },
+          {
+            "startId": "b2508dd1",
+            "endId": "70a865a7",
+            "length": 0.89514014032536926,
+            "isTrunk": false,
+            "massFlow": 0.2738028909874089,
+            "diameter": 400,
+            "velocity": 2.1788541766748737,
+            "deltaPDrop": 0,
+            "friction": 1.0025870545144575
+          },
+          {
+            "startId": "ef09004a",
+            "endId": "2fdeef10",
+            "length": 0.45802304928066206,
+            "isTrunk": false,
+            "massFlow": 0.25486366177932401,
+            "diameter": 350,
+            "velocity": 2.6489999403546372,
+            "deltaPDrop": 0,
+            "friction": 0.12418992339862794
+          },
+          {
+            "startId": "2fdeef10",
+            "endId": "d6e087a9",
+            "length": 2.3437943258306646,
+            "isTrunk": false,
+            "massFlow": 0.25486366177932401,
+            "diameter": 350,
+            "velocity": 2.6489999403546372,
+            "deltaPDrop": 0,
+            "friction": 0.63550434469224082
+          },
+          {
+            "startId": "d6e087a9",
+            "endId": "6f14c287",
+            "length": 0.89507978701017521,
+            "isTrunk": false,
+            "massFlow": 0.25486366177932401,
+            "diameter": 350,
+            "velocity": 2.6489999403546372,
+            "deltaPDrop": 0,
+            "friction": 2.5787420826332492
+          },
+          {
+            "startId": "7f9d0662",
+            "endId": "a1a1be04",
+            "length": 1.4312899999999544,
+            "isTrunk": false,
+            "massFlow": 0.19813847125579853,
+            "diameter": 350,
+            "velocity": 2.0594100974388088,
+            "deltaPDrop": 0,
+            "friction": 0.29787719544416025
+          },
+          {
+            "startId": "b936b8ff",
+            "endId": "bdeeeba9",
+            "length": 0.97389184372764959,
+            "isTrunk": false,
+            "massFlow": 0.15372344060636184,
+            "diameter": 300,
+            "velocity": 2.174741817030744,
+            "deltaPDrop": 0,
+            "friction": 2.809375525078837
+          }
+        ]
+      }
+    }
+  ]
+}

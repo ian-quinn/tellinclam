@@ -6,6 +6,7 @@ using System.Diagnostics;
 
 using Tellinclam.MO;
 using Tellinclam.JSON;
+using Tellinclam.XML;
 
 namespace Tellinclam
 {
@@ -123,7 +124,7 @@ namespace Tellinclam
             module += $"Buildings.Controls.OBC.CDL.Reals.Multiply TMul_zon{id};\n";
             module += $"Buildings.Controls.OBC.CDL.Reals.Add TSet_zon{id};\n";
             // note here we use modR2B.y port from upper level as mode switch
-            module += $"Buildings.Controls.OBC.CDL.Reals.PID conPID_zon{id}(k = 1, Ti = 120, reverseActing={isHeatingMode.ToString().ToLower()}, " +
+            module += $"Buildings.Controls.OBC.CDL.Reals.PID conPID_zon{id}(k = 1, Ti = 1800, reverseActing={isHeatingMode.ToString().ToLower()}, " +
                 $"controllerType = Buildings.Controls.OBC.CDL.Types.SimpleController.PI, u_m(displayUnit=\"degC\", unit=\"K\"), u_s(displayUnit=\"degC\", unit=\"K\"));\n";
             module += $"Buildings.Controls.OBC.CDL.Reals.Hysteresis staA_zon{id}(uLow = 0.05, uHigh = 0.5);\n";
             module += $"Buildings.Controls.OBC.CDL.Reals.Hysteresis staB_zon{id}(uLow = 0.5, uHigh = 0.75);\n";
@@ -191,8 +192,8 @@ namespace Tellinclam
                 $"final controllerType=Buildings.Controls.OBC.CDL.Types.SimpleController.PI);\n";
             for (int i = 0; i < heatLoads.Length; i++)
             {
-                model += $"Buildings.Controls.OBC.CDL.Reals.MultiplyByParameter gaiHea{id}_{i}(final k=5*{heatLoads[i]});\n";
-                model += $"Buildings.Controls.OBC.CDL.Reals.MultiplyByParameter gaiCoo{id}_{i}(final k=-5*{coolLoads[i]});\n";
+                model += $"Buildings.Controls.OBC.CDL.Reals.MultiplyByParameter gaiHea{id}_{i}(final k=1.25*{heatLoads[i]});\n";
+                model += $"Buildings.Controls.OBC.CDL.Reals.MultiplyByParameter gaiCoo{id}_{i}(final k=-1.25*{coolLoads[i]});\n";
                 model += $"Modelica.Blocks.Math.Add add{id}_{i};\n";
                 model += $"Modelica.Thermal.HeatTransfer.Sources.PrescribedHeatFlow preHeaFlo{id}_{i};\n";
             }
@@ -602,13 +603,12 @@ namespace Tellinclam
                 // paired with a mass flow port
                 string flowName = $"leakAir_{id}_{i}";
                 // leakage 0.3*VRoo*1.2/3600 Outdoor air mass flow rate, assuming constant infiltration air flow rate [kg/s]
-                double infiltration = 0.3 * jsSpaces[i].volume * 1.2 / 3600;
-                MassFlowSource leakage = new MassFlowSource(flowName, "MediumA", infiltration);
+                MassFlowSource leakage = new MassFlowSource(flowName, "MediumA", jsSpaces[i].airLeakage);
                 leakage.ports.Add(new Port($"ports[{leakage.ports.Count + 1}]", flowName));
                 space.leak = leakage;
                 // paired with a pressure drop with outdoor air
                 string ductName = $"outDuc_{id}_{i}"; 
-                PressureDrop crack = new PressureDrop(ductName, "MediumA", 20, infiltration, false, true, true);
+                PressureDrop crack = new PressureDrop(ductName, "MediumA", 20, jsSpaces[i].airLeakage, false, true, true);
 
                 // this mutual assignment indicates a bad data structure, we'll fix it later
                 Port.Connect(pAtm.ports[i], crack.port_b);
@@ -732,6 +732,106 @@ namespace Tellinclam
             return new Tuple<string, string>(module, equation);
         }
 
+
+        public static Tuple<string, string> TemplateIdealLoad(Floorplan jsFloorplan)
+        {
+            string module = "";
+            string equation = "";
+            int z = 0;
+            foreach (SystemZone jsSystem in jsFloorplan.systems)
+            {
+                foreach (ControlZone jsZone in jsSystem.zones)
+                {
+                    Boundary_pT pAtm = new Boundary_pT($"pAtm_{z}", "MediumA", jsZone.rooms.Count, true);
+                    Port.Connect(pAtm.T_in, new Port("TDryBul", "weaBus"));
+                    var jsSpaces = jsZone.rooms;
+                    List<ThermalZone> spaces = new List<ThermalZone>();
+                    List<double> heatLoads = new List<double>();
+                    List<double> coolLoads = new List<double>();
+                    for (int i = 0; i < jsSpaces.Count; i++)
+                    {
+                        string spaceName = $"zon_{z}_{i}";
+                        heatLoads.Add(jsSpaces[i].heatLoad);
+                        coolLoads.Add(jsSpaces[i].coolLoad);
+
+                        ThermalZone space = new ThermalZone(spaceName, "MediumA", jsSpaces[i].name, jsSpaces[i].volume, 0);
+                        // only apply one-direction connetion between constant/bus with component?
+                        space.qGai_flow.to.Add(space.qIntGai.y);
+                        space.ports[0] = new Port($"ports[1]", spaceName); // for mass flow
+                        space.ports[1] = new Port($"ports[2]", spaceName); // for p drop
+                        // this can be the inherit attribute of a space, the flow rate should be designated while system sizing
+
+                        // paired with a mass flow port
+                        string flowName = $"freshAir_{z}_{i}";
+                        MassFlowSource outAir = new MassFlowSource(flowName, "MediumA", jsSpaces[i].airOutFlow + jsSpaces[i].airLeakage);
+                        outAir.ports.Add(new Port($"ports[{outAir.ports.Count + 1}]", flowName));
+                        space.leak = outAir;
+                        // paired with a pressure drop with outdoor air
+                        string ductName = $"outDuc_{z}_{i}";
+                        PressureDrop crack = new PressureDrop(ductName, "MediumA", 20, jsSpaces[i].airOutFlow + jsSpaces[i].airLeakage,
+                            false, true, true);                 ///////////////////////////////////////-CHECK-///////
+                        // this mutual assignment indicates a bad data structure, we'll fix it later
+                        Port.Connect(pAtm.ports[i], crack.port_b);
+                        Port.Connect(space.ports[0], outAir.ports[0]);
+                        space.ports[1].to.Add(crack.port_a);
+                        space.crack = crack;
+                        spaces.Add(space);
+                    }
+
+                    double[] volumes = new double[jsSpaces.Count];
+                    for (int i = 0; i < jsSpaces.Count; i++)
+                        volumes[i] = jsSpaces[i].volume;
+
+                    // if no room acts as thermostat, take the average temp of all rooms
+                    MassAverage avg = new MassAverage($"AvgTemp_{z}", spaces.Count, volumes);
+                    for (int i = 0; i < spaces.Count; i++)
+                        Port.Connect(avg.u[i], spaces[i].TAir);
+                    Port sensor = avg.y;
+
+                    // ---------------------------- Serialization part --------------------------
+
+                    module += $"// Control zone {z} module...\n";
+                    module += pAtm.Serialize();
+                    foreach (ThermalZone space in spaces)
+                    {
+                        module += space.Serialize();
+                        module += space.leak.Serialize(); // flow source
+                        module += space.qIntGai.Serialize();
+                        module += space.crack.Serialize();
+                    }
+                    module += avg.Serialize();
+
+                    // equation -------------------------------------
+
+                    List<Port> heatPorts = new List<Port>() { };
+                    equation += $"// Control zone {z} connections...\n";
+                    equation += pAtm.T_in.Serialize();
+                    foreach (ThermalZone space in spaces)
+                    {
+                        heatPorts.Add(new Port("heaPorAir", $"{space.Name}"));
+                        equation += $"connect({space.qGai_flow.Name}, {space.qGai_flow.to[0].Name});\n";
+                        equation += $"connect({space.ports[0].Name}, {space.ports[0].to[0].Name});\n";
+                        equation += $"connect({space.ports[1].Name}, {space.ports[1].to[0].Name});\n";
+                        equation += $"connect({space.leak.weaBus.Name}, weaBus);\n";
+                        equation += $"connect({space.crack.port_b.Name}, {space.crack.port_b.to[0].Name});\n";
+                    }
+
+                    foreach (Port monitor in avg.u)
+                        equation += $"connect({monitor.Name}, {monitor.to[0].Name});\n";
+
+                    var scriptZip = Preset.IdealLoad($"{z}",
+                        new double[] { jsFloorplan.systems[0].heatSet, jsFloorplan.systems[0].coolSet },
+                        jsFloorplan.systems[0].schedule,
+                        heatLoads.ToArray(), coolLoads.ToArray(), sensor, heatPorts.ToArray());
+                    module += scriptZip.Item1;
+                    equation += scriptZip.Item2;
+
+                    z++;
+                }
+            }
+            return new Tuple<string, string>(module, equation);
+        }
+
         // previous version backup in obsidian
         public static Tuple<string, string> TemplateFanCoil(Floorplan jsFloorplan)
         {
@@ -739,7 +839,7 @@ namespace Tellinclam
             string module = "";
             string equation = "";
 
-            bool isHeatingMode = false;
+            bool isHeatingMode = true;
             double[] occSch = jsFloorplan.systems[0].schedule;
 
             // global setting
@@ -774,14 +874,14 @@ namespace Tellinclam
                     // seems not possible to switch the mode of NTU coil inside model scripts
                     // here use cooling mode to size the equipment capacity
                     var hex = new Exchangers.CoilEffectivenessNTU(
-                        isHeatingMode ? 0 : 1, 
+                        isHeatingMode ? 0 : 0, // dry coil, testing only
                         $"hex_{z}", "MediumW", "MediumA",
-                        jsZone.wFlow, jsZone.airCooFlow, 6000, 200, 
+                        jsZone.wFlow, jsZone.airCooFlow, jsZone.equipCoilPDrop, 0, 
                         isHeatingMode ? jsZone.heatLoad : -jsZone.coolLoad,
                         isHeatingMode ? jsSystem.hwTempSupply+273.15 : jsSystem.chwTempSupply+273.15,
                         isHeatingMode ? jsSystem.heatSet+273.15 : jsSystem.coolSet+273.15, 0.017, 
                         false, false);
-                    var fan = new MoverFlowControlled($"fan_{z}", "MediumA", 0, jsZone.airCooFlow, 200);
+                    var fan = new MoverFlowControlled($"fan_{z}", "MediumA", 0, jsZone.airCooFlow, jsZone.equipFanPRise);
                     var val = new TwoWayValve($"valZon_{z}", "TwoWayLinear", "MediumW", jsZone.wFlow, 100, 8e4);
                     Port.Connect(hex.port_b2, fan.port_a);
                     Port.Connect(val.port_b, hex.port_a1);
@@ -861,105 +961,6 @@ namespace Tellinclam
             }
 
             return new Tuple<string, string> ( module, equation );
-        }
-
-        public static Tuple<string, string> TemplateIdealLoad(Floorplan jsFloorplan)
-        {
-            string module = "";
-            string equation = "";
-            int z = 0;
-            foreach (SystemZone jsSystem in jsFloorplan.systems)
-            {
-                foreach (ControlZone jsZone in jsSystem.zones)
-                {
-                    Boundary_pT pAtm = new Boundary_pT($"pAtm_{z}", "MediumA", jsZone.rooms.Count, true);
-                    Port.Connect(pAtm.T_in, new Port("TDryBul", "weaBus"));
-                    var jsSpaces = jsZone.rooms;
-                    List<ThermalZone> spaces = new List<ThermalZone>();
-                    List<double> heatLoads = new List<double>();
-                    List<double> coolLoads = new List<double>();
-                    for (int i = 0; i < jsSpaces.Count; i++)
-                    {
-                        string spaceName = $"zon_{z}_{i}";
-                        heatLoads.Add(jsSpaces[i].heatLoad);
-                        coolLoads.Add(jsSpaces[i].coolLoad);
-
-                        ThermalZone space = new ThermalZone(spaceName, "MediumA", jsSpaces[i].name, jsSpaces[i].volume, 0);
-                        // only apply one-direction connetion between constant/bus with component?
-                        space.qGai_flow.to.Add(space.qIntGai.y);
-                        space.ports[0] = new Port($"ports[1]", spaceName); // for mass flow
-                        space.ports[1] = new Port($"ports[2]", spaceName); // for p drop
-                        // this can be the inherit attribute of a space, the flow rate should be designated while system sizing
-
-                        // paired with a mass flow port
-                        string flowName = $"freshAir_{z}_{i}";
-                        MassFlowSource outAir = new MassFlowSource(flowName, "MediumA", jsSpaces[i].airOutFlow);
-                        outAir.ports.Add(new Port($"ports[{outAir.ports.Count + 1}]", flowName));
-                        space.leak = outAir;
-                        // paired with a pressure drop with outdoor air
-                        string ductName = $"outDuc_{z}_{i}";
-                        PressureDrop crack = new PressureDrop(ductName, "MediumA", 20, jsSpaces[i].airOutFlow,
-                            false, true, true);                 ///////////////////////////////////////-CHECK-///////
-                        // this mutual assignment indicates a bad data structure, we'll fix it later
-                        Port.Connect(pAtm.ports[i], crack.port_b);
-                        Port.Connect(space.ports[0], outAir.ports[0]);
-                        space.ports[1].to.Add(crack.port_a);
-                        space.crack = crack;
-                        spaces.Add(space);
-                    }
-
-                    double[] volumes = new double[jsSpaces.Count];
-                    for (int i = 0; i < jsSpaces.Count; i++)
-                        volumes[i] = jsSpaces[i].volume;
-
-                    // if no room acts as thermostat, take the average temp of all rooms
-                    MassAverage avg = new MassAverage($"AvgTemp_{z}", spaces.Count, volumes);
-                    for (int i = 0; i < spaces.Count; i++)
-                        Port.Connect(avg.u[i], spaces[i].TAir);
-                    Port sensor = avg.y;
-
-                    // ---------------------------- Serialization part --------------------------
-
-                    module += $"// Control zone {z} module...\n";
-                    module += pAtm.Serialize();
-                    foreach (ThermalZone space in spaces)
-                    {
-                        module += space.Serialize();
-                        module += space.leak.Serialize(); // flow source
-                        module += space.qIntGai.Serialize();
-                        module += space.crack.Serialize();
-                    }
-                    module += avg.Serialize();
-
-                    // equation -------------------------------------
-
-                    List<Port> heatPorts = new List<Port>() { };
-                    equation += $"// Control zone {z} connections...\n";
-                    equation += pAtm.T_in.Serialize();
-                    foreach (ThermalZone space in spaces)
-                    {
-                        heatPorts.Add(new Port("heaPorAir", $"{space.Name}"));
-                        equation += $"connect({space.qGai_flow.Name}, {space.qGai_flow.to[0].Name});\n";
-                        equation += $"connect({space.ports[0].Name}, {space.ports[0].to[0].Name});\n";
-                        equation += $"connect({space.ports[1].Name}, {space.ports[1].to[0].Name});\n";
-                        equation += $"connect({space.leak.weaBus.Name}, weaBus);\n";
-                        equation += $"connect({space.crack.port_b.Name}, {space.crack.port_b.to[0].Name});\n";
-                    }
-                    
-                    foreach (Port monitor in avg.u)
-                        equation += $"connect({monitor.Name}, {monitor.to[0].Name});\n";
-
-                    var scriptZip = Preset.IdealLoad($"{z}", 
-                        new double[] { jsFloorplan.systems[0].heatSet, jsFloorplan.systems[0].coolSet }, 
-                        jsFloorplan.systems[0].schedule, 
-                        heatLoads.ToArray(), coolLoads.ToArray(), sensor, heatPorts.ToArray());
-                    module += scriptZip.Item1;
-                    equation += scriptZip.Item2;
-
-                    z++;
-                }
-            }
-            return new Tuple<string, string>(module, equation);
         }
 
         public static Tuple<string, string> TemplateVAVReheat(Floorplan jsFloorplan)

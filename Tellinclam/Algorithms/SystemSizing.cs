@@ -1,22 +1,131 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Diagnostics;
+using System.Reflection;
 using System.Collections.Generic;
 
 using PsychroLib;
 using Tellinclam.JSON;
-using System.Xml.Linq;
+using Grasshopper.Documentation;
+using System.Security.Policy;
+using static Tellinclam.Algorithms.PathFinding;
 
 namespace Tellinclam.Algorithms
 {
     internal class SystemSizing
     {
+        public class EquipFCU
+        {
+            public string name { get; set;} 
+            public int coolLoad { get; set; }
+            public int heatLoad { get; set; }
+            public double wFlow { get; set; }
+            public double aFlow { get; set; }
+            public int pDrop { get; set; }
+            public int pRise { get; set; }
+            public int power { get; set; }
+            public int price { get; set; }
+            public EquipFCU(string name, int coolLoad, int heatLoad, double wFlow, double aFlow, int pDrop, int pRise, int power, int price)
+            {
+                this.name = name;
+                this.coolLoad = coolLoad;
+                this.heatLoad = heatLoad;
+                this.wFlow = wFlow;
+                this.aFlow = aFlow;
+                this.pDrop = pDrop;
+                this.pRise = pRise;
+                this.power = power;
+                this.price = price;
+            }
+        }
+        public class EquipPipe
+        {
+            public string name { get; set; }
+            public double pricePipe { get; set; }
+            public double priceElbow { get; set; }
+            public double priceTee { get; set; }
+            public EquipPipe(string name, double pricePipe, double priceElbow, double priceTee)
+            {
+                this.name = name;
+                this.pricePipe = pricePipe;
+                this.priceElbow = priceElbow;
+                this.priceTee = priceTee;
+            }
+        }
+        public class EquipVAV
+        {
+            public string name { get; set; }
+            public double maxFlow { get; set; }
+            public double minFlow { get; set; }
+            public int wDrop { get; set; }
+            public int aDrop { get; set; }
+            public int heatCap { get; set; }
+            public int price { get; set; }
+            public EquipVAV(string name, double maxFlow, double minFlow, int wDrop, int aDrop, int heatCap, int price)
+            {
+                this.name = name;
+                this.maxFlow = maxFlow;
+                this.minFlow = minFlow;
+                this.wDrop = wDrop;
+                this.aDrop = aDrop;
+                this.heatCap = heatCap;
+                this.price = price;
+            }
+        }
+
+        public static List<EquipFCU> GetCatalogueFCU()
+        {
+            List<EquipFCU> fcus = new List<EquipFCU>();
+            string[] lines = Properties.Resources.preset_fcu.Split(
+                new string[] { Environment.NewLine },
+                StringSplitOptions.None
+            );
+            foreach (string line in lines)
+            {
+                string[] values = line.Split(',');
+                fcus.Add(new EquipFCU(values[0], Int32.Parse(values[1]), Int32.Parse(values[2]), Double.Parse(values[3]),
+                    Double.Parse(values[4]), Int32.Parse(values[5]), Int32.Parse(values[6]), Int32.Parse(values[7]), Int32.Parse(values[8])));
+            }
+            return fcus;
+        }
+        public static List<EquipPipe> GetCataloguePipe()
+        {
+            List<EquipPipe> pipes = new List<EquipPipe>();
+            string[] lines = Properties.Resources.preset_pipe.Split(
+                new string[] { Environment.NewLine },
+                StringSplitOptions.None
+            );
+            foreach (string line in lines)
+            {
+                string[] values = line.Split(',');
+                pipes.Add(new EquipPipe(values[0], Double.Parse(values[1]), Double.Parse(values[2]), Double.Parse(values[3])));
+            }
+            return pipes;
+        }
+
+        public static List<EquipVAV> GetCatalogueVAV()
+        {
+            List<EquipVAV> vavs = new List<EquipVAV>();
+            string[] lines = Properties.Resources.preset_vav.Split(
+                new string[] { Environment.NewLine },
+                StringSplitOptions.None
+            );
+            foreach (string line in lines)
+            {
+                string[] values = line.Split(',');
+                vavs.Add(new EquipVAV(values[0], Double.Parse(values[1]), Double.Parse(values[2]), Int32.Parse(values[3]),
+                    Int32.Parse(values[4]), Int32.Parse(values[5]), Int32.Parse(values[6])));
+            }
+            return vavs;
+        }
+
         public static void Sizing(SystemZone jsSystem, List<string> spaceIdfNames, List<int> sensorLocs, 
             List<double> heatLoads, List<double> coolLoads, double exp, List<double> heatTemps, List<double> coolTemps)
         {
             // inject some information to the JSON file
             // this is only valid for fan-coil system, maybe
-            jsSystem.chwTempSupply = 12; // chilled water 7 ~ 12
+            jsSystem.chwTempSupply = 7; // chilled water 7 ~ 12
             jsSystem.chwTempDelta = 5;
             jsSystem.hwTempSupply = 50; // hot water 45 ~ 50
             jsSystem.hwTempDelta = 5;
@@ -24,12 +133,12 @@ namespace Tellinclam.Algorithms
             jsSystem.heatSet = heatTemps[0];
             jsSystem.coolSet = coolTemps[0];
             jsSystem.heatSupply = 35;
-            jsSystem.coolSupply = 18;
+            jsSystem.coolSupply = 14;
 
             foreach (ControlZone jsZone in jsSystem.zones)
             {
-                double heatLoad = 0;
-                double coolLoad = 0;
+                double sumHeatLoad = 0;
+                double sumCoolLoad = 0;
                 foreach (FunctionSpace jsSpace in jsZone.rooms)
                 {
                     int spaceId = Convert.ToInt32(jsSpace.id.Split('_')[1]);
@@ -37,10 +146,10 @@ namespace Tellinclam.Algorithms
                     if (Convert.ToInt32(spaceIdfNames[spaceId].Split('_')[1]) != spaceId)
                         Debug.Print("IDF space name not in accordance with the JSON space ID");
                     jsSpace.name = spaceIdfNames[spaceId];
-                    jsSpace.heatLoad = heatLoads[spaceId];
-                    jsSpace.coolLoad = coolLoads[spaceId];
-                    heatLoad += jsSpace.heatLoad;
-                    coolLoad += jsSpace.coolLoad;
+                    jsSpace.heatLoad = exp * heatLoads[spaceId];
+                    jsSpace.coolLoad = exp * coolLoads[spaceId];
+                    sumHeatLoad += jsSpace.heatLoad;
+                    sumCoolLoad += jsSpace.coolLoad;
                     // mapping the space label to the schedule/control setting, then assign it to the jsSpace
                 }
                 int zoneId = Convert.ToInt32(jsZone.id.Split('_')[1]);
@@ -51,8 +160,8 @@ namespace Tellinclam.Algorithms
                 else if (sensorLocs[zoneId] == -2)
                     jsZone.sensor = "TempAverage";
 
-                jsZone.heatLoad = heatLoad; // safe factor maybe
-                jsZone.coolLoad = coolLoad; 
+                jsZone.heatLoad = sumHeatLoad; // safe factor maybe
+                jsZone.coolLoad = sumCoolLoad; 
                 // all zones share the same setpoint by system property
                 //jsZone.heatSet = heatTemps[zoneId];
                 //jsZone.coolSet = coolTemps[zoneId];
@@ -72,12 +181,16 @@ namespace Tellinclam.Algorithms
                 {
                     // 这里应该以冷负荷为准，冬季有内热余量的
                     // var rho = psySI.GetDryAirDensity(sizingSet, 101325);
-                    var airHeaFlow = exp * jsSpace.heatLoad / Math.Abs(psySI.GetDryAirEnthalpy(jsSystem.heatSupply) - psySI.GetDryAirEnthalpy(jsSystem.heatSet));
-                    var airCooFlow = exp * jsSpace.coolLoad / Math.Abs(psySI.GetDryAirEnthalpy(jsSystem.coolSet) - psySI.GetDryAirEnthalpy(jsSystem.coolSupply));
+                    var airHeaFlow = jsSpace.heatLoad / Math.Abs(psySI.GetDryAirEnthalpy(jsSystem.heatSupply) - psySI.GetDryAirEnthalpy(jsSystem.heatSet));
+                    var airCooFlow = jsSpace.coolLoad / Math.Abs(psySI.GetDryAirEnthalpy(jsSystem.coolSet) - psySI.GetDryAirEnthalpy(jsSystem.coolSupply));
                     // var speed -> ?
+                    // leakage 0.3*VRoo*1.2/3600 Outdoor air mass flow rate, assuming constant infiltration air flow rate [kg/s]
+                    //jsSpace.airLeakage = 0.3 * jsSpace.volume * 1.2 / 3600;
+                    jsSpace.airLeakage = 0.0001 / jsSpace.volume;
+                    if (jsSpace.airLeakage < 0.00000001)
+                        jsSpace.airLeakage = 0.00000001; // this value cannot be zero
                     jsSpace.airHeaFlow = airHeaFlow;
                     jsSpace.airCooFlow = airCooFlow;
-                    //jsSpace.airOutFlow = jsSpace.area * 0.1 * 0.00833;
                     jsSpace.airOutFlow = jsSpace.area * 0.0003; // area weighted OA by default
                     if (jsSpace.function.Contains("oz:Office"))
                         jsSpace.airOutFlow += jsSpace.area * 0.05 * 0.0025;
@@ -89,8 +202,6 @@ namespace Tellinclam.Algorithms
                         jsSpace.airOutFlow += jsSpace.area * 0.7 * 0.0025;
                     if (jsSpace.function.Contains("oz:Conference"))
                         jsSpace.airOutFlow += jsSpace.area * 0.5 * 0.0025;
-                    // leakage 0.3*VRoo*1.2/3600 Outdoor air mass flow rate, assuming constant infiltration air flow rate [kg/s]
-                    //jsSpace.airOutFlow = 0.3 * jsSpace.volume * 1.2 / 3600;
                     //terminalSpaceFlow.Add(jsSpace.id, aFlow);
                 }
                 // the flowrate can be rounded up by sizing factor upon load value, no need to do it here
@@ -108,10 +219,44 @@ namespace Tellinclam.Algorithms
                         }
                     }
 
-                // presumtion rho = 1000 kg/m3, cp = 4186.8 J/kg, note that load value in W
+                // presumption rho = 1000 kg/m3, cp = 4186.8 J/kg, note that load value in W
                 var wFlowHeat = jsZone.heatLoad / jsSystem.hwTempDelta / 4186;
                 var wFlowCool = jsZone.coolLoad / jsSystem.chwTempDelta / 4186;
+                //jsZone.wFlow = wFlowHeat > wFlowCool ? wFlowHeat : wFlowCool;
                 jsZone.wFlow = wFlowHeat > wFlowCool ? wFlowHeat : wFlowCool;
+
+                // find the minimum capacity right above the cooling load
+                // this should satisfy both heating and cooling load
+                // (for now, the testing case has heating load way smaller than cooling load)
+                if (jsSystem.type == sysTypeEnum.FCU)
+                {
+                    List<EquipFCU> fcus = GetCatalogueFCU();
+                    if (fcus.Last().coolLoad < jsZone.coolLoad)
+                    {
+                        Util.LogPrint($"ERROR - Sizing failure with no proper FCU capacity for {jsZone.coolLoad}");
+                    }
+                    // DEBUG test different sizing factors here
+                    EquipFCU fcu = fcus.Where(e => e.coolLoad > jsZone.coolLoad).OrderBy(e => e.coolLoad).First();
+                    jsZone.equipPrice = fcu.price;
+                    jsZone.equipCoilPDrop = fcu.pDrop;
+                    jsZone.equipFanPRise = fcu.pRise;
+                    jsZone.equipCoolLoad = fcu.coolLoad;
+                    jsZone.equipHeatLoad = fcu.heatLoad;
+                    jsZone.equipWFlow = fcu.wFlow;
+                    jsZone.equipAFlow = fcu.aFlow;
+                    //jsZone.coolLoad = fcu.coolLoad;
+                    //jsZone.heatLoad = fcu.heatLoad;
+                    //jsZone.wFlow = fcu.wFlow;
+                    //jsZone.airCooFlow = fcu.aFlow;
+                }
+                if (jsSystem.type == sysTypeEnum.VAV)
+                {
+                    List<EquipVAV> vavs = GetCatalogueVAV();
+                    EquipVAV vav = vavs.Where(e => e.maxFlow > jsZone.airCooFlow).OrderBy(e => e.maxFlow).First();
+                    jsZone.equipPrice = vav.price;
+                    jsZone.equipCoilPDrop = vav.wDrop;
+                    jsZone.equipFanPRise = -vav.aDrop;
+                }
             }
 
             // do water flowrate calculation, 0.09 ~ 0.18 kg/s, round up a little bit
@@ -243,23 +388,43 @@ namespace Tellinclam.Algorithms
             double epsilon = 0.0005; // absolute roughness of close water pipe
             double density = 1000;
             double viscosity = 4.74e-7;
-            List<double> d_DN = new List<double>() {0.015, 0.02, 0.025, 0.032, 0.04, 0.05,
+            List<double> d_DN = new List<double>() {0.01, 0.015, 0.02, 0.025, 0.032, 0.04, 0.05,
                 0.065, 0.08, 0.1, 0.125, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4};
             // open function
             Tuple<double, double, double> FrictionFilter(IEnumerable<double> ds, double volumeFlow)
             {
-                // pick the diameter with the smallest pressure drop
+                // pick the diameter with the minimum pressure drop if within 100~300 Pa/m
+                // else pick the maximum pressure drop under 100 Pa/m to ensure a proper flowrate
                 List<Tuple<double, double, double>> sizings = new List<Tuple<double, double, double>>();
                 foreach (double d in ds)
                 {
                     var sizingZip = PressureDropSizing(d, volumeFlow, density, viscosity, epsilon);
-                    if (sizingZip.Item3 > 100 && sizingZip.Item3 < 300)
-                        sizings.Add(sizingZip);
+                    sizings.Add(sizingZip);
                 }
-                if (sizings.Count > 0)
-                    return sizings.OrderBy(z => z.Item3).First();
-                else
-                    return null;
+                Tuple<double, double, double> optSizing = null;
+                // since diameters are in ascending order, the pressure drops will be in descending order
+                foreach (var sizing in sizings)
+                {
+                    if (sizing.Item3 > 100 && sizing.Item3 < 300)
+                        if (optSizing is null)
+                            optSizing = sizing;
+                        else if (sizing.Item3 < optSizing.Item3)
+                            optSizing = sizing;
+                    if (sizing.Item3 < 100 && optSizing is null)
+                    {
+                        optSizing = sizing;
+                        break;
+                    }
+                }
+                return optSizing;
+                //var optSizings = sizings.Where(z => z.Item3 > 100 && z.Item3 < 300);
+                //var subSizings = sizings.Where(z => z.Item3 < 100);
+                //if (optSizings.Any())
+                //    return optSizings.OrderBy(z => z.Item3).First();
+                //else if (subSizings.Any())
+                //    return subSizings.OrderByDescending(z => z.Item3).First();
+                //else
+                //    return null;
             }
 
             // calculate the flow rate at each network node
@@ -277,6 +442,8 @@ namespace Tellinclam.Algorithms
             }
             foreach (ConduitEdge jsEdge in jsNetwork.edges)
             {
+                if (Math.Abs(jsEdge.length - 2.814468) < 1)
+                    Debug.Print("NOTEHERE");
                 List<double> velocities = new List<double>();
                 Tuple<double, double, double> sizing = null;
                 foreach (double diameter in d_DN)
@@ -284,13 +451,13 @@ namespace Tellinclam.Algorithms
                     velocities.Add(4 * jsEdge.massFlow / density / Math.PI / Math.Pow(diameter, 2));
                 }
                 // check if v(32mm) < 1.5, v(65) < 2
-                if (velocities[3] < 1.5)
-                    sizing = FrictionFilter(d_DN.Take(4), jsEdge.massFlow / density);
+                if (velocities[4] < 1.5)
+                    sizing = FrictionFilter(d_DN.Take(5), jsEdge.massFlow / density);
                 // if previous loop does not find the suitable p_delta
-                if (sizing is null && velocities[6] < 2)
-                    sizing = FrictionFilter(d_DN.Skip(4).Take(3), jsEdge.massFlow / density);
-                if (sizing is null && velocities[15] < 3)
-                    sizing = FrictionFilter(d_DN.Skip(7), jsEdge.massFlow / density);
+                if (sizing is null && velocities[7] < 2)
+                    sizing = FrictionFilter(d_DN.Skip(5).Take(3), jsEdge.massFlow / density);
+                if (sizing is null && velocities[16] < 3)
+                    sizing = FrictionFilter(d_DN.Skip(8), jsEdge.massFlow / density);
                 if (sizing is null)
                     Util.LogPrint("ERROR - No suitable diameter found");
                 else
@@ -298,6 +465,7 @@ namespace Tellinclam.Algorithms
                     // record the info of main duct/pipe
                     jsEdge.diameter = Convert.ToInt32(sizing.Item1 * 1000); // mm only for record
                     jsEdge.velocity = sizing.Item2;
+                    jsEdge.deltaPDrop = sizing.Item3;
                     jsEdge.friction = sizing.Item3 * jsEdge.length; // Pa
                 }
             }
@@ -306,6 +474,54 @@ namespace Tellinclam.Algorithms
             jsNetwork.sumLength = jsNetwork.edges.Sum(x => x.length);
 
             return;
+        }
+
+        public static List<double> VendorQuote(SystemZone jsSystem)
+        {
+            List<EquipPipe> DN = GetCataloguePipe();
+
+            double costZoneEquip = 0;
+            double costZoneNetwork = 0;
+            double costSysNetwork = 0;
+            double costSysEquip = 0;
+            foreach (ControlZone zone in jsSystem.zones)
+            {
+                costZoneEquip += zone.equipPrice;
+                // 20% material allowance to cover hangers, cleats, hardware, waste and seams
+                costZoneNetwork += zone.network.sumMaterial * 1.2 * 5.64 * 5.6;
+            }
+            if (jsSystem.type == sysTypeEnum.FCU)
+            {
+                // pass the pipe sizing to the elbow/tee at the starting node
+                Dictionary<string, EquipPipe> sizings = new Dictionary<string, EquipPipe>();
+                foreach (ConduitEdge edge in jsSystem.network.edges)
+                {
+                    var size = DN.Where(p => p.name.Contains(edge.diameter.ToString())).FirstOrDefault();
+                    if (!sizings.ContainsKey(edge.startId))
+                        sizings.Add(edge.startId, size);
+                    costSysNetwork += size.pricePipe * edge.length;
+                }
+                foreach (ConduitNode node in jsSystem.network.nodes)
+                {
+                    if (sizings.ContainsKey(node.id))
+                    {
+                        var size = sizings[node.id];
+                        if (node.type == nodeTypeEnum.relay)
+                            costSysNetwork += size.priceElbow;
+                        if (node.type == nodeTypeEnum.tjoint)
+                            costSysNetwork += size.priceTee;
+                    }
+                }
+            }
+                
+            if (jsSystem.type == sysTypeEnum.VAV)
+            {
+                costSysNetwork += jsSystem.network.sumMaterial * 1.2 * 5.64 * 5.6;
+                //costSysNetwork += jsSystem.
+                costSysEquip += 563839;
+            }
+            // double the network cost for supply and return
+            return new List<double> { costZoneEquip, 2 * costZoneNetwork, 2 * costSysNetwork, costSysEquip};
         }
 
         protected static double DarcyFriction(double diameter, double velocity, double viscosity, double epsilon)

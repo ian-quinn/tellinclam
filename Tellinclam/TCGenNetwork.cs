@@ -12,6 +12,8 @@ using Grasshopper.Kernel.Types;
 
 using Tellinclam.Algorithms;
 using Tellinclam.JSON;
+using Eto.Forms;
+using Grasshopper.Kernel.Parameters;
 
 namespace Tellinclam
 {
@@ -49,6 +51,12 @@ namespace Tellinclam
                 "List of space loads for AHU sizing and further balanced partitioning", GH_ParamAccess.list);
             pManager.AddIntegerParameter("Zoned index", "zone",
                 "Nested lists including all space index of each zoning cluster", GH_ParamAccess.tree);
+            pManager.AddIntegerParameter("Source type", "src",
+                "0: Mechanical Room for centrol AHU\n1: Shaft for water system\n2: Distributed sources for VRV system", GH_ParamAccess.item);
+            Param_Integer srcType = pManager[6] as Param_Integer;
+            srcType.AddNamedValue("Mechanical room first", 0);
+            srcType.AddNamedValue("Shaft first", 1);
+            srcType.AddNamedValue("Distributed source first", 2);
             pManager.AddIntegerParameter("Select mode for level-1 network generation", "mode",
                 "0: Dijkstra (default)\n1: BCP_k with predefined sources\n>=2: BCP_k with anonymous sources\n-n: same as n but without zoning", GH_ParamAccess.item);
         }
@@ -103,7 +111,9 @@ namespace Tellinclam
             if (spaceCrvs.Count != funcTags.Count || spaceCrvs.Count != spaceLoads.Count)
                 return;
             int solverMode = 0;
-            DA.GetData(6, ref solverMode);
+            int sourceType = 1;
+            DA.GetData(6, ref sourceType);
+            DA.GetData(7, ref solverMode);
 
             List<double> heatLoads = spaceLoads.Select(load => load.Value.T0).ToList();
             List<double> coolLoads = spaceLoads.Select(load => load.Value.T1).ToList();
@@ -209,8 +219,9 @@ namespace Tellinclam
                 else
                     nested_entryPts.Add(new List<Point3d> ());
                 // additionally, record the source node for net-A
-                if (funcTags[i].Contains("oz:ServiceShaft") ||
-                    funcTags[i].Contains("oz:MechanicalRoom"))
+                if (funcTags[i].Contains("oz:ServiceShaft") && sourceType == 1)
+                    entryPts_shaft.AddRange(entryPts);
+                if (funcTags[i].Contains("oz:MechanicalRoom") && sourceType == 0)
                     entryPts_shaft.AddRange(entryPts);
             }
 
@@ -298,7 +309,9 @@ namespace Tellinclam
                     PathFinding.Node<int> terminal = zoneGraph.AddNode(1, 0);
                     zoneGraph.Nodes.Last().Coords = AHU;
                     double diameter = 4 * spaceAreas[spaceIds[0]] / spaceCrvs[spaceIds[0]].GetLength();
-                    zoneGraph.AddEdge(root, terminal, diameter);
+                    // diameter can roughly represents the ductwork within a space (actual steiner tree is the best)
+                    // for now, we do not consider the pressure drop or weight at this level, for zoning scheme comparison
+                    zoneGraph.AddEdge(root, terminal, 0);
                     zoneGraphs.Add(zoneGraph);
                 }
                 // if a zone has several spaces, find the centroid of this MST then connect it to the guideline
@@ -392,9 +405,9 @@ namespace Tellinclam
 
             // DISPATCH-1 AHU organized by Dijkstra shortest path
             // there is only one solution thus we have sysForests.Count = 1
-            sysForests.Add(new List<List<Line>> { });
             if (solverMode == 0)
             {
+                sysForests.Add(new List<List<Line>> { });
                 // by default, sysZones.Count = entryPts_shaft.Count
                 // allocate each AHU to its nearest shaft/mech entry point
                 List<List<Point3d>> sysZones = new List<List<Point3d>>() { };
@@ -464,10 +477,15 @@ namespace Tellinclam
                             // .Item1 outside the Nodes list
                             // by default, Nodes are indexed from 0 to Nodes.Count
                             // the source will be offset ↙ a bit to its entry point in the network
+
+                            // DEBUG 20240919 
+                            // temporally remove this mark. it causes zero flow pipe (naked node without space load connection)
                             if (connection.Item1 >= sysCompleteGraph.Nodes.Count)
-                                sys_tree.Add(new Line(
-                                sysCompleteGraph.Nodes[connection.Item2].Coords - new Vector3d(-1, -1, 0),
-                                sysCompleteGraph.Nodes[connection.Item2].Coords));
+                            {
+                                //sys_tree.Add(new Line(
+                                //sysCompleteGraph.Nodes[connection.Item2].Coords - new Vector3d(-1, -1, 0),
+                                //sysCompleteGraph.Nodes[connection.Item2].Coords));
+                            }
                             else
                                 sys_tree.Add(new Line(
                                 sysCompleteGraph.Nodes[connection.Item1].Coords,
@@ -510,6 +528,12 @@ namespace Tellinclam
             // take the first solution, for Dijkstra it is the only one, for BCP, it is the optimum
             foreach (List<Line> sysTree in sysForests[0])
             {
+                //DEBUG 20240919
+                // due to lack of restrictions, BCP-k solver may return redundant connections
+                // for now, remove those stray lines (if sysTree has too few branches)
+                if (sysTree.Count < 10)
+                    continue;
+
                 PathFinding.Graph<int> sysGraph = PathFinding.RebuildGraph(sysTree);
                 // how rookie finds the root/terminal node by comparing coordinates
                 foreach (Point3d pt in entryPts_shaft)

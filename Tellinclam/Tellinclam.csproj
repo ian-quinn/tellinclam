@@ -36,10 +36,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Folder Include="Resources\" />
-  </ItemGroup>
-  
-  <ItemGroup>
     <Reference Include="gurobi110.netstandard20">
       <HintPath>C:\gurobi1101\win64\lib\gurobi110.netstandard20.dll</HintPath>
     </Reference>

@@ -68,7 +68,11 @@ namespace Tellinclam
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Serialized configurations", "json", 
-                "Serialized information of space layout, functional labeling, system configuration and so on.", GH_ParamAccess.list);
+                "Serialized information of space layout, functional labeling, system configuration and so on.", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Vendor quote estimation costs", "cost",
+                "Cost listed in four parts: zone equipment, zone ducting, system plumbing, system equipment.", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Maximum zone sizing", "size", "", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Maximum zone critical path", "range", "", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -111,9 +115,12 @@ namespace Tellinclam
                 heatSetpoints = Enumerable.Repeat(setPoints[0].Value.T0, spaceNames.Count).ToList();
                 coolSetpoints = Enumerable.Repeat(setPoints[0].Value.T1, spaceNames.Count).ToList();
             }
+            List<double> costs = new List<double>() { 0, 0, 0, 0 };
 
             // now everything is unpacked from the JSON file
             Floorplan jsFloorplan = JsonSerializer.Deserialize<Floorplan>(jsonSys);
+            double maxCapacity = 0;
+            double maxRange = 0;
             foreach (SystemZone jsSystem in jsFloorplan.systems)
             {
                 if (jsSystem.zones.Count == 0) // skip if no system
@@ -141,6 +148,18 @@ namespace Tellinclam
                 // presume a sizing factor as 1.25
                 SystemSizing.Sizing(jsSystem, spaceNames, sensorLocs, 
                     heatLoads, coolLoads, 1.25, heatSetpoints, coolSetpoints);
+
+                foreach (ControlZone zone in jsSystem.zones)
+                {
+                    if (zone.coolLoad > maxCapacity)
+                        maxCapacity = zone.coolLoad;
+                    if (zone.network.maxLength > maxRange)
+                        maxRange = zone.network.maxLength;
+                }
+
+                var prices = SystemSizing.VendorQuote(jsSystem);
+                for (int i = 0; i < 4; i++)
+                    costs[i] += prices[i];
             }
 
             // ----------------------------------- DEBUG -------------------------------------
@@ -171,6 +190,9 @@ namespace Tellinclam
             }
 
             DA.SetData(0, jsonSys);
+            DA.SetDataList(1, costs);
+            DA.SetData(2, maxCapacity);
+            DA.SetData(3, maxRange);
 
             Util.ScriptPrint(jsonSys, $"network_gen.json", "");
         }

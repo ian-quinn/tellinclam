@@ -161,6 +161,65 @@ namespace Tellinclam.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to FC2A-D010L,1500,2000,0.069,0.094,39200,55,36,2541
+        ///FC2A-D020L,1700,2200,0.08,0.088,6300,55,29,2632
+        ///FC2A-D030L,2500,3100,0.119,0.13,28800,65,45,2807
+        ///FC2A-D040L,3200,4000,0.152,0.166,28000,85,56,3234
+        ///FC2A-D050L,4600,5700,0.222,0.239,46900,85,72,3675
+        ///FC2A-D060L,5800,7100,0.279,0.311,60200,15,105,4025
+        ///FC2A-D070L,7300,9300,0.348,0.355,21500,125,147,4550
+        ///FC2A-D080L,8100,11600,0.389,0.466,32500,70,188,6559
+        ///FC2A-E150L,14200,20000,0.677,1.066,29300,200,675,9443
+        ///FC2A-E180L,15000,23200,0.719,1.066,32000,200,67 [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string preset_fcu {
+            get {
+                return ResourceManager.GetString("preset_fcu", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to DN10,14.91,20.44,26.74
+        ///DN15,8.89,13.44,17.01
+        ///DN20,10.71,16.45,28.7
+        ///DN25,14.77,30.45,45.43
+        ///DN32,19.25,47.11,71.96
+        ///DN40,23.03,62.3,89.46
+        ///DN50,30.94,103.04,148.54
+        ///DN65,48.37,264.18,409.64
+        ///DN80,63.35,435.54,480.34
+        ///DN90,76.86,630,735
+        ///DN100,90.51,768.39,1136.17
+        ///DN125,131.74,2509.57,2626.26
+        ///DN150,184.66,2716,3063.69.
+        /// </summary>
+        internal static string preset_pipe {
+            get {
+                return ResourceManager.GetString("preset_pipe", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 35E-C-04-W21,0.13,0.023,1405,10,17832,1623
+        ///35E-C-05-W21,0.204,0.035,1405,25,22405,2196
+        ///35E-C-06-W21,0.292,0.05,1405,45,25605,2654
+        ///35E-C-07-W21,0.396,0.069,1913,45,32921,3047
+        ///35E-C-08-W21,0.521,0.09,1913,37,36122,3396
+        ///35E-C-09-W21,0.657,0.114,389,62,38865,3693
+        ///35E-C-10-W21,0.81,0.14,389,62,41837,3961
+        ///35E-C-12-W21,1.167,0.202,508,62,53268,4428
+        ///35E-C-14-W21,1.586,0.275,239,57,60584,4820
+        ///35E-C-16-W21,2.039,0.359,478,60,88704,5142
+        ///35E-C-22-W21,3.964,0.686,628,75,123454,5992
+        ///35E-C-28-W21,5.097,0.883,80 [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string preset_vav {
+            get {
+                return ResourceManager.GetString("preset_vav", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap prune {

@@ -58,6 +58,7 @@ namespace Tellinclam.JSON
         public double volume { get; set; }
         public double heatLoad { get; set; }
         public double coolLoad { get; set; }
+        public double airLeakage { get; set; }
         public double airHeaFlow { get; set; }
         public double airCooFlow { get; set; }
         public double airOutFlow { get; set; }
@@ -78,6 +79,13 @@ namespace Tellinclam.JSON
         public double airOutFlow { get; set; }
         public double wFlow { get; set; }
         public string id_root { get; set; }
+        public int equipCoilPDrop { get; set; }
+        public int equipFanPRise { get; set; }
+        public int equipCoolLoad { get; set; }
+        public int equipHeatLoad { get; set; }
+        public double equipWFlow { get; set; }
+        public double equipAFlow { get; set; }
+        public int equipPrice { get; set; }
         public List<FunctionSpace> rooms { get; set; }
         public ConduitGraph network { get; set; }
         // the terminal/control unit location of this zone, id targets to the root point of the zone's network
@@ -154,6 +162,7 @@ namespace Tellinclam.JSON
         public double massFlow { get; set; } = 0.0;
         public int diameter { get; set; }
         public double velocity { get; set; }
+        public double deltaPDrop { get; set; }
         public double friction { get; set; }
 
         //public ConduitEdge(string startId, string endId, double length)
